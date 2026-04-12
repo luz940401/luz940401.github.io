@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>格蘭大陸 · GM 控制台</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+:root{--parch:#f5e9ce;--parch2:#ede0b5;--parch3:#dece96;--ink:#1a1008;--ink2:#3a2010;--ink3:#6a4820;--gold:#b8860b;--gold2:#d4a017;--up:#c0392b;--dn:#27ae60;--purple:#7b2d8b;--shadow:rgba(20,10,0,0.35);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellipse at 50% 0%,#2e1a08,#140c04 65%);font-family:'Noto Sans TC',sans-serif;font-size:15px;color:var(--ink);padding:12px;}
+.setup-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:3000;display:flex;align-items:center;justify-content:center;padding:16px;overflow-y:auto;}
+.setup-overlay.hidden{display:none;}
+.setup-box{background:var(--parch);border:2px solid var(--gold);width:100%;max-width:560px;padding:24px;margin:auto;}
+.setup-title{font-size:20px;font-weight:900;color:var(--ink);margin-bottom:6px;}
+.setup-sub{font-size:13px;color:var(--ink3);margin-bottom:20px;line-height:1.8;}
+.step-row{display:flex;gap:12px;margin-bottom:16px;align-items:flex-start;}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--gold);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-body{font-size:13px;color:var(--ink2);line-height:1.8;}
+.step-body code{background:rgba(184,134,11,0.15);padding:1px 6px;font-size:12px;font-family:monospace;border-radius:2px;}
+.setup-warn{background:rgba(192,57,43,0.07);border:1px solid rgba(192,57,43,0.3);padding:10px 14px;font-size:12px;color:var(--up);margin:14px 0;line-height:1.7;}
+.url-input{width:100%;background:rgba(255,255,255,0.6);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:10px 14px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none;margin:12px 0 10px;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2000;display:flex;align-items:center;justify-content:center;padding:16px;}
+.modal-overlay.hidden{display:none;}
+.modal-box{background:var(--parch);border:2px solid var(--gold);width:100%;max-width:720px;max-height:90vh;overflow-y:auto;}
+.modal-head{background:var(--parch2);border-bottom:2px solid var(--gold);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.modal-title{font-size:16px;font-weight:700;}
+.modal-close{font-size:20px;color:var(--ink3);cursor:pointer;padding:2px 10px;border:1px solid var(--parch3);background:transparent;flex-shrink:0;}
+.modal-close:hover{border-color:var(--gold);}
+.modal-body{padding:18px 20px;}
+.modal-stats{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--parch3);}
+.mstat{text-align:center;min-width:72px;}
+.mstat-val{font-size:18px;font-weight:700;}
+.mstat-lbl{font-size:11px;color:var(--ink3);margin-top:2px;}
+.panel{background:rgba(245,233,206,0.95);border:2px solid var(--gold);box-shadow:0 3px 16px var(--shadow);margin-bottom:14px;}
+.ph{background:var(--parch2);border-bottom:2px solid var(--gold);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.ph-title{font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:1px;}
+.pb{padding:16px;}
+.site-header{background:rgba(245,233,206,0.97);border:2px solid var(--gold);border-bottom:4px solid var(--gold);box-shadow:0 3px 16px var(--shadow);padding:14px 16px;margin-bottom:14px;text-align:center;}
+.site-header h1{font-size:clamp(18px,4vw,26px);font-weight:900;color:var(--ink);letter-spacing:2px;}
+.site-header .sub{font-size:12px;color:var(--ink3);margin-top:3px;}
+.nav-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px;}
+.nav-link{font-size:12px;font-weight:500;color:var(--gold);text-decoration:none;border:1px solid var(--gold);padding:5px 14px;transition:background .2s;}
+.nav-link:hover{background:rgba(184,134,11,0.12);}
+.sync-bar{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);padding:4px 12px;border:1px solid var(--parch3);background:rgba(255,255,255,0.2);}
+.sdot{width:8px;height:8px;border-radius:50%;background:var(--parch3);flex-shrink:0;}
+.sdot.ok{background:var(--dn);}.sdot.err{background:var(--up);}
+.sdot.spin{background:var(--gold);animation:sp .8s infinite;}
+@keyframes sp{0%,100%{opacity:1}50%{opacity:0.3}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+@media(max-width:800px){.g2{grid-template-columns:1fr;}}
+@media(max-width:600px){.g3{grid-template-columns:1fr 1fr;}}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase;}
+.field input,.field select,.field textarea{width:100%;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:9px 12px;font-family:'Noto Sans TC',sans-serif;font-size:14px;outline:none;transition:border-color .2s;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+.field textarea{resize:vertical;min-height:60px;}
+.form-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap;}
+.form-row .field{flex:1;min-width:80px;margin:0;}
+.btn{display:block;width:100%;padding:11px 16px;border:2px solid;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;transition:all .2s;margin-bottom:8px;}
+.btn-gold{border-color:var(--gold);color:var(--gold);background:rgba(184,134,11,0.07);}
+.btn-gold:hover{background:rgba(184,134,11,0.18);}
+.btn-red{border-color:var(--up);color:var(--up);background:rgba(192,57,43,0.07);}
+.btn-red:hover{background:rgba(192,57,43,0.16);}
+.btn-purple{border-color:var(--purple);color:var(--purple);background:rgba(123,45,139,0.07);}
+.btn-purple:hover{background:rgba(123,45,139,0.16);}
+.btn-ghost{border-color:var(--parch3);color:var(--ink3);background:transparent;font-size:12px;}
+.btn-sm{padding:7px 14px;border:1px solid var(--gold);background:rgba(184,134,11,0.07);color:var(--gold2);font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-sm:hover{background:rgba(184,134,11,0.18);}
+.btn-danger{padding:7px 14px;border:1px solid var(--up);background:rgba(192,57,43,0.07);color:var(--up);font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-danger:hover{background:rgba(192,57,43,0.18);}
+.time-big{font-size:clamp(20px,4vw,30px);font-weight:700;color:var(--ink);text-align:center;padding:10px 0 3px;}
+.time-sub{font-size:14px;color:var(--ink3);text-align:center;margin-bottom:12px;}
+/* 市場表格 */
+.mkt-table{width:100%;border-collapse:collapse;}
+.mkt-table th{font-size:11px;font-weight:700;color:var(--ink3);padding:8px 8px;border-bottom:2px solid var(--parch3);text-align:left;letter-spacing:1px;white-space:nowrap;}
+.mkt-table td{padding:8px 8px;border-bottom:1px solid rgba(222,206,150,0.5);vertical-align:middle;}
+.mkt-table tr{cursor:pointer;transition:background .15s;}
+.mkt-table tr:hover{background:rgba(192,57,43,0.04);}
+.mkt-table tr.is-limit-up td{background:#cc0000 !important;}
+.mkt-table tr.is-limit-up td,.mkt-table tr.is-limit-up td strong,.mkt-table tr.is-limit-up td span{color:#fff !important;}
+.mkt-table tr.is-limit-dn td{background:#007a3d !important;}
+.mkt-table tr.is-limit-dn td,.mkt-table tr.is-limit-dn td strong,.mkt-table tr.is-limit-dn td span{color:#fff !important;}
+@keyframes flashUp{0%,49%{background:#cc0000}50%,100%{background:#ff2222}}
+@keyframes flashDn{0%,49%{background:#007a3d}50%,100%{background:#00a050}}
+.mkt-table tr.is-limit-up td:first-child{animation:flashUp .7s step-end infinite;}
+.mkt-table tr.is-limit-dn td:first-child{animation:flashDn .7s step-end infinite;}
+.limit-badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:900;letter-spacing:1px;margin-left:6px;vertical-align:middle;}
+.limit-badge.up{background:var(--up);color:#fff;}
+.limit-badge.dn{background:var(--dn);color:#fff;}
+.mkt-table tr.is-limit-up .limit-badge,
+.mkt-table tr.is-limit-dn .limit-badge{display:none;}
+/* 下市警示 */
+.mkt-table tr.is-warning td{background:rgba(184,134,11,0.08);}
+.mkt-table tr.is-delisted td{background:rgba(100,100,100,0.15)!important;opacity:0.5;}
+.delist-badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:900;letter-spacing:1px;margin-left:6px;vertical-align:middle;background:#888;color:#fff;}
+.warn-badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:900;letter-spacing:1px;margin-left:6px;vertical-align:middle;background:var(--gold);color:#fff;}
+.tag{display:inline-block;padding:2px 8px;font-size:10px;font-weight:500;border:1px solid var(--gold);color:var(--gold);}
+/* 事件表單 */
+.evt-pct-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;}
+@media(max-width:500px){.evt-pct-grid{grid-template-columns:1fr;}}
+.evt-pct-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(222,206,150,0.3);}
+.evt-pct-row .elabel{font-size:12px;font-weight:500;flex:1;color:var(--ink2);}
+.evt-pct-row input{width:72px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.5);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;}
+.infer-box{background:rgba(123,45,139,0.06);border:1px solid rgba(123,45,139,0.25);padding:12px 14px;margin:10px 0;font-size:13px;color:var(--ink2);line-height:1.7;}
+.infer-box.hidden{display:none;}
+.infer-tag{font-size:11px;font-weight:700;color:var(--purple);margin-bottom:6px;display:block;}
+.preset-evt{padding:10px 14px;margin-bottom:7px;border:1px solid var(--parch3);background:rgba(255,255,255,0.15);display:flex;justify-content:space-between;align-items:flex-start;gap:10px;transition:all .2s;}
+.preset-evt:hover{border-color:var(--gold);}
+.pname{font-size:13px;font-weight:700;color:var(--ink);}
+.pdetail{font-size:12px;color:var(--ink3);margin-top:3px;line-height:1.6;}
+.preset-btns{display:flex;gap:6px;flex-shrink:0;}
+.fire-btn{padding:5px 14px;border:1px solid var(--gold);color:var(--gold);background:transparent;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;}
+.del-btn{padding:5px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;}
+/* 財富表 */
+.w-table{width:100%;border-collapse:collapse;}
+.w-table th{font-size:11px;font-weight:700;color:var(--ink3);padding:8px 10px;border-bottom:2px solid var(--parch3);text-align:left;white-space:nowrap;}
+.w-table td{padding:9px 10px;border-bottom:1px solid var(--parch3);font-size:13px;vertical-align:top;}
+.w-table tr:hover{background:rgba(184,134,11,0.05);}
+.name-input{border:none;border-bottom:1px dashed var(--parch3);background:transparent;width:90px;font-family:'Noto Sans TC',sans-serif;font-size:13px;padding:2px;outline:none;color:var(--ink);}
+.holding-detail{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.8;}
+.holding-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 0;}
+.pnl-pos{color:var(--up);font-weight:700;}
+.pnl-neg{color:var(--dn);font-weight:700;}
+/* IPO 表單 */
+.ipo-form{background:rgba(123,45,139,0.05);border:1px solid rgba(123,45,139,0.2);padding:14px;margin-bottom:12px;}
+/* 自動事件 */
+.ae-toast{position:fixed;bottom:20px;right:20px;z-index:3000;background:var(--parch);border:2px solid var(--gold);box-shadow:0 4px 20px rgba(0,0,0,0.5);max-width:320px;width:calc(100vw - 40px);animation:toastIn .3s ease;}
+.ae-toast.hidden{display:none;}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.ae-toast-head{background:linear-gradient(135deg,#3a0808,#5a1212);padding:10px 14px;display:flex;align-items:center;gap:8px;}
+.ae-toast-icon{font-size:20px;}
+.ae-toast-title{color:#f5e9ce;font-size:13px;font-weight:700;}
+.ae-toast-time{color:rgba(245,233,206,0.55);font-size:11px;margin-left:auto;}
+.ae-toast-body{padding:12px 14px 10px;}
+.ae-toast-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.ae-toast-affects{font-size:12px;color:var(--ink3);line-height:1.8;}
+.ae-toggle-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(184,134,11,0.06);border:1px solid rgba(184,134,11,0.2);margin-bottom:12px;}
+.ae-toggle-label{font-size:13px;color:var(--ink2);flex:1;}
+.ae-toggle-sub{font-size:11px;color:var(--ink3);margin-top:2px;}
+.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle-switch input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--parch3);border-radius:24px;cursor:pointer;transition:.3s;}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;}
+.toggle-switch input:checked+.toggle-slider{background:var(--dn);}
+.toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px);}
+.ae-pct-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3);margin-top:8px;}
+.ae-pct-row input[type=range]{flex:1;accent-color:var(--gold);}
+.ae-pct-val{font-weight:700;color:var(--gold2);min-width:36px;text-align:right;}
+/* 趨勢面板 */
+.asset-row-mini{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--parch3);margin-bottom:7px;background:rgba(255,255,255,0.2);flex-wrap:wrap;}
+.asset-row-mini .icon{font-size:18px;flex-shrink:0;}
+.asset-row-mini .aname{font-size:12px;font-weight:700;flex:1;min-width:80px;}
+.asset-row-mini .cur{font-size:13px;font-weight:700;min-width:72px;text-align:right;color:var(--ink2);}
+.asset-row-mini input{width:90px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.5);padding:4px 7px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;}
+.log-box{max-height:200px;overflow-y:auto;border:1px solid var(--parch3);padding:10px;background:rgba(255,255,255,0.12);}
+.log-box::-webkit-scrollbar{width:4px;}.log-box::-webkit-scrollbar-thumb{background:var(--parch3);}
+.log-e{padding:6px 10px;margin-bottom:4px;border-left:3px solid var(--parch3);font-size:13px;color:var(--ink3);line-height:1.5;}
+.log-e.ev{border-color:var(--gold);color:var(--gold2);}
+.log-e.good{border-color:var(--up);color:var(--ink);}
+.log-e.bad{border-color:var(--dn);color:var(--ink);}
+.log-e.time{border-color:var(--ink3);color:var(--ink2);}
+.log-e.warn{border-color:var(--up);color:var(--up);}
+.lt{color:var(--ink3);margin-right:8px;font-size:11px;}
+.sec{font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;padding-bottom:5px;border-bottom:1px solid var(--parch3);}
+.divider{border:none;border-top:1px dashed var(--parch3);margin:12px 0;}
+.notice{background:rgba(184,134,11,0.08);border:1px solid rgba(184,134,11,0.3);padding:9px 13px;font-size:13px;color:var(--ink3);margin-bottom:12px;}
+canvas{display:block;}
+</style>
+</head>
+<body>
+
+<!-- 自動事件 Toast -->
+<div class="ae-toast hidden" id="aeToast">
+  <div class="ae-toast-head">
+    <span class="ae-toast-icon" id="aeIcon">⚡</span>
+    <span class="ae-toast-title">世界自動事件</span>
+    <span class="ae-toast-time" id="aeTime"></span>
+  </div>
+  <div class="ae-toast-body">
+    <div class="ae-toast-name" id="aeName"></div>
+    <div class="ae-toast-affects" id="aeAffects"></div>
+  </div>
+</div>
+
+<!-- 走勢圖 Modal -->
+<div class="modal-overlay hidden" id="chartModal" onclick="closeModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div class="modal-head"><div class="modal-title" id="modalTitle">走勢圖</div><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-stats" id="modalStats"></div>
+      <canvas id="modalChart" height="240" style="width:100%"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Setup Overlay -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-box">
+    <div class="setup-title">🗺 初次設定：連接 Google Sheets</div>
+    <div class="setup-sub">設定完成後，所有裝置都能讀取同一份資料。</div>
+    <div class="step-row"><div class="step-num">1</div><div class="step-body">前往 <a href="https://sheets.google.com" target="_blank" style="color:var(--gold)">Google Sheets</a>，建立新試算表</div></div>
+    <div class="step-row"><div class="step-num">2</div><div class="step-body"><code>擴充功能</code> → <code>Apps Script</code>，貼上 apps-script.js 內容，儲存</div></div>
+    <div class="step-row"><div class="step-num">3</div><div class="step-body"><code>部署</code> → <code>新增部署</code>，類型選網頁應用程式，存取權選任何人，部署並授權</div></div>
+    <div class="step-row"><div class="step-num">4</div><div class="step-body">複製網頁應用程式網址，貼到下方</div></div>
+    <div class="setup-warn">⚠ 修改 Apps Script 後須重新部署（管理部署 → 新版本）</div>
+    <input class="url-input" type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/xxxxxxxx/exec">
+    <button class="btn btn-gold" onclick="saveUrl()">確認並連線</button>
+    <button class="btn btn-ghost" onclick="localMode()">先跳過，使用本地模式</button>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="site-header">
+  <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">⚙ GM 控制台</div>
+  <h1>格蘭大陸</h1>
+  <div class="sub">皇家交易所</div>
+  <div class="nav-row">
+    <a href="player.html" target="_blank" class="nav-link">玩家頁面 ↗</a>
+    <a href="overview.html" target="_blank" class="nav-link">大盤總覽 ↗</a>
+    <div class="sync-bar"><div class="sdot" id="sdot"></div><span id="slabel">未連線</span></div>
+    <button class="btn-sm" onclick="document.getElementById('setupOverlay').classList.remove('hidden')" style="font-size:11px">重新設定</button>
+    <span id="gmClock" style="font-size:12px;color:var(--ink3)"></span>
+  </div>
+</div>
+
+<div class="g2">
+<div>
+  <!-- 時間 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">⏳ 時間控制</div></div>
+    <div class="pb">
+      <div class="time-big" id="dateBig">格蘭曆 第1年 第1日</div>
+      <div class="time-sub" id="seasonLbl">春之日</div>
+      <div class="g2">
+        <div class="field"><label>年</label><input type="number" id="setY" min="1" value="1"></div>
+        <div class="field"><label>第幾日</label><input type="number" id="setD" min="1" value="1"></div>
+      </div>
+      <div class="g2">
+        <button class="btn btn-gold" onclick="applyTime()">設定時間</button>
+        <button class="btn btn-gold" onclick="adv(1)">▶ 推進 1 日</button>
+      </div>
+      <div class="g3">
+        <button class="btn btn-gold" onclick="adv(7)">+7 日</button>
+        <button class="btn btn-gold" onclick="adv(30)">+30 日</button>
+        <button class="btn btn-gold" onclick="adv(90)">+90 日</button>
+      </div>
+
+      <!-- 自動推進 -->
+      <div class="ae-toggle-wrap" style="margin-bottom:8px">
+        <div style="flex:1">
+          <div class="ae-toggle-label">⏱ 自動推進時間</div>
+          <div class="ae-toggle-sub">每 6 小時自動推進 1 日</div>
+          <div class="ae-pct-row" style="margin-top:6px">
+            <span id="autoAdvCountdown" style="font-size:13px;font-weight:700;color:var(--gold2);min-width:80px">已暫停</span>
+            <div style="flex:1;height:4px;background:var(--parch3);border-radius:2px;overflow:hidden;margin:0 8px">
+              <div id="autoAdvBar" style="height:100%;background:var(--gold);width:0%;transition:width 1s linear"></div>
+            </div>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoAdvEnabled" onchange="onAutoAdvToggle(this)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="ae-toggle-wrap">
+        <div style="flex:1">
+          <div class="ae-toggle-label">⚡ 自動世界事件</div>
+          <div class="ae-toggle-sub">開啟後，每次推進時有機率自動觸發</div>
+          <div class="ae-pct-row">
+            <span>觸發機率</span>
+            <input type="range" id="aePctSlider" min="5" max="80" value="35" oninput="document.getElementById('aePctVal').textContent=this.value+'%'">
+            <span class="ae-pct-val" id="aePctVal">35%</span>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="aeEnabled" checked onchange="onAeToggle(this)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- 市場行情 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">📊 市場行情</div><span style="font-size:12px;color:var(--ink3)">點擊查看走勢</span></div>
+    <div class="pb" style="padding:0;overflow-x:auto">
+      <table class="mkt-table"><thead><tr><th>商品</th><th>現價</th><th>漲跌</th><th>趨勢</th><th>類別</th><th></th></tr></thead><tbody id="mktBody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- 隱形漲跌調整 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">🌫 隱形漲跌調整</div></div>
+    <div class="pb">
+      <div class="notice" style="border-color:rgba(123,45,139,0.3);background:rgba(123,45,139,0.05);color:var(--ink3)">
+        輸入漲跌幅直接套用，<strong>不會記錄進消息欄</strong>。<br>玩家只會看到「時間推進」，不知道發生了什麼。
+      </div>
+      <div class="evt-pct-grid" id="silentPctGrid"></div>
+      <button class="btn btn-purple" style="margin-top:12px" onclick="applySilent()">🌫 靜默套用</button>
+    </div>
+  </div>
+
+  <!-- 趨勢狀態 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">📈 市場趨勢狀態</div><span style="font-size:12px;color:var(--ink3)">自動更新</span></div>
+    <div class="pb" style="padding:10px 14px"><div id="trendStatus"></div></div>
+  </div>
+
+  <!-- 手動調價 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">🔧 手動調價</div></div>
+    <div class="pb">
+      <div class="notice">直接輸入新價格套用，不受漲跌停限制。</div>
+      <div id="manualList"></div>
+      <button class="btn btn-gold" onclick="applyManual()">套用所有調整</button>
+    </div>
+  </div>
+</div>
+
+<div>
+  <!-- 事件編輯器 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">⚡ 世界事件編輯器</div></div>
+    <div class="pb">
+      <div class="sec">建立新事件</div>
+      <div class="field"><label>事件名稱</label><input type="text" id="evtName" placeholder="例：銀翼軍宣布聖戰"></div>
+      <div class="field"><label>事件描述（選填）</label><textarea id="evtDesc" placeholder="描述這場事件的背景…"></textarea></div>
+      <button class="btn btn-purple" onclick="inferEvent()">✨ 自動聯想各標的漲跌幅</button>
+      <div class="infer-box hidden" id="inferBox">
+        <span class="infer-tag">✨ 聯想分析（已自動填入，可手動調整）</span>
+        <div id="inferReason"></div>
+      </div>
+      <div class="sec" style="margin-top:4px">各標的漲跌幅（正漲・負跌・每日限 ±10%・留空不影響）</div>
+      <div class="evt-pct-grid" id="evtPctGrid"></div>
+      <div class="g2" style="margin-top:12px">
+        <button class="btn btn-gold" onclick="savePreset()">📜 儲存為預設</button>
+        <button class="btn btn-red" onclick="fireNow()">⚡ 立即觸發</button>
+      </div>
+      <hr class="divider">
+      <div class="sec">已儲存的預設事件</div>
+      <div id="presetList"></div>
+    </div>
+  </div>
+
+  <!-- IPO / 下市管理 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">📋 標的管理（IPO ／ 下市）</div></div>
+    <div class="pb">
+      <div class="sec">新標的上市（IPO）</div>
+      <div class="ipo-form">
+        <div class="g2">
+          <div class="field"><label>標的名稱</label><input type="text" id="ipoName" placeholder="例：黑龍傭兵團"></div>
+          <div class="field"><label>圖示（emoji）</label><input type="text" id="ipoIcon" placeholder="🐉" maxlength="4"></div>
+        </div>
+        <div class="g3">
+          <div class="field"><label>初始價格（G）</label><input type="number" id="ipoPrice" value="300" min="10"></div>
+          <div class="field"><label>波動性（0.04~0.22）</label><input type="number" id="ipoVol" value="0.10" step="0.01" min="0.04" max="0.22"></div>
+          <div class="field"><label>類別</label><input type="text" id="ipoCat" placeholder="戰鬥"></div>
+        </div>
+        <div class="field"><label>上市公告</label><textarea id="ipoDesc" placeholder="描述這個標的的背景與投資邏輯…" style="min-height:50px"></textarea></div>
+        <button class="btn btn-purple" onclick="doIPO()">🚀 宣告上市</button>
+      </div>
+      <hr class="divider">
+      <div class="sec">下市管理</div>
+      <div id="delistList"></div>
+    </div>
+  </div>
+
+  <!-- 玩家管理 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">👥 玩家管理</div></div>
+    <div class="pb">
+      <div class="sec">財富 · 持倉 · 損益總覽</div>
+      <div style="overflow-x:auto">
+        <table class="w-table">
+          <thead><tr><th>冒險者</th><th>現金</th><th>持倉值</th><th>未實現</th><th>已實現</th><th>總資產</th><th></th></tr></thead>
+          <tbody id="wealthBody"></tbody>
+        </table>
+      </div>
+      <hr class="divider">
+      <div class="sec">發放金幣</div>
+      <div class="form-row">
+        <div class="field"><label>對象</label><select id="goldTarget"></select></div>
+        <div class="field"><label>金額</label><input type="number" id="goldAmt" placeholder="金額"></div>
+        <button class="btn-sm" onclick="giveGold()">發放</button>
+      </div>
+      <hr class="divider">
+      <div class="sec">新增玩家</div>
+      <div class="form-row">
+        <div class="field"><label>名稱</label><input type="text" id="newPlayerName" placeholder="冒險者名稱"></div>
+        <button class="btn-sm" onclick="addPlayer()">新增</button>
+      </div>
+      <hr class="divider">
+      <div class="sec">危險操作</div>
+      <div style="background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.25);padding:12px 14px;">
+        <div style="font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.7">
+          重置所有資料，包含所有標的價格、玩家持倉、消息記錄。<br>
+          同時清空瀏覽器本地快取（localStorage）。<br>
+          <strong style="color:var(--up)">此操作無法復原。</strong>
+        </div>
+        <button class="btn-danger" style="width:100%;padding:10px;font-size:13px" onclick="fullReset()">
+          🗑 清空所有資料並重新開始
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 消息記錄 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">📜 世界消息記錄</div><button class="btn-sm" onclick="clearLog()">清除</button></div>
+    <div class="pb" style="padding:10px 14px"><div class="log-box" id="logBox"></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  常數
+// ═══════════════════════════════════════════════════════
+const URL_KEY='gran_script_url', LOCAL_KEY='gran_world_v4';
+const SEASONS=['深冬','初春','春','暮春','初夏','盛夏','暑末','初秋','金秋','暮秋','初冬','隆冬'];
+const DAILY_LIMIT=0.10;
+
+// ═══════════════════════════════════════════════════════
+//  38 個標的
+//  baseBias：預設趨勢偏向（戰鬥類負值=平時慢跌）
+//  special：特殊機制標記
+// ═══════════════════════════════════════════════════════
+const ASSETS0=[
+  // ── 戰鬥群（平時慢跌，戰事暴漲）──
+  {id:'watchmen',  name:'無冬城：守望者',          icon:'🛡️', price:400,  cat:'戰鬥·北方', vol:0.08, baseBias:-0.008, region:'north'},
+  {id:'law12',     name:'銀月城：十二律法',         icon:'⚖️', price:590,  cat:'戰鬥·極北', vol:0.07, baseBias:-0.004, region:'north', special:'law_income'},
+  {id:'roundtable',name:'深水城：圓桌騎士',         icon:'🏇', price:420,  cat:'戰鬥·北方', vol:0.09, baseBias:-0.008, region:'north'},
+  {id:'blood13',   name:'夜隱城：十三血源',         icon:'🧛', price:600,  cat:'戰鬥·北方', vol:0.13, baseBias:-0.010, region:'north', special:'vampire'},
+  {id:'silverwing',name:'艾特加德：銀翼軍',         icon:'🪽', price:700,  cat:'戰鬥·南方', vol:0.09, baseBias:-0.008, region:'south'},
+  {id:'primemage', name:'艾雷茲：原初魔導騎士團',   icon:'🔱', price:2000, cat:'戰鬥·南方', vol:0.13, baseBias:-0.010, region:'south', special:'mage_knight'},
+  {id:'guardian',  name:'星辰峰：守護者',           icon:'⭐', price:520,  cat:'戰鬥·中立', vol:0.10, baseBias:-0.006, region:'central'},
+  {id:'mercenary', name:'博德之門：傭兵派遣協會',   icon:'💰', price:120,  cat:'戰鬥·中立', vol:0.11, baseBias:-0.002, region:'neutral'},
+  // ── 魔法技術群 ──
+  {id:'archmage',  name:'艾雷茲：最高魔導議會',     icon:'🔮', price:2200, cat:'魔法',      vol:0.08, baseBias:0.003,  special:'upper_tier'},
+  {id:'spellres',  name:'日曜塔：法術研究協會',     icon:'🧪', price:1800, cat:'魔法',      vol:0.16, baseBias:-0.005, special:'research_cycle'},
+  // ── 研究群 ──
+  {id:'relic',     name:'日曜塔：古遺物研究院',     icon:'🏺', price:2500, cat:'研究',      vol:0.14, baseBias:0.001},
+  {id:'seyfer',    name:'凌風堡：賽菲爾私人實驗所', icon:'⚗️', price:150,  cat:'研究',      vol:0.22, baseBias:0,      special:'chaos'},
+  {id:'magitools', name:'火剪城：魔導具開發研究所', icon:'⚙️', price:560,  cat:'研究',      vol:0.09, baseBias:0.003},
+  {id:'archive',   name:'燭堡：古代與現代文獻研究中心',icon:'📚',price:220, cat:'研究',      vol:0.05, baseBias:-0.003},
+  {id:'starobs',   name:'星辰峰：觀星占卜觀測協會', icon:'🔭', price:680,  cat:'研究',      vol:0.11, baseBias:0.002,  special:'prophecy_cycle'},
+  // ── 能源群 ──
+  {id:'arcanergs', name:'艾雷茲：奧術能源',         icon:'⚡', price:620,  cat:'能源',      vol:0.05, baseBias:0.004},
+  {id:'metalex',   name:'無冬城：貴重金屬交易所',   icon:'🥇', price:400,  cat:'能源',      vol:0.08, baseBias:0.002},
+  {id:'mstone',    name:'深水城：魔法礦石交易所',   icon:'💎', price:650,  cat:'能源',      vol:0.10, baseBias:0.001},
+  {id:'mining',    name:'亨德爾之石：礦石與金屬挖掘',icon:'⛏️',price:280,  cat:'能源',      vol:0.11, baseBias:0.003},
+  // ── 工業群 ──
+  {id:'ironforge', name:'火剪城：七匠鍛鋼',         icon:'⚔️', price:500,  cat:'工業',      vol:0.09, baseBias:0.002},
+  {id:'beastyard', name:'狼牙堡：野獸馴導中心',     icon:'🐺', price:130,  cat:'工業',      vol:0.11, baseBias:0.002},
+  {id:'shipyard',  name:'黑石港：重型船塢造船廠',   icon:'⚓', price:440,  cat:'工業',      vol:0.08, baseBias:0.003},
+  {id:'lumber',    name:'潛行森林：木料加工廠',     icon:'🌲', price:80,   cat:'工業',      vol:0.07, baseBias:0.002},
+  // ── 飲食群 ──
+  {id:'grain',     name:'雅塔：安特穀糧',           icon:'🌾', price:60,   cat:'飲食',      vol:0.05, baseBias:0.001},
+  {id:'brew',      name:'博德之門：麥酒專業釀製',   icon:'🍺', price:100,  cat:'飲食',      vol:0.06, baseBias:0.002},
+  // ── 貿易群 ──
+  {id:'harbor',    name:'博德之門：大陸貿易海港協會',icon:'🚢',price:360,  cat:'貿易',      vol:0.08, baseBias:0.003},
+  {id:'northtrade',name:'陸斯坎：北海特殊貿易商會', icon:'🏴‍☠️',price:240,  cat:'貿易',      vol:0.14, baseBias:0.001},
+  {id:'textile',   name:'博德之門：布料皮革絲綢商會',icon:'🧵',price:110,  cat:'貿易',      vol:0.06, baseBias:0.002},
+  {id:'spice',     name:'博德之門：香料與珍寶',     icon:'💍', price:580,  cat:'貿易',      vol:0.12, baseBias:0.002},
+  // ── 交通群 ──
+  {id:'airtravel', name:'博德之門：飛行與傳送通行協會',icon:'✈️',price:750,cat:'交通',     vol:0.11, baseBias:0.003},
+  {id:'landroute', name:'博德之門：陸上通行協會',   icon:'🛤️', price:90,   cat:'交通',      vol:0.06, baseBias:0.002},
+  // ── 醫療群 ──
+  {id:'herb',      name:'至高之森：翡翠藥草商會',   icon:'🌿', price:200,  cat:'醫療',      vol:0.07, baseBias:0.002},
+  {id:'alchemy',   name:'夜隱城：煉金藥劑工坊',     icon:'🧫', price:340,  cat:'醫療',      vol:0.11, baseBias:0.001, special:'vampire_alchemy'},
+  {id:'antimagic', name:'艾特加德：禦魔道具生產機構',icon:'🔰',price:540,  cat:'醫療',      vol:0.10, baseBias:0.002},
+  {id:'temple',    name:'艾特加德：聖者神廟',       icon:'⛪', price:300,  cat:'醫療',      vol:0.04, baseBias:0.003},
+  {id:'lifetree',  name:'銀月城：生命樹緊急治療中心',icon:'🌳',price:300,  cat:'醫療',      vol:0.07, baseBias:0.002},
+  // ── 特殊群 ──
+  {id:'adventure', name:'格蘭大陸：冒險者協會',     icon:'🗡️', price:380,  cat:'特殊',      vol:0.09, baseBias:0.002},
+  {id:'prison',    name:'海上監獄：艾佛利斯',       icon:'⛓️', price:260,  cat:'特殊',      vol:0.13, baseBias:0.002},
+];
+
+// ═══════════════════════════════════════════════════════
+//  行業群組（景氣循環聯動）
+// ═══════════════════════════════════════════════════════
+const SECTOR_GROUPS={
+  // 民生：景氣好略跌（供過於求），危機暴漲
+  civilian:  ['grain','brew','textile','herb','lifetree'],
+  // 軍事：太平跌，衝突漲
+  military:  ['watchmen','law12','roundtable','blood13','silverwing','primemage','guardian','mercenary'],
+  // 貿易交通：景氣正相關
+  trade:     ['harbor','northtrade','spice','airtravel','landroute','shipyard'],
+  // 魔法科技：魔網決定一切
+  magic:     ['archmage','spellres','magitools','arcanergs','mstone','airtravel'],
+  // 工礦：原料週期
+  industrial:['ironforge','beastyard','lumber','mining','metalex'],
+  // 研究：獨立週期
+  research:  ['relic','seyfer','archive','starobs'],
+  // 神聖防禦：危機反向受益
+  holy:      ['temple','silverwing','antimagic','lifetree'],
+};
+
+// ═══════════════════════════════════════════════════════
+//  38 個標的完整事件聯動規則
+// ═══════════════════════════════════════════════════════
+const INFER_RULES=[
+// ── 戰爭 ──
+{kw:['戰爭','戰役','入侵','攻打','出兵','圍城','叛亂','宣戰','征伐'],
+ fx:{watchmen:25,law12:15,roundtable:22,blood13:18,silverwing:28,primemage:30,guardian:10,mercenary:35,
+     ironforge:28,beastyard:20,grain:18,brew:-20,harbor:-25,spice:-22,airtravel:-18,landroute:8,
+     archmage:-10,arcanergs:-12,herb:15,temple:30,lifetree:22,adventure:15,prison:20,
+     antimagic:15,shipyard:12,northtrade:8,textile:-8,mstone:10,mining:8,metalex:10,
+     relic:-8,spellres:-5,magitools:8,archive:15,starobs:-5,alchemy:22,seyfer:0},
+ reason:'戰爭爆發：騎士團與軍備大漲；貿易中斷；聖者神廟復活需求激增；冒險者委託暴增。'},
+// ── 北方戰事 ──
+{kw:['無冬城','深水城','夜隱城','銀月城','北境','北方','冰風谷','浮冰海','陸斯坎'],
+ fx:{watchmen:35,law12:25,roundtable:30,blood13:20,mercenary:20,ironforge:15,grain:12,
+     silverwing:5,primemage:5,guardian:5,harbor:-15,airtravel:-10,spice:-12,brew:-15,
+     herb:10,temple:18,lifetree:20,adventure:12,prison:15,northtrade:10,metalex:5,
+     shipyard:8,lumber:5,beastyard:8,grain:15,textile:-5,archive:8,
+     archmage:-5,arcanergs:-5,mstone:5,mining:8,relic:5,spellres:0,magitools:5,starobs:0,alchemy:10,seyfer:0},
+ reason:'北方戰事：北方騎士團暴漲；無冬城守望者與圓桌騎士受益最大；北境貿易中斷。'},
+// ── 南方戰事 ──
+{kw:['艾特加德','艾雷茲','博德之門','南方','南境','亡者平原','至高荒原'],
+ fx:{silverwing:35,primemage:30,guardian:10,mercenary:18,ironforge:20,antimagic:22,
+     watchmen:5,law12:5,roundtable:5,harbor:-20,spice:-18,airtravel:-15,brew:-18,
+     herb:12,temple:25,lifetree:12,adventure:10,prison:18,shipyard:10,
+     archmage:5,arcanergs:-8,mstone:8,mining:5,relic:5,spellres:0,magitools:8,
+     northtrade:8,textile:-5,grain:10,beastyard:8,lumber:5,metalex:5,
+     archive:10,starobs:5,alchemy:12,blood13:-5,seyfer:0},
+ reason:'南方戰事：銀翼軍與原初魔導騎士團大漲；博德之門貿易中斷；聖者神廟需求激增。'},
+// ── 聖戰 ──
+{kw:['聖戰','聖光','神聖審判','異端審判','銀翼','聖者','神明降臨','聖物'],
+ fx:{silverwing:40,antimagic:35,temple:45,lifetree:20,law12:15,guardian:12,
+     blood13:-40,alchemy:-30,northtrade:-20,primemage:-15,archmage:-10,
+     mercenary:15,adventure:18,prison:25,herb:20,ironforge:10,
+     watchmen:8,roundtable:8,harbor:-10,spice:-8,brew:-12,airtravel:-8,
+     grain:5,beastyard:5,lumber:5,metalex:5,mstone:5,mining:5,
+     relic:15,spellres:5,magitools:5,starobs:8,seyfer:0,archive:12,arcanergs:-5},
+ reason:'聖戰宣告：銀翼軍與聖者神廟暴漲；十三血源與煉金藥劑工坊遭打壓；異端審判帶動監獄收入。'},
+// ── 黑暗勢力崛起 ──
+{kw:['吸血鬼','亡靈','惡魔','黑暗魔法','詛咒','腐化','黑暗神','夜隱城','十三血源'],
+ fx:{blood13:40,alchemy:35,northtrade:15,prison:20,adventure:22,
+     silverwing:-20,temple:-15,antimagic:35,lifetree:-10,law12:-12,
+     ironforge:15,mercenary:20,herb:18,guardian:8,
+     harbor:-15,spice:-10,brew:-12,airtravel:-10,grain:-5,
+     archmage:-8,arcanergs:-5,mstone:10,mining:5,metalex:5,
+     relic:15,archive:18,starobs:5,spellres:8,magitools:5,seyfer:0,
+     watchmen:5,roundtable:5,primemage:-5,shipyard:-5,beastyard:-5,lumber:-5,textile:-5},
+ reason:'黑暗勢力崛起：十三血源與煉金藥劑工坊暴漲；銀翼軍與聖者神廟遭壓制；禦魔道具需求暴增。'},
+// ── 瘟疫 ──
+{kw:['瘟疫','鼠疫','疾病','感染','病毒','毒霧','黑死'],
+ fx:{herb:45,temple:50,lifetree:35,alchemy:30,antimagic:10,
+     harbor:-22,spice:-18,airtravel:-20,brew:-28,textile:-10,northtrade:-15,landroute:-12,
+     grain:-10,ironforge:-8,beastyard:-8,mercenary:15,adventure:10,prison:12,
+     archmage:10,arcanergs:-5,mstone:5,mining:-5,metalex:5,
+     watchmen:-5,law12:-5,roundtable:-5,blood13:8,silverwing:-5,primemage:-5,guardian:-5,
+     relic:-5,spellres:8,magitools:5,archive:15,starobs:5,shipyard:-8,lumber:-5,seyfer:0},
+ reason:'瘟疫爆發：醫療三巨頭暴漲；貿易全面中斷；煉金藥劑工坊緊急供應。'},
+// ── 天災 ──
+{kw:['天災','旱災','洪水','饑荒','暴雪','地震','火山','蝗災','寒流','冰風谷寒流'],
+ fx:{grain:40,herb:22,temple:18,lifetree:15,alchemy:12,
+     ironforge:-15,shipyard:-10,airtravel:-15,harbor:-18,spice:-10,brew:12,
+     lumber:-12,beastyard:-10,textile:-8,northtrade:-8,
+     watchmen:-8,law12:-5,roundtable:-8,blood13:5,silverwing:-5,primemage:-5,
+     mercenary:10,adventure:8,prison:5,archive:12,
+     archmage:-5,arcanergs:-8,mstone:-5,mining:-8,metalex:-5,
+     relic:-5,spellres:0,magitools:-5,starobs:8,guardian:5,seyfer:0},
+ reason:'天災衝擊：穀糧短缺暴漲；醫療需求激增；建設貿易全面停滯。'},
+// ── 太平繁榮 ──
+{kw:['太平','繁榮','盛世','豐收','節慶','祭典','和平','慶典','月亮祭典','龍牙堡競技'],
+ fx:{brew:25,spice:22,airtravel:20,harbor:18,textile:15,landroute:12,shipyard:12,
+     grain:-15,herb:-8,ironforge:-10,mercenary:-15,watchmen:-18,roundtable:-15,
+     law12:5,blood13:-12,silverwing:-12,primemage:-12,guardian:-5,
+     archmage:8,arcanergs:10,mstone:5,mining:5,metalex:5,
+     relic:10,spellres:8,magitools:8,starobs:10,
+     temple:5,antimagic:-5,lifetree:-5,herb:-8,alchemy:-5,
+     northtrade:5,adventure:-10,prison:-12,archive:-8,beastyard:8,lumber:10,seyfer:0},
+ reason:'太平盛世：奢侈消費暴漲；騎士團因無戰事而跌；貿易與交通大漲；農業供過於求。'},
+// ── 貿易繁榮 ──
+{kw:['貿易協議','通商','開港','外交','聯盟','新航線','商路'],
+ fx:{harbor:30,spice:25,textile:18,airtravel:22,landroute:15,shipyard:18,northtrade:10,
+     brew:15,grain:8,lumber:10,beastyard:8,ironforge:8,metalex:8,mstone:10,mining:8,
+     archmage:8,arcanergs:8,magitools:8,
+     watchmen:-8,roundtable:-8,silverwing:-8,primemage:-8,blood13:-5,
+     mercenary:-5,adventure:-5,herb:5,temple:5,lifetree:5,
+     antimagic:-5,prison:-8,relic:8,spellres:5,archive:5,starobs:5,seyfer:0,guardian:5},
+ reason:'貿易繁榮：海港協會與交通標的大漲；香料絲綢暢銷；軍事類標的因太平而跌。'},
+// ── 封鎖海盜 ──
+{kw:['封鎖','海盜','禁運','劫掠','航線中斷','陸斯坎海盜'],
+ fx:{northtrade:35,mercenary:20,ironforge:12,adventure:18,
+     harbor:-40,spice:-30,airtravel:-25,landroute:15,shipyard:-15,textile:-15,
+     grain:12,brew:-15,herb:8,temple:10,
+     watchmen:5,roundtable:5,law12:8,blood13:5,
+     archmage:-8,arcanergs:-5,mstone:-15,mining:-5,metalex:-8,
+     relic:-5,spellres:0,magitools:-5,archive:5,starobs:0,
+     silverwing:5,primemage:-5,guardian:5,lifetree:5,antimagic:5,alchemy:8,prison:10,seyfer:0},
+ reason:'海盜封鎖：北海特殊貿易商會反漲（走私暢行）；正規貿易全面崩跌；陸路需求上升。'},
+// ── 遺跡發現 ──
+{kw:['遺跡','廢墟','出土','挖掘','古代文明','上古','尼瑟瑞爾','裂罪遺跡','古城'],
+ fx:{relic:40,adventure:30,magitools:20,archmage:18,mstone:22,mining:15,
+     spellres:15,starobs:12,archive:18,seyfer:15,
+     shipyard:12,harbor:8,landroute:8,ironforge:10,
+     grain:0,brew:5,herb:8,temple:15,antimagic:15,
+     watchmen:5,roundtable:5,mercenary:18,guardian:10,
+     northtrade:5,spice:5,airtravel:5,lumber:5,beastyard:5,
+     metalex:8,arcanergs:8,textile:0,lifetree:5,
+     blood13:8,alchemy:5,prison:5,law12:5,silverwing:-5,primemage:8,seyfer:8},
+ reason:'遺跡發現：古遺物研究院暴漲；冒險者遠征委託激增；魔法礦石伴隨出土。'},
+// ── 魔網動盪 ──
+{kw:['魔網動盪','魔法失靈','禁魔','魔力消散','法術失效','魔網崩潰'],
+ fx:{archmage:-40,arcanergs:-40,airtravel:-35,primemage:-35,mstone:-30,spellres:-25,magitools:-25,
+     landroute:25,ironforge:15,metalex:15,grain:12,brew:5,textile:8,
+     temple:22,antimagic:20,lifetree:12,archive:18,
+     blood13:15,alchemy:10,northtrade:8,mercenary:15,adventure:8,
+     watchmen:10,law12:8,roundtable:8,harbor:-15,shipyard:-10,spice:-10,
+     silverwing:10,guardian:5,mining:5,beastyard:5,lumber:5,
+     relic:12,starobs:-10,prison:5,herb:10,seyfer:0},
+ reason:'魔網崩潰：魔法類標的全面暴跌；陸路與傳統工業反漲；禦魔道具失去用武之地但神廟需求大增。'},
+// ── 魔法突破 ──
+{kw:['魔法突破','新法術','奧術革命','魔法技術','法術研究','魔法發現'],
+ fx:{archmage:20,spellres:35,magitools:25,arcanergs:18,mstone:20,airtravel:15,
+     relic:12,starobs:10,seyfer:15,
+     ironforge:-10,landroute:-8,lumber:-5,
+     harbor:8,spice:5,textile:5,brew:8,
+     watchmen:-5,roundtable:-5,silverwing:5,primemage:8,guardian:8,
+     mercenary:5,adventure:8,temple:8,antimagic:10,
+     blood13:5,alchemy:8,northtrade:5,prison:0,lifetree:5,
+     herb:8,grain:0,beastyard:0,mining:8,metalex:5,law12:5,archive:-5,shipyard:5},
+ reason:'魔法突破：法術研究協會暴漲；魔導具需求大增；奧術能源擴張；傳統工業受壓。'},
+// ── 政變動盪 ──
+{kw:['政變','篡位','崩殂','宮廷','內亂','刺殺','議長遇刺','王位爭奪'],
+ fx:{mercenary:25,ironforge:18,adventure:15,prison:22,blood13:10,northtrade:12,
+     harbor:-18,spice:-15,airtravel:-15,brew:-18,textile:-10,
+     archmage:8,antimagic:15,temple:12,lifetree:10,
+     grain:8,herb:8,metalex:8,archive:15,
+     watchmen:12,law12:15,roundtable:12,silverwing:8,primemage:5,guardian:8,
+     arcanergs:-8,mstone:5,mining:5,relic:8,spellres:5,magitools:5,
+     starobs:8,shipyard:-5,lumber:0,beastyard:5,seyfer:0,alchemy:8},
+ reason:'政局動盪：傭兵與情報需求暴增；監獄關押增加；貿易萎縮；法律執行機構強化。'},
+// ── 矮人礦業 ──
+{kw:['矮人','礦山','礦坑','礦脈','亨德爾','地底','鍛造','桑克里斯特'],
+ fx:{mining:35,ironforge:28,metalex:20,mstone:-18,magitools:15,beastyard:12,
+     shipyard:12,lumber:-5,relic:15,adventure:18,mercenary:10,
+     grain:5,brew:8,harbor:8,northtrade:8,
+     archmage:5,arcanergs:5,spellres:5,
+     watchmen:5,roundtable:8,blood13:5,silverwing:5,primemage:8,
+     herb:5,temple:5,antimagic:5,lifetree:5,
+     archive:8,starobs:0,spice:5,airtravel:0,landroute:5,textile:0,seyfer:5,alchemy:5},
+ reason:'矮人工業：亨德爾礦石挖掘暴漲；七匠鍛鋼大量出貨；魔法礦石交易所因供給增加而跌。'},
+// ── 精靈 ──
+{kw:['精靈','至高之森','德魯伊','樹人','自然覺醒','潛行森林開放'],
+ fx:{herb:30,lumber:25,relic:12,magitools:10,spellres:8,
+     harbor:12,textile:15,spice:10,brew:12,grain:8,
+     ironforge:-5,mining:-5,beastyard:8,
+     archmage:8,arcanergs:5,mstone:5,
+     watchmen:-5,roundtable:-5,silverwing:-8,blood13:-5,
+     mercenary:-5,adventure:8,temple:8,antimagic:5,lifetree:8,
+     shipyard:8,landroute:5,northtrade:5,
+     starobs:8,archive:10,guardian:5,prison:-5,
+     law12:0,primemage:0,metalex:0,seyfer:0,alchemy:5},
+ reason:'精靈開放：藥草與木料豐沛；自然系魔法研究受益；奢侈品貿易活絡。'},
+// ── 怪物入侵 ──
+{kw:['龍','巨龍','怪物','魔物','惡魔','獸人','喪屍','亡靈','哥布林','地下城','魔物大軍'],
+ fx:{ironforge:25,adventure:38,mercenary:30,temple:35,antimagic:28,lifetree:20,
+     watchmen:22,law12:12,roundtable:20,blood13:15,silverwing:25,primemage:22,guardian:20,
+     relic:18,mstone:12,mining:8,herb:20,alchemy:15,
+     harbor:-20,spice:-15,airtravel:-18,brew:-15,textile:-12,northtrade:-8,
+     grain:-8,lumber:-8,beastyard:-8,shipyard:-10,
+     archmage:10,arcanergs:-5,archive:10,starobs:8,
+     metalex:8,magitools:8,spellres:8,landroute:-10,prison:8,seyfer:0},
+ reason:'怪物入侵：軍備與醫療暴漲；冒險者委託激增；貿易路線危險；聖者神廟復活需求爆炸。'},
+// ── 神聖事件 ──
+{kw:['神明','神祇','神廟','祭司','聖物','神蹟','信仰','復活','聖者','祝福'],
+ fx:{temple:50,silverwing:22,antimagic:18,lifetree:20,law12:12,guardian:12,
+     blood13:-25,alchemy:-18,northtrade:-10,
+     herb:18,adventure:15,mercenary:12,relic:18,archive:12,starobs:15,
+     harbor:8,spice:8,brew:8,grain:5,
+     ironforge:8,archmage:10,arcanergs:5,mstone:8,magitools:8,
+     watchmen:8,roundtable:8,primemage:5,
+     shipyard:5,lumber:5,beastyard:5,textile:5,metalex:5,mining:5,
+     prison:15,spellres:5,seyfer:0},
+ reason:'神明介入：聖者神廟聲望暴增；銀翼軍受神命；煉金藥劑與黑暗標的受壓制。'},
+// ── 執法行動 ──
+{kw:['十二律法','執法','掃蕩','查緝','逮捕','清查','制裁'],
+ fx:{law12:30,prison:28,antimagic:10,temple:8,
+     northtrade:-35,blood13:-20,alchemy:-15,
+     mercenary:12,adventure:8,ironforge:5,
+     harbor:-10,spice:-8,airtravel:-8,brew:-10,
+     grain:5,herb:5,lifetree:5,
+     watchmen:5,roundtable:5,silverwing:5,guardian:5,
+     archmage:5,arcanergs:5,mstone:5,mining:5,metalex:5,
+     relic:5,spellres:0,magitools:5,archive:8,starobs:5,
+     primemage:0,shipyard:-5,lumber:-5,beastyard:-5,textile:-5,seyfer:0},
+ reason:'十二律法執法：監獄收入暴增；走私黑市遭打壓；各城市秩序維護需求上升。'},
+// ── 博德之門事件 ──
+{kw:['博德之門','大門城','商賈大道','博德之門議會','博德之門封鎖','博德之門政變'],
+ fx:{harbor:25,brew:18,textile:15,spice:20,airtravel:15,landroute:12,
+     mercenary:10,adventure:8,ironforge:8,grain:5,
+     archmage:5,arcanergs:5,mstone:5,
+     watchmen:-5,blood13:5,northtrade:8,
+     herb:5,temple:8,lifetree:5,antimagic:5,
+     shipyard:10,lumber:5,beastyard:5,metalex:5,mining:5,
+     law12:5,roundtable:-5,silverwing:0,primemage:0,guardian:0,
+     relic:5,spellres:0,magitools:5,archive:5,starobs:0,prison:8,seyfer:0},
+ reason:'博德之門事件：城市代表標的同步反應；海港協會最敏感；周邊貿易標的連動。'},
+// ── 星辰峰異常 ──
+{kw:['星辰峰','魔法陣','星辰峰異常','魔法陣啟動','宇宙異變'],
+ fx:{guardian:40,starobs:35,archmage:25,spellres:20,relic:22,mstone:20,
+     adventure:18,mercenary:15,antimagic:15,temple:12,
+     airtravel:-15,arcanergs:-10,
+     watchmen:5,roundtable:5,silverwing:5,primemage:8,blood13:5,law12:5,
+     harbor:-10,spice:-8,brew:-8,textile:-5,
+     ironforge:5,mining:8,metalex:8,magitools:10,
+     herb:8,lifetree:8,grain:0,lumber:-5,beastyard:-5,shipyard:-5,
+     northtrade:5,landroute:5,archive:10,seyfer:20,alchemy:8,prison:5},
+ reason:'星辰峰魔法陣異常：守護者與觀星協會暴漲；魔法研究者蜂擁而至；傳送路線受干擾。'},
+// ── 裂罪遺跡 ──
+{kw:['裂罪遺跡','七大罪','封印鬆動','黑暗神','邪教'],
+ fx:{temple:50,antimagic:40,silverwing:35,guardian:22,lifetree:20,archive:18,
+     adventure:32,mercenary:28,ironforge:18,
+     blood13:20,alchemy:15,northtrade:10,prison:25,
+     harbor:-28,spice:-20,airtravel:-22,brew:-20,textile:-12,
+     archmage:12,arcanergs:-8,mstone:15,mining:8,metalex:8,
+     watchmen:15,law12:12,roundtable:12,primemage:8,
+     grain:-5,herb:15,relic:18,spellres:10,magitools:8,starobs:8,shipyard:-10,
+     lumber:-8,beastyard:-5,seyfer:0},
+ reason:'裂罪遺跡封印鬆動：神聖防禦類全面暴漲；黑暗勢力得到助力；普通貿易在恐慌中崩跌。'},
+// ── 火災重建 ──
+{kw:['火災','大火','焚毀','重建','災後重建'],
+ fx:{lumber:35,shipyard:12,ironforge:12,beastyard:8,mining:8,
+     herb:10,temple:15,lifetree:12,alchemy:10,
+     harbor:-8,spice:-5,airtravel:-8,brew:-10,textile:-8,
+     grain:8,metalex:5,mstone:5,
+     mercenary:12,adventure:10,prison:5,
+     watchmen:5,law12:8,roundtable:5,
+     archmage:-5,arcanergs:-5,magitools:5,
+     northtrade:-5,landroute:10,blood13:5,silverwing:5,guardian:5,
+     relic:-10,spellres:0,archive:5,starobs:0,seyfer:0,primemage:0},
+ reason:'城市大火：木料加工廠需求暴增；重建帶動工業；醫療需求激增；奢侈品暫停。'},
+// ── 越獄事件 ──
+{kw:['越獄','逃獄','艾佛利斯越獄','監獄動亂'],
+ fx:{prison:-35,adventure:30,mercenary:25,law12:20,
+     ironforge:8,antimagic:8,temple:5,
+     northtrade:10,blood13:8,
+     harbor:-5,spice:-5,brew:-8,
+     grain:0,herb:5,lifetree:5,
+     watchmen:8,roundtable:8,silverwing:5,guardian:5,
+     archmage:0,arcanergs:0,mstone:0,mining:0,metalex:0,
+     relic:5,spellres:0,magitools:0,archive:5,starobs:5,
+     primemage:0,shipyard:0,lumber:0,beastyard:5,textile:0,seyfer:0,alchemy:5},
+ reason:'艾佛利斯越獄：監獄公信力崩潰暴跌；冒險者與傭兵追捕委託激增；執法需求上升。'},
+];
+
+// ═══════════════════════════════════════════════════════
+//  內建自動事件池
+// ═══════════════════════════════════════════════════════
+const BUILTIN_EVENTS=[
+  {name:'陸斯坎海盜封鎖劍灣',icon:'🏴‍☠️',
+   pcts:{northtrade:0.09,mercenary:0.08,ironforge:0.05,harbor:-0.10,spice:-0.09,airtravel:-0.08,brew:-0.06,shipyard:-0.05},
+   reason:'陸斯坎海盜大規模出動，劍灣航線封鎖，正規貿易崩跌，走私商會獲利。'},
+  {name:'冰風谷寒流南下',icon:'❄️',
+   pcts:{grain:0.10,herb:0.07,brew:0.05,ironforge:-0.06,shipyard:-0.07,harbor:-0.06,arcanergs:-0.04,watchmen:-0.05},
+   reason:'冰風谷寒流突破北境防線，農業全毀，港口結冰，能源中斷。'},
+  {name:'博德之門議會醜聞',icon:'⚖️',
+   pcts:{harbor:-0.08,brew:-0.06,spice:-0.07,mercenary:0.07,prison:0.08,law12:0.05,northtrade:0.05},
+   reason:'博德之門議會舞弊爆發，城門關閉，執法機構需求增加。'},
+  {name:'亨德爾之石發現新礦脈',icon:'⛏️',
+   pcts:{mining:0.10,ironforge:0.08,magitools:0.06,metalex:0.05,mstone:-0.09,relic:0.07,adventure:0.06},
+   reason:'矮人工坊深挖發現純度極高的新型礦脈，供給暴增，礦石交易所因此跌價。'},
+  {name:'永恆沼地毒霧蔓延',icon:'☠️',
+   pcts:{herb:0.10,temple:0.09,lifetree:0.07,alchemy:0.08,harbor:-0.06,airtravel:-0.05,archmage:0.05},
+   reason:'永恆沼地詛咒毒霧向外擴散，醫療需求暴增，主要商路中斷。'},
+  {name:'銀月城月亮祭典',icon:'🌙',
+   pcts:{brew:0.07,spice:0.06,airtravel:0.06,lifetree:0.05,harbor:0.05,law12:0.04,starobs:0.05},
+   reason:'銀月城月亮祭典吸引全大陸朝聖者，消費與交通全面熱絡。'},
+  {name:'巨魔部族南下劫掠',icon:'👹',
+   pcts:{mercenary:0.10,ironforge:0.08,temple:0.09,adventure:0.09,grain:0.07,harbor:-0.08,airtravel:-0.07},
+   reason:'巨魔部族從巨魔咆哮森林南下，亡者平原村莊遭摧毀，軍事需求激增。'},
+  {name:'星辰峰魔法陣異常',icon:'✨',
+   pcts:{guardian:0.10,starobs:0.09,archmage:0.08,spellres:0.07,relic:0.07,airtravel:-0.06,arcanergs:-0.05},
+   reason:'星辰峰魔法陣突然啟動，周邊魔法道具失靈，大量研究者湧入。'},
+  {name:'龍牙堡競技大賽',icon:'🏆',
+   pcts:{mercenary:0.06,ironforge:0.07,brew:0.08,airtravel:0.05,harbor:0.05,adventure:0.06,spice:0.05},
+   reason:'龍牙堡十年一次武術競技，全大陸觀眾湧入，商業活動熱絡。'},
+  {name:'深水城爆發黑水鼠疫',icon:'🐀',
+   pcts:{herb:0.10,temple:0.10,lifetree:0.08,alchemy:0.07,harbor:-0.09,brew:-0.09,grain:-0.05},
+   reason:'深水城下層區爆發黑水鼠疫，港口隔離，醫療需求暴增。'},
+  {name:'裂罪遺跡封印鬆動',icon:'💀',
+   pcts:{temple:0.10,antimagic:0.09,silverwing:0.09,adventure:0.08,harbor:-0.10,airtravel:-0.08,brew:-0.07},
+   reason:'裂罪遺跡七大罪封印出現鬆動，邪教聚集，海域出現靈體，恐慌蔓延。'},
+  {name:'艾雷茲開闢新魔法航線',icon:'⚡',
+   pcts:{airtravel:0.10,archmage:0.07,arcanergs:0.06,harbor:0.06,spice:0.06,landroute:-0.06,shipyard:-0.05},
+   reason:'艾雷茲最高魔導議會開放新型傳送網路，飛行航線大幅擴張，陸路運輸受壓。'},
+];
+
+// ═══════════════════════════════════════════════════════
+//  同步狀態
+// ═══════════════════════════════════════════════════════
+let SURL=localStorage.getItem(URL_KEY)||'', W=null, busy=false;
+const upCol='#c0392b', dnCol='#27ae60';
+const chCol=ch=>ch>=0?upCol:dnCol;
+const sn=d=>{const m=Math.floor(((d-1)%360)/30);return SEASONS[m]+'之日';};
+const ds=()=>`格蘭曆 第${W.gameYear}年 第${W.gameDay||1}日`;
+const gc=a=>{const h=a.history;return h.length<2?0:(h[h.length-1]-h[h.length-2])/h[h.length-2];};
+const isLimitUp=a=>gc(a)>=DAILY_LIMIT*0.98;
+const isLimitDn=a=>gc(a)<=-DAILY_LIMIT*0.98;
+
+function getPos(p,id){const raw=p.portfolio[id];if(!raw)return{qty:0,avgCost:0};if(typeof raw==='number')return{qty:raw,avgCost:0};return raw;}
+function pvOf(p){return Object.keys(p.portfolio).reduce((s,id)=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);const pos=getPos(p,id);return s+(a?a.price*pos.qty:0);},0);}
+function totalCost(p){return Object.keys(p.portfolio).reduce((s,id)=>{const pos=getPos(p,id);return s+(pos.avgCost*pos.qty);},0);}
+
+function setSS(state,txt){document.getElementById('sdot').className='sdot '+state;document.getElementById('slabel').textContent=txt;}
+
+async function pull(){
+  if(!SURL){setSS('','無同步');return null;}setSS('spin','讀取中…');
+  try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();if(j.ok){setSS('ok','已連線');return j.data;}setSS('err','讀取失敗');return null;}
+  catch(e){setSS('err','無法連線');return null;}
+}
+
+async function push(){
+  if(!SURL||busy)return;busy=true;setSS('spin','儲存中…');
+  try{
+    // ── 先拉一次最新雲端資料，把玩家寫進去的 log 合併進來 ──
+    const latest=await (async()=>{
+      try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();return j.ok?j.data:null;}catch{return null;}
+    })();
+    if(latest&&latest.log&&latest.log.length>0){
+      const localLog=W.log||[];
+      const localKeys=new Set(localLog.map(e=>e.time+'|'+e.text));
+      const missing=latest.log.filter(e=>!localKeys.has(e.time+'|'+e.text));
+      if(missing.length>0){
+        W.log=[...localLog,...missing].sort((a,b)=>0); // 保持原順序，missing 放後面
+        // 重新按時間排序（unshift 的最新在前）
+        W.log=[...missing,...localLog];
+      }
+    }
+    // log 上限
+    if(W.log.length>200)W.log=W.log.slice(0,200);
+    W.lastSaved=Date.now();
+    await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
+    setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
+    localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
+  }catch(e){setSS('err','儲存失敗');localStorage.setItem(LOCAL_KEY,JSON.stringify(W));}
+  finally{busy=false;}
+}
+
+function makeDefault(){
+  return{
+    assets:ASSETS0.map(a=>({...a,history:[a.price]})),
+    players:[
+      {id:'p1',name:'冒險者一',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p2',name:'冒險者二',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p3',name:'冒險者三',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p4',name:'冒險者四',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p5',name:'冒險者五',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p6',name:'冒險者六',cash:1500,portfolio:{},realizedPnL:0},
+    ],
+    gameYear:1,gameDay:1,gameMonth:1,
+    presetEvents:[],log:[],lastSaved:Date.now(),
+    market:initMarketState(),
+  };
+}
+
+function migrateAssets(world){
+  if(!world.assets)world.assets=[];
+
+  // 有效標的 ID 清單（以 ASSETS0 為準）
+  const validIds=new Set(ASSETS0.map(a=>a.id));
+
+  // 移除不在新版清單裡的舊標的（保留 IPO 上市的自訂標的，id 開頭為 ipo_）
+  world.assets=world.assets.filter(a=>validIds.has(a.id)||a.id.startsWith('ipo_'));
+
+  // 補入缺少的新標的
+  ASSETS0.forEach(t=>{
+    if(!world.assets.find(a=>a.id===t.id)){
+      world.assets.push({...t,history:[t.price]});
+    }
+  });
+
+  // 清理玩家持倉裡已不存在的舊標的
+  if(world.players)world.players.forEach(p=>{
+    if(typeof p.realizedPnL!=='number')p.realizedPnL=0;
+    if(!p.portfolio)p.portfolio={};
+    if(!p.shorts)p.shorts=[];
+    // 移除持有舊標的的記錄
+    Object.keys(p.portfolio).forEach(id=>{
+      if(!validIds.has(id)&&!id.startsWith('ipo_'))delete p.portfolio[id];
+    });
+    // 移除舊標的的做空記錄
+    p.shorts=p.shorts.filter(s=>validIds.has(s.assetId)||s.assetId.startsWith('ipo_'));
+  });
+
+  if(!world.gameDay)world.gameDay=world.gameMonth||1;
+  if(!world.market)world.market=initMarketState();
+
+  // 趨勢狀態也補入缺少的新標的
+  ASSETS0.forEach(t=>{
+    if(!world.market.trends[t.id]){
+      const bb=t.baseBias||0;
+      world.market.trends[t.id]={bias:bb,duration:Math.floor(Math.random()*10)+4,momentum:0};
+    }
+  });
+
+  return world;
+}
+
+async function init(){
+  const cloud=await pull();
+  if(cloud){W=migrateAssets(cloud);}
+  else{const loc=localStorage.getItem(LOCAL_KEY);W=loc?migrateAssets(JSON.parse(loc)):makeDefault();}
+  afterLoad();
+}
+function afterLoad(){
+  buildEvtGrid();
+  buildSilentGrid();
+  document.getElementById('setY').value=W.gameYear||1;
+  document.getElementById('setD').value=W.gameDay||1;
+  renderAll();
+  if(!W.log.length)gmLog('ev','═══ 格蘭大陸皇家交易所 GM 控制台啟動（新版 38 標的）═══');
+}
+setInterval(async()=>{
+  if(!SURL||busy)return;
+  const c=await pull();
+  if(c&&c.lastSaved>(W?.lastSaved||0)){
+    // 合併 log：保留本地 GM 的 log，再補入雲端有但本地沒有的條目
+    const localLog=W?.log||[];
+    const localKeys=new Set(localLog.map(e=>e.time+'|'+e.text));
+    const incoming=c.log||[];
+    const missing=incoming.filter(e=>!localKeys.has(e.time+'|'+e.text));
+    W=c;
+    if(missing.length>0)W.log=[...localLog,...missing];
+    renderAll();
+  }
+},10000);
+
+function saveUrl(){const u=document.getElementById('scriptUrlInput').value.trim();if(!u.startsWith('https://script.google.com')){alert('請輸入正確的 Apps Script 網址');return;}SURL=u;localStorage.setItem(URL_KEY,u);document.getElementById('setupOverlay').classList.add('hidden');init();}
+function localMode(){SURL='';document.getElementById('setupOverlay').classList.add('hidden');setSS('','本地模式');const loc=localStorage.getItem(LOCAL_KEY);W=loc?migrateAssets(JSON.parse(loc)):makeDefault();afterLoad();}
+
+// ═══════════════════════════════════════════════════════
+//  趨勢引擎
+// ═══════════════════════════════════════════════════════
+function initMarketState(){
+  const trends={};
+  ASSETS0.forEach(a=>{
+    const bb=a.baseBias||0;
+    const initBias=bb+(Math.random()-0.5)*0.06;
+    trends[a.id]={bias:initBias,duration:Math.floor(Math.random()*10)+4,momentum:initBias*0.3};
+  });
+  return{trends,cycle:(Math.random()-0.5)*0.4,cycleDir:Math.random()>0.5?1:-1,cycleDur:Math.floor(Math.random()*12)+6,
+    researchTimer:Math.floor(Math.random()*20)+20,  // 法術研究週期
+    prophecyTimer:Math.floor(Math.random()*15)+15,  // 占卜公信力週期
+  };
+}
+
+function rollMkt(eventBiasFn){
+  if(!W.market)W.market=initMarketState();
+  const M=W.market;
+  // 景氣循環
+  M.cycle+=M.cycleDir*0.08+(Math.random()-0.5)*0.04;
+  M.cycle=Math.max(-1,Math.min(1,M.cycle));
+  M.cycleDur--;
+  if(M.cycleDur<=0){
+    M.cycleDir*=-1;M.cycleDur=Math.floor(Math.random()*14)+5;
+    const cn=M.cycle>0.3?'繁榮':M.cycle<-0.3?'衰退':'盤整';
+    gmLog('ev',`📈 景氣轉向 — 格蘭大陸進入${cn}期`);
+  }
+  const cycleEffect={
+    civilian:M.cycle*-0.010,military:M.cycle*-0.006,trade:M.cycle*0.015,
+    magic:M.cycle*0.007,industrial:M.cycle*0.008,research:M.cycle*0.003,holy:M.cycle*-0.008,
+  };
+
+  // 特殊週期事件
+  M.researchTimer--;
+  if(M.researchTimer<=0){
+    M.researchTimer=Math.floor(Math.random()*20)+20;
+    const success=Math.random()<0.6;
+    const a=W.assets.find(x=>x.id==='spellres');
+    if(a&&!a.delisted){
+      const bias=success?0.09:-0.08;
+      if(M.trends['spellres']){M.trends['spellres'].bias=bias;M.trends['spellres'].duration=Math.floor(Math.random()*8)+5;M.trends['spellres'].momentum=bias*0.5;}
+      gmLog('ev',success?'🧪 法術研究協會宣布重大突破！股價預期強勢上攻。':'🧪 法術研究協會實驗失敗洩露，股價進入下行趨勢。');
+    }
+  }
+  M.prophecyTimer--;
+  if(M.prophecyTimer<=0){
+    M.prophecyTimer=Math.floor(Math.random()*15)+15;
+    const accurate=Math.random()<0.55;
+    const a=W.assets.find(x=>x.id==='starobs');
+    if(a&&!a.delisted){
+      const bias=accurate?0.07:-0.08;
+      if(M.trends['starobs']){M.trends['starobs'].bias=bias;M.trends['starobs'].duration=Math.floor(Math.random()*6)+3;M.trends['starobs'].momentum=bias*0.4;}
+      gmLog('ev',accurate?'🔭 觀星占卜觀測協會本期預測準確，公信力大增！':'🔭 觀星占卜觀測協會預測失準，信任危機，股價承壓。');
+    }
+  }
+
+  W.assets.forEach(a=>{
+    if(a.delisted)return;
+    const T=M.trends[a.id];if(!T)return;
+    T.duration--;
+    if(T.duration<=0){
+      const bb=a.baseBias||0;
+      const reversion=-T.bias*0.35+bb*0.5;
+      const swing=(Math.random()-0.5)*0.14;
+      let newBias=reversion+swing+bb;
+      if(Math.random()<0.10)newBias=(Math.random()>0.5?1:-1)*(0.06+Math.random()*0.04)+bb;
+      // 賽菲爾：完全混沌
+      if(a.special==='chaos')newBias=(Math.random()-0.5)*0.20;
+      T.bias=Math.max(-0.10,Math.min(0.10,newBias));
+      const baseDur=Math.abs(T.bias)>0.06?8:4;
+      T.duration=Math.floor(Math.random()*12)+baseDur;
+      T.momentum=T.bias*0.5;
+      if(Math.abs(T.bias)>0.04){
+        const dir=T.bias>0?'進入上攻趨勢':'進入下行趨勢';
+        gmLog('ev',`📊 ${a.name} ${dir}（日偏向 ${T.bias>=0?'+':''}${(T.bias*100).toFixed(1)}%）`);
+      }
+    }
+    let sectorBias=0;
+    for(const[sector,ids]of Object.entries(SECTOR_GROUPS)){if(ids.includes(a.id)){sectorBias=cycleEffect[sector]||0;break;}}
+    const evBias=eventBiasFn?(eventBiasFn(a)||0):0;
+    T.momentum=T.momentum*0.75+T.bias*0.4;
+    T.momentum=Math.max(-0.08,Math.min(0.08,T.momentum));
+    const noise=(Math.random()-0.5)*a.vol*0.8;
+    let total=T.bias+sectorBias+T.momentum*0.4+noise+evBias;
+
+    // ── 價格保護：跌深自動反彈 ──
+    const base=ASSETS0.find(x=>x.id===a.id);
+    if(base){
+      const basePrice=base.price;
+      const ratio=a.price/basePrice;
+      if(ratio<0.35){
+        // 跌破 35%：強制大力反彈（+4~8%），覆蓋趨勢
+        total=0.04+Math.random()*0.04;
+        T.bias=Math.abs(T.bias)*0.3+0.03; // 強制轉正偏向
+        T.momentum=0.03;
+      }else if(ratio<0.50){
+        // 跌破 50%：強反彈力（+2~5%）疊加
+        const bounceForce=0.02+Math.random()*0.03;
+        total=Math.max(total+bounceForce, bounceForce);
+        if(T.bias<0)T.bias=T.bias*0.4; // 壓制負偏向
+      }else if(ratio<0.65){
+        // 跌破 65%：溫和回彈力疊加
+        const softBounce=0.008+Math.random()*0.012;
+        total=total+softBounce;
+        if(T.bias<-0.04)T.bias=T.bias*0.7; // 稍微壓制過強的負偏向
+      }
+    }
+
+    total=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,total));
+    a.price=Math.max(1,Math.round(a.price*(1+total)));
+    a.history.push(a.price);
+
+    // 下市警示
+    if(base&&a.price<base.price*0.5&&!a.delistWarned){
+      a.delistWarned=true;
+      gmLog('warn',`⚠ ${a.name} 價格跌破初始價 50%，請 GM 考慮是否下市。`);
+    }
+  });
+
+  // 做空手續費結算
+  if(W.players){
+    W.players.forEach(p=>{
+      if(!p.shorts||!p.shorts.length)return;
+      const toClose=[];
+      p.shorts.forEach((s,i)=>{
+        s.daysHeld=(s.daysHeld||0)+1;
+        // 手續費：1~3日2%/日，4~7日3.5%/日，8+強制平倉
+        let fee=0;
+        if(s.daysHeld<=3)fee=s.principal*0.02;
+        else if(s.daysHeld<=7)fee=s.principal*0.035;
+        else{toClose.push(i);return;}
+        p.cash=Math.max(0,p.cash-fee);
+        // 最大虧損檢查
+        const a=W.assets.find(x=>x.id===s.assetId);
+        if(a){const pnl=s.shortQty*(s.entryPrice-a.price);if(pnl<=-s.principal)toClose.push(i);}
+      });
+      // 強制平倉（從後往前刪）
+      [...new Set(toClose)].sort((a,b)=>b-a).forEach(i=>{
+        const s=p.shorts[i];
+        const a=W.assets.find(x=>x.id===s.assetId);
+        if(a){const pnl=s.shortQty*(s.entryPrice-a.price);p.cash+=s.principal+pnl;p.realizedPnL+=pnl;addLog(pnl>=0?'good':'bad',`${p.name} 空單強制平倉：${a.name} ×${s.shortQty}，${pnl>=0?'獲利':'虧損'} ${Math.abs(Math.round(pnl)).toLocaleString()} G`);}
+        p.shorts.splice(i,1);
+      });
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  時間
+// ═══════════════════════════════════════════════════════
+function refreshTime(){document.getElementById('dateBig').textContent=ds();document.getElementById('seasonLbl').textContent=sn(W.gameDay||1);}
+function applyTime(){
+  W.gameYear=Math.max(1,parseInt(document.getElementById('setY').value)||1);
+  W.gameDay=Math.max(1,parseInt(document.getElementById('setD').value)||1);
+  W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+  gmLog('time',`GM 設定時間 → ${ds()}`);push();refreshTime();
+}
+function adv(n){
+  for(let i=0;i<n;i++){
+    W.gameDay=(W.gameDay||1)+1;
+    if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
+    W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+    rollMkt();checkAutoEvents();
+  }
+  document.getElementById('setY').value=W.gameYear;
+  document.getElementById('setD').value=W.gameDay;
+  addLog('time',`⏱ 時間推進 ${n} 日 → ${ds()}`);push();renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  事件推理
+// ═══════════════════════════════════════════════════════
+function inferEvent(){
+  const name=document.getElementById('evtName').value.trim();
+  const desc=document.getElementById('evtDesc').value.trim();
+  if(!name&&!desc){alert('請先輸入事件名稱或描述');return;}
+  const txt=(name+' '+desc).toLowerCase();
+  const sc={};W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=0;});
+  let reasons=[],hits=0;
+  INFER_RULES.forEach(rule=>{
+    if(rule.kw.some(k=>txt.includes(k))){
+      hits++;reasons.push(rule.reason);
+      Object.entries(rule.fx).forEach(([id,v])=>{if(sc[id]!==undefined)sc[id]+=v;});
+    }
+  });
+  if(!hits){W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=Math.round(Math.random()*10-5);});reasons=['未識別關鍵字，套用輕微隨機波動。'];}
+  else if(hits>1){Object.keys(sc).forEach(id=>sc[id]=Math.round(sc[id]/hits*1.3));}
+  W.assets.forEach(a=>{if(a.delisted)return;const el=document.getElementById('epct_'+a.id);if(el)el.value=sc[a.id]!==0?sc[a.id]:'';});
+  document.getElementById('inferReason').textContent=reasons.join(' / ');
+  document.getElementById('inferBox').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════
+//  事件觸發
+// ═══════════════════════════════════════════════════════
+function getPcts(){const p={};W.assets.forEach(a=>{if(a.delisted)return;const v=parseFloat(document.getElementById('epct_'+a.id)?.value);if(!isNaN(v))p[a.id]=v/100;});return p;}
+
+// 根據已填標的，計算空白標的的關聯漲跌（±0~3%）
+function calcCorrelationPcts(filledPcts){
+  const result={};
+  // 計算填入標的的平均方向與強度
+  const entries=Object.entries(filledPcts);
+  if(!entries.length)return result;
+  // 各 sector 的平均偏向
+  const sectorAvg={};
+  entries.forEach(([id,v])=>{
+    for(const[sector,ids]of Object.entries(SECTOR_GROUPS)){
+      if(ids.includes(id)){
+        if(!sectorAvg[sector]){sectorAvg[sector]={sum:0,cnt:0};}
+        sectorAvg[sector].sum+=v;sectorAvg[sector].cnt++;
+      }
+    }
+  });
+  // 對每個空白標的，依所屬 sector 決定關聯方向
+  W.assets.filter(a=>!a.delisted&&filledPcts[a.id]===undefined).forEach(a=>{
+    let corr=0,weight=0;
+    for(const[sector,ids]of Object.entries(SECTOR_GROUPS)){
+      if(ids.includes(a.id)&&sectorAvg[sector]){
+        const avg=sectorAvg[sector].sum/sectorAvg[sector].cnt;
+        corr+=avg*0.4; // 同 sector 弱聯動（40%）
+        weight++;
+      }
+    }
+    // 加上整體市場平均方向的微弱影響（10%）
+    const mktAvg=entries.reduce((s,[,v])=>s+v,0)/entries.length;
+    corr+=mktAvg*0.1;
+    // 限制在 ±3% 內，再加上隨機小數點
+    const maxCorr=0.03;
+    corr=Math.max(-maxCorr,Math.min(maxCorr,corr));
+    // 加上 ±1% 以內的隨機雜訊，讓每隻都不一樣
+    const noise=(Math.random()-0.5)*0.02;
+    corr+=noise;
+    corr=Math.max(-maxCorr,Math.min(maxCorr,corr));
+    // 不動方向太小的就直接給 ±0~1.5% 隨機
+    if(Math.abs(corr)<0.002)corr=(Math.random()-0.5)*0.015;
+    result[a.id]=corr;
+  });
+  return result;
+}
+
+function applyPcts(pcts,label){
+  // 計算空白標的的關聯漲跌（±0~3%）
+  const corrPcts=calcCorrelationPcts(pcts);
+  // 合併：有填的用填的，空白的用關聯
+  const allPcts={...corrPcts,...pcts};
+
+  // 對每個標的直接套用精確漲跌幅（不走 rollMkt 亂數引擎）
+  W.assets.forEach(a=>{
+    if(a.delisted)return;
+    const basePct=allPcts[a.id];
+    if(basePct===undefined)return;
+    const prevPrice=a.history.length>1?a.history[a.history.length-1]:a.price;
+
+    let finalPct;
+    if(pcts[a.id]!==undefined){
+      // GM 有填值：以填入值為基礎，加上 ±0~1% 的隨機小數
+      const sign=pcts[a.id]>=0?1:-1;
+      const base=Math.abs(pcts[a.id]);
+      const jitter=Math.random()*0.01; // 0 ~ 1%
+      finalPct=sign*(base+jitter);
+    } else {
+      // 空白：用關聯計算出的 ±0~3%（已含雜訊）
+      finalPct=basePct;
+    }
+
+    // 漲跌停限制 ±10%
+    finalPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,finalPct));
+    a.price=Math.max(1,Math.round(prevPrice*(1+finalPct)));
+    a.history.push(a.price);
+
+    // 更新趨勢偏向，讓後續幾日延續方向
+    if(W.market&&W.market.trends[a.id]){
+      const evDir=finalPct>0?1:-1;
+      const evStrength=Math.abs(finalPct);
+      W.market.trends[a.id].bias=evDir*Math.min(0.09,evStrength*0.7);
+      W.market.trends[a.id].duration=Math.floor(Math.random()*10)+5;
+      W.market.trends[a.id].momentum=evDir*Math.min(0.07,evStrength*0.5);
+    }
+  });
+
+  addLog('ev',`⚡ 事件觸發：${label}`);
+  // log 只顯示 GM 有填值的標的
+  const aff=W.assets.filter(a=>!a.delisted&&pcts[a.id]!==undefined).map(a=>{
+    const h=a.history;
+    const prev=h.length>1?h[h.length-2]:a.price;
+    const actual=(a.price-prev)/prev;
+    return `${a.name} ${actual>=0?'↑':'↓'}${Math.abs(actual*100).toFixed(1)}%`;
+  }).join('  ');
+  if(aff)addLog('ev',`　${aff}`);push();renderAll();
+}
+function buildEvtGrid(){
+  const el=document.getElementById('evtPctGrid');el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const r=document.createElement('div');r.className='evt-pct-row';
+    r.innerHTML=`<span class="elabel">${a.icon} ${a.name}</span><input type="number" id="epct_${a.id}" placeholder="%" step="1">`;
+    el.appendChild(r);
+  });
+}
+function clearForm(){document.getElementById('evtName').value='';document.getElementById('evtDesc').value='';document.getElementById('inferBox').classList.add('hidden');W.assets.forEach(a=>{const e=document.getElementById('epct_'+a.id);if(e)e.value='';});}
+function fireNow(){const name=document.getElementById('evtName').value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}applyPcts(p,name);}
+function savePreset(){
+  const name=document.getElementById('evtName').value.trim();if(!name){alert('請輸入事件名稱');return;}
+  const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}
+  W.presetEvents.push({id:Date.now(),name,desc:document.getElementById('evtDesc').value.trim(),pcts:p});
+  gmLog('ev',`📜 儲存事件：「${name}」`);clearForm();push();renderPresets();
+}
+function renderPresets(){
+  const el=document.getElementById('presetList');el.innerHTML='';
+  if(!W.presetEvents.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:8px">尚無儲存事件</div>';return;}
+  W.presetEvents.forEach((ev,i)=>{
+    const aff=Object.entries(ev.pcts).map(([id,v])=>{const a=W.assets.find(x=>x.id===id);return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:''}).filter(Boolean).join('  ');
+    const d=document.createElement('div');d.className='preset-evt';
+    d.innerHTML=`<div style="flex:1"><div class="pname">${ev.name}</div><div class="pdetail">${aff}</div>${ev.desc?`<div class="pdetail">${ev.desc}</div>`:''}</div>
+      <div class="preset-btns"><button class="fire-btn" onclick="firePreset(${i})">觸發</button><button class="del-btn" onclick="delPreset(${i})">刪除</button></div>`;
+    el.appendChild(d);
+  });
+}
+function firePreset(i){applyPcts(W.presetEvents[i].pcts,W.presetEvents[i].name);}
+function delPreset(i){if(!confirm('確定刪除？'))return;W.presetEvents.splice(i,1);push();renderPresets();}
+
+// ═══════════════════════════════════════════════════════
+//  IPO 與下市
+// ═══════════════════════════════════════════════════════
+function doIPO(){
+  const name=document.getElementById('ipoName').value.trim();
+  const icon=document.getElementById('ipoIcon').value.trim()||'📌';
+  const price=parseInt(document.getElementById('ipoPrice').value)||300;
+  const vol=parseFloat(document.getElementById('ipoVol').value)||0.10;
+  const cat=document.getElementById('ipoCat').value.trim()||'特殊';
+  const desc=document.getElementById('ipoDesc').value.trim();
+  if(!name){alert('請輸入標的名稱');return;}
+  const id='ipo_'+Date.now();
+  const newAsset={id,name,icon,price,cat,vol,baseBias:0,history:[price]};
+  W.assets.push(newAsset);
+  // 初始化趨勢
+  if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0};}
+  addLog('ev',`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）${desc?'— '+desc:''}`);
+  document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';document.getElementById('ipoDesc').value='';
+  push();renderAll();buildEvtGrid();
+}
+
+function doDelistAsset(id){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(!confirm(`確定宣告「${a.name}」下市？持有玩家將損失全部持倉。`))return;
+  const residual=parseFloat(prompt(`設定殘值比例（0~1，0 表示全損，0.1 表示退回 10% 本金）`,'0'))||0;
+  a.delisted=true;a.delistedAt=ds();
+  // 清算所有玩家持倉
+  W.players.forEach(p=>{
+    const pos=getPos(p,id);
+    if(pos.qty>0){
+      const costVal=pos.avgCost*pos.qty;
+      const refund=Math.round(costVal*residual);
+      const loss=Math.round(costVal*(1-residual));
+      p.cash+=refund;
+      p.realizedPnL-=loss;
+      delete p.portfolio[id];
+      addLog('bad',`💔 ${p.name} 持有的「${a.name}」因下市清算，退回 ${refund.toLocaleString()} G，損失 ${loss.toLocaleString()} G`);
+    }
+  });
+  addLog('warn',`📛 ${a.name} 正式下市（殘值比例 ${(residual*100).toFixed(0)}%）`);
+  push();renderAll();buildEvtGrid();
+}
+
+function renderDelistList(){
+  const el=document.getElementById('delistList');el.innerHTML='';
+  const active=W.assets.filter(a=>!a.delisted);
+  if(!active.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3)">無上市標的</div>';return;}
+  active.forEach(a=>{
+    const base=ASSETS0.find(x=>x.id===a.id);
+    const initPrice=base?base.price:a.history[0]||a.price;
+    const ratio=a.price/initPrice;
+    const isWarn=ratio<0.5;
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--parch3);flex-wrap:wrap;';
+    row.innerHTML=`<span style="font-size:16px">${a.icon}</span>
+      <span style="flex:1;font-size:12px;font-weight:700">${a.name}</span>
+      <span style="font-size:12px;color:${isWarn?'var(--up)':'var(--ink3)'}">${a.price.toLocaleString()} G ${isWarn?'⚠':''}</span>
+      <button class="btn-danger" style="padding:4px 10px;font-size:11px" onclick="doDelistAsset('${a.id}')">下市</button>`;
+    el.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+//  手動調價
+// ═══════════════════════════════════════════════════════
+function buildManual(){
+  const el=document.getElementById('manualList');el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const r=document.createElement('div');r.className='asset-row-mini';
+    r.innerHTML=`<span class="icon">${a.icon}</span><span class="aname">${a.name}</span><span class="cur">${a.price.toLocaleString()} G</span><input type="number" id="mp_${a.id}" value="${a.price}" min="1">`;
+    el.appendChild(r);
+  });
+}
+function applyManual(){
+  W.assets.forEach(a=>{if(a.delisted)return;const v=parseInt(document.getElementById('mp_'+a.id)?.value);if(!isNaN(v)&&v>0&&v!==a.price){const o=a.price;a.price=v;a.history.push(v);gmLog('time',`GM 調整《${a.name}》：${o.toLocaleString()} → ${v.toLocaleString()} G`);}});
+  push();renderAll();
+}
+
+// ── 隱形漲跌調整（不記錄消息）──
+function buildSilentGrid(){
+  const el=document.getElementById('silentPctGrid');if(!el)return;
+  el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const r=document.createElement('div');r.className='evt-pct-row';
+    r.innerHTML=`<span class="elabel">${a.icon} ${a.name}</span><input type="number" id="sp_${a.id}" placeholder="%" step="1">`;
+    el.appendChild(r);
+  });
+}
+
+function applySilent(){
+  let changed=0;
+  W.assets.forEach(a=>{
+    if(a.delisted)return;
+    const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);
+    if(isNaN(raw))return;
+    const pct=raw/100;
+    // 受每日漲跌停限制
+    const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
+    const noise=(Math.random()*0.006-0.003);
+    a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
+    a.history.push(a.price);
+    // 同時更新趨勢偏向，讓後續幾日延續方向
+    if(W.market&&W.market.trends[a.id]){
+      const dir=clamped>0?1:-1;
+      W.market.trends[a.id].bias=dir*Math.min(0.07,Math.abs(clamped)*0.6);
+      W.market.trends[a.id].duration=Math.floor(Math.random()*6)+3;
+      W.market.trends[a.id].momentum=dir*Math.min(0.05,Math.abs(clamped)*0.4);
+    }
+    changed++;
+    // 清空輸入框
+    const inp=document.getElementById('sp_'+a.id);if(inp)inp.value='';
+  });
+  if(!changed){alert('請至少輸入一個標的的漲跌幅');return;}
+  // 推進一日（不觸發市場引擎與自動事件）
+  W.gameDay=(W.gameDay||1)+1;
+  if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
+  W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+  document.getElementById('setY').value=W.gameYear;
+  document.getElementById('setD').value=W.gameDay;
+  addLog('time',`⏱ 時間推進 1 日 → ${ds()}`);
+  push();renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  玩家管理
+// ═══════════════════════════════════════════════════════
+function renderWealth(){
+  const tb=document.getElementById('wealthBody');tb.innerHTML='';
+  W.players.forEach((p,i)=>{
+    const pv=pvOf(p);const cost=totalCost(p);const unr=pv-cost;const rlz=p.realizedPnL||0;
+    const held=Object.keys(p.portfolio).filter(id=>getPos(p,id).qty>0);
+    let holdHtml='';
+    held.forEach(id=>{
+      const a=W.assets.find(x=>x.id===id);const pos=getPos(p,id);if(!a||!pos.qty)return;
+      const mv=a.price*pos.qty;const pnl=mv-(pos.avgCost*pos.qty);
+      const s=pnl>=0?'+':'';const cls=pnl>=0?'pnl-pos':'pnl-neg';
+      const rate=pos.avgCost>0?((pnl/(pos.avgCost*pos.qty))*100).toFixed(1):'—';
+      holdHtml+=`<div class="holding-row"><span>${a.icon} ${a.name} ×${pos.qty}</span><span>均${Math.round(pos.avgCost).toLocaleString()}G</span><span>${mv.toLocaleString()}G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()}G(${s}${rate}%)</span></div>`;
+    });
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input class="name-input" value="${p.name}" onchange="renameP(${i},this.value)">${holdHtml?`<div class="holding-detail">${holdHtml}</div>`:''}</td>
+      <td>${p.cash.toLocaleString()} G</td>
+      <td>${pv.toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">成本 ${Math.round(cost).toLocaleString()} G</span></td>
+      <td><span class="${unr>=0?'pnl-pos':'pnl-neg'}">${unr>=0?'+':''}${Math.round(unr).toLocaleString()} G</span></td>
+      <td><span class="${rlz>=0?'pnl-pos':'pnl-neg'}">${rlz>=0?'+':''}${Math.round(rlz).toLocaleString()} G</span></td>
+      <td style="font-weight:700;color:var(--gold2)">${(p.cash+pv).toLocaleString()} G</td>
+      <td><button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">重置</button></td>`;
+    tb.appendChild(tr);
+  });
+  const sel=document.getElementById('goldTarget');const cur=sel.value;
+  sel.innerHTML=`<option value="all">全部玩家</option>`+W.players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  if(cur)sel.value=cur;
+}
+function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
+function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];push();renderWealth();}
+function giveGold(){
+  const t=document.getElementById('goldTarget').value,g=parseInt(document.getElementById('goldAmt').value);if(!g)return;
+  if(t==='all'){W.players.forEach(p=>p.cash+=g);addLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
+  else{const idx=parseInt(t);W.players[idx].cash+=g;addLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
+  document.getElementById('goldAmt').value='';push();renderWealth();
+}
+function addPlayer(){
+  const n=document.getElementById('newPlayerName').value.trim();if(!n)return;
+  W.players.push({id:'p'+Date.now(),name:n,cash:1500,portfolio:{},realizedPnL:0,shorts:[]});
+  document.getElementById('newPlayerName').value='';push();renderWealth();buildEvtGrid();
+}
+
+// ═══════════════════════════════════════════════════════
+//  市場表格
+// ═══════════════════════════════════════════════════════
+function renderMkt(){
+  const tb=document.getElementById('mktBody');tb.innerHTML='';
+  W.assets.forEach(a=>{
+    if(a.delisted){
+      const tr=document.createElement('tr');tr.className='is-delisted';
+      tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">下市</span></td>
+        <td colspan="5" style="font-size:12px;color:var(--ink3)">已於 ${a.delistedAt||'—'} 下市</td>`;
+      tb.appendChild(tr);return;
+    }
+    const ch=gc(a),pct=(ch*100).toFixed(1),sign=ch>=0?'+':'',col=chCol(ch);
+    const lUp=isLimitUp(a),lDn=isLimitDn(a);
+    const base=ASSETS0.find(x=>x.id===a.id);
+    const initPrice=base?base.price:a.history[0]||a.price;
+    const isWarn=a.price<initPrice*0.5&&!a.delistWarned;
+    const tr=document.createElement('tr');
+    tr.className=(lUp?'is-limit-up':lDn?'is-limit-dn':isWarn?'is-warning':'');
+    tr.onclick=()=>openChart(a.id);
+    const badge=lUp?'<span class="limit-badge up">漲停</span>':lDn?'<span class="limit-badge dn">跌停</span>':isWarn?'<span class="warn-badge">警示</span>':'';
+    tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong>${badge}</td>
+      <td><strong style="font-size:14px;color:${col}">${a.price.toLocaleString()}</strong><span style="font-size:10px;color:var(--ink3)"> G</span></td>
+      <td><strong style="font-size:12px;color:${col}">${sign}${pct}%</strong></td>
+      <td><canvas id="spk_${a.id}" width="72" height="22"></canvas></td>
+      <td><span class="tag" style="font-size:9px">${a.cat}</span></td>
+      <td></td>`;
+    tb.appendChild(tr);drawSpk(a,`spk_${a.id}`);
+  });
+}
+function drawSpk(a,cid){const c=document.getElementById(cid);if(!c)return;const ctx=c.getContext('2d');const d=a.history.slice(-20);const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;ctx.clearRect(0,0,72,22);ctx.strokeStyle=chCol(gc(a));ctx.lineWidth=1.5;ctx.beginPath();d.forEach((v,i)=>{const x=(i/(d.length-1))*72,y=20-((v-mn)/rng)*17;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();}
+
+// ═══════════════════════════════════════════════════════
+//  趨勢狀態面板
+// ═══════════════════════════════════════════════════════
+function renderTrendStatus(){
+  const el=document.getElementById('trendStatus');if(!el)return;
+  if(!W.market){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">尚未初始化</div>';return;}
+  const M=W.market;
+  const cycleVal=(M.cycle*100).toFixed(0);
+  const cycleCls=M.cycle>0.2?'pnl-pos':M.cycle<-0.2?'pnl-neg':'';
+  const cycleLabel=M.cycle>0.4?'繁榮期':M.cycle>0.1?'緩慢成長':M.cycle<-0.4?'衰退期':M.cycle<-0.1?'緩慢下行':'盤整期';
+  let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--parch3);flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--ink3)">世界景氣：</span>
+    <span style="font-size:14px;font-weight:700" class="${cycleCls}">${cycleLabel}（${cycleVal>0?'+':''}${cycleVal}）</span>
+    <span style="font-size:11px;color:var(--ink3)">研究週期 ${M.researchTimer} 日後・占卜週期 ${M.prophecyTimer} 日後</span>
+  </div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px">`;
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const T=M.trends[a.id];if(!T)return;
+    const biasPct=(T.bias*100).toFixed(1);
+    const cls=T.bias>0.01?'pnl-pos':T.bias<-0.01?'pnl-neg':'';
+    const arrow=T.bias>0.04?'↑↑':T.bias>0.01?'↑':T.bias<-0.04?'↓↓':T.bias<-0.01?'↓':'→';
+    html+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid rgba(222,206,150,0.3);font-size:11px">
+      <span>${a.icon}</span><span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${a.name}</span>
+      <span style="font-weight:700" class="${cls}">${arrow}</span>
+      <span style="color:var(--ink3);min-width:60px;text-align:right">${biasPct}%/${T.duration}日</span>
+    </div>`;
+  });
+  html+='</div>';el.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  走勢圖
+// ═══════════════════════════════════════════════════════
+function openChart(id){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  const ch=gc(a),h=a.history,hi=Math.max(...h),lo=Math.min(...h),cur=h[h.length-1],first=h[0],tot=(cur-first)/first*100;
+  document.getElementById('modalTitle').textContent=`${a.icon} ${a.name} 走勢圖`;
+  document.getElementById('modalStats').innerHTML=`
+    <div class="mstat"><div class="mstat-val" style="color:${chCol(ch)}">${cur.toLocaleString()} G</div><div class="mstat-lbl">現價</div></div>
+    <div class="mstat"><div class="mstat-val" style="color:${upCol}">${hi.toLocaleString()} G</div><div class="mstat-lbl">歷史最高</div></div>
+    <div class="mstat"><div class="mstat-val" style="color:${dnCol}">${lo.toLocaleString()} G</div><div class="mstat-lbl">歷史最低</div></div>
+    <div class="mstat"><div class="mstat-val" style="color:${chCol(tot)}">${tot>=0?'+':''}${tot.toFixed(1)}%</div><div class="mstat-lbl">總漲跌幅</div></div>
+    <div class="mstat"><div class="mstat-val">${h.length}</div><div class="mstat-lbl">記錄天數</div></div>`;
+  document.getElementById('chartModal').classList.remove('hidden');
+  requestAnimationFrame(()=>drawFull(a));
+}
+function closeModal(e){if(e&&e.target!==document.getElementById('chartModal'))return;document.getElementById('chartModal').classList.add('hidden');}
+function drawFull(a){
+  const c=document.getElementById('modalChart');const w=c.parentElement.clientWidth-40;c.width=w;c.height=240;
+  const ctx=c.getContext('2d');const d=a.history;if(d.length<2)return;
+  const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;
+  const pl=54,pr=10,pt=14,pb=26,cw=w-pl-pr,ch2=240-pt-pb;
+  const px=i=>pl+(i/(d.length-1))*cw,py=v=>pt+(1-(v-mn)/rng)*ch2;
+  ctx.clearRect(0,0,w,240);
+  for(let i=0;i<=4;i++){const frac=i/4,y=pt+frac*ch2,val=Math.round(mx-frac*(mx-mn));ctx.strokeStyle='rgba(139,105,20,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(w-pr,y);ctx.stroke();ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='right';ctx.fillText(val.toLocaleString(),pl-4,y+3);}
+  ctx.textAlign='left';const col=chCol(gc(a));const rgb=gc(a)>=0?'192,57,43':'39,174,96';
+  const grad=ctx.createLinearGradient(0,pt,0,pt+ch2);grad.addColorStop(0,`rgba(${rgb},0.2)`);grad.addColorStop(1,`rgba(${rgb},0.01)`);
+  ctx.beginPath();d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.lineTo(px(d.length-1),pt+ch2);ctx.lineTo(px(0),pt+ch2);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2.5;d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
+  [[0,d[0]],[d.length-1,d[d.length-1]]].forEach(([i,v])=>{ctx.beginPath();ctx.arc(px(i),py(v),4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();});
+  const xs=Math.max(1,Math.floor(d.length/8));ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';
+  for(let i=0;i<d.length;i+=xs)ctx.fillText(`T${i+1}`,px(i),238);
+}
+
+// ═══════════════════════════════════════════════════════
+//  自動事件
+// ═══════════════════════════════════════════════════════
+let aeToastTimer=null;
+function onAeToggle(cb){}
+
+// ═══════════════════════════════════════════════════════
+//  自動推進系統
+//  每 60 秒自動推進 1 日，GM 可隨時暫停/繼續
+// ═══════════════════════════════════════════════════════
+const AUTO_ADV_INTERVAL = 21600; // 秒（6小時）
+let autoAdvTimer = null;
+let autoAdvRemaining = AUTO_ADV_INTERVAL;
+let autoAdvTick = null;
+
+function onAutoAdvToggle(cb){
+  if(cb.checked){
+    startAutoAdv();
+  } else {
+    stopAutoAdv();
+  }
+}
+
+function startAutoAdv(){
+  stopAutoAdv(); // 先清除舊的
+  autoAdvRemaining = AUTO_ADV_INTERVAL;
+  updateAdvUI();
+
+  autoAdvTick = setInterval(()=>{
+    autoAdvRemaining--;
+    updateAdvUI();
+    if(autoAdvRemaining <= 0){
+      autoAdvRemaining = AUTO_ADV_INTERVAL;
+      adv(1); // 推進 1 日（含事件判斷）
+    }
+  }, 1000);
+}
+
+function stopAutoAdv(){
+  if(autoAdvTick){ clearInterval(autoAdvTick); autoAdvTick=null; }
+  autoAdvRemaining = AUTO_ADV_INTERVAL;
+  const bar = document.getElementById('autoAdvBar');
+  const label = document.getElementById('autoAdvCountdown');
+  if(bar) bar.style.width = '0%';
+  if(label) label.textContent = '已暫停';
+}
+
+function updateAdvUI(){
+  const bar = document.getElementById('autoAdvBar');
+  const label = document.getElementById('autoAdvCountdown');
+  if(!bar || !label) return;
+  const pct = ((AUTO_ADV_INTERVAL - autoAdvRemaining) / AUTO_ADV_INTERVAL) * 100;
+  bar.style.width = pct + '%';
+  const h = Math.floor(autoAdvRemaining / 3600);
+  const m = Math.floor((autoAdvRemaining % 3600) / 60);
+  const s = autoAdvRemaining % 60;
+  const hStr = h > 0 ? `${h}時` : '';
+  const mStr = m > 0 ? `${m}分` : '';
+  const sStr = `${s}秒`;
+  label.textContent = `${hStr}${mStr}${sStr}後推進`;
+}
+function drawEvent(){
+  const hasPresets=W.presetEvents&&W.presetEvents.length>0;
+  if(hasPresets&&Math.random()<0.5){const ev=W.presetEvents[Math.floor(Math.random()*W.presetEvents.length)];return{name:ev.name,icon:'📜',pcts:ev.pcts,reason:ev.desc||'來自預設事件庫。'};}
+  const ev=BUILTIN_EVENTS[Math.floor(Math.random()*BUILTIN_EVENTS.length)];return{...ev};
+}
+function showAeToast(evt){
+  document.getElementById('aeIcon').textContent=evt.icon;
+  document.getElementById('aeName').textContent=evt.name;
+  document.getElementById('aeTime').textContent=`${W.gameYear}年第${W.gameDay}日`;
+  const lines=Object.entries(evt.pcts).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]))
+    .map(([id,v])=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return'';const sign=v>=0?'+':'';const col=v>=0?'var(--up)':'var(--dn)';return`<span style="margin-right:8px">${a.icon}<span style="color:${col};font-weight:700">${sign}${(v*100).toFixed(0)}%</span></span>`;}).join('');
+  document.getElementById('aeAffects').innerHTML=lines||'';
+  const toast=document.getElementById('aeToast');toast.classList.remove('hidden');
+  if(aeToastTimer)clearTimeout(aeToastTimer);
+  aeToastTimer=setTimeout(()=>toast.classList.add('hidden'),6000);
+}
+function checkAutoEvents(){
+  const enabled=document.getElementById('aeEnabled')?.checked??true;if(!enabled)return;
+  const pct=parseInt(document.getElementById('aePctSlider')?.value)||35;
+  if(Math.random()*100>=pct)return;
+  const evt=drawEvent();
+  W.assets.forEach(a=>{
+    if(a.delisted||evt.pcts[a.id]===undefined)return;
+    const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,evt.pcts[a.id]));
+    const noise=(Math.random()*0.01-0.005);
+    a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
+    a.history.push(a.price);
+    if(W.market&&W.market.trends[a.id]){
+      const evDir=clamped>0?1:-1;const evStrength=Math.abs(clamped);
+      W.market.trends[a.id].bias=evDir*Math.min(0.09,evStrength*0.7);
+      W.market.trends[a.id].duration=Math.floor(Math.random()*10)+5;
+      W.market.trends[a.id].momentum=evDir*Math.min(0.07,evStrength*0.5);
+    }
+  });
+  addLog('ev',`🌍 自動事件：${evt.name}`);
+  const aff=W.assets.filter(a=>!a.delisted&&evt.pcts[a.id]!==undefined)
+    .map(a=>`${a.name} ${evt.pcts[a.id]>=0?'↑':'↓'}${Math.min(Math.abs(evt.pcts[a.id]*100),10).toFixed(0)}%`).join('　');
+  if(aff)addLog('ev',`　${aff}`);
+  setTimeout(()=>showAeToast(evt),300);
+}
+
+// ═══════════════════════════════════════════════════════
+//  Log
+// ═══════════════════════════════════════════════════════
+function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>200)W.log.pop();renderLog();}
+function gmLog(type,text){addLog(type,text,true);}  // GM 專用，玩家看不到
+function renderLog(){const b=document.getElementById('logBox');b.innerHTML='';W.log.forEach(e=>{const d=document.createElement('div');d.className=`log-e ${e.type}`;d.innerHTML=`<span class="lt">[${e.time}]</span>${e.text}`;b.appendChild(d);});}
+function clearLog(){W.log=[];push();renderLog();}
+
+async function fullReset(){
+  const step1=confirm('⚠ 確定要清空所有資料？\n\n包含：38個標的價格歸零、玩家持倉清空、消息記錄刪除。\n\n此操作無法復原！');
+  if(!step1)return;
+  const step2=confirm('再次確認：你要放棄所有現有遊戲資料，重新開始嗎？');
+  if(!step2)return;
+
+  // 清空 localStorage（所有版本的存檔鍵）
+  ['gran_world_v1','gran_world_v2','gran_world_v3','gran_world_v4'].forEach(k=>localStorage.removeItem(k));
+
+  // 重建預設資料
+  W=makeDefault();
+
+  // 清空雲端
+  if(SURL){
+    setSS('spin','重置中…');
+    try{
+      await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
+      setSS('ok','已重置並同步');
+    }catch(e){
+      setSS('err','雲端清除失敗，已在本地重置');
+      localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
+    }
+  }else{
+    localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
+    setSS('','本地已重置');
+  }
+
+  addLog('warn','═══ GM 執行全資料重置，遊戲重新開始 ═══');
+  alert('✅ 重置完成！所有資料已清空，使用 38 個新標的重新開始。');
+  push();renderAll();buildEvtGrid();
+}
+
+function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderLog();}
+
+// 啟動
+if(SURL){document.getElementById('setupOverlay').classList.add('hidden');document.getElementById('scriptUrlInput').value=SURL;init();}
+setInterval(()=>{const n=new Date();document.getElementById('gmClock').textContent=`現實 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;},1000);
+</script>
+</body>
+</html>
