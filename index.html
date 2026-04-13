@@ -408,6 +408,17 @@ canvas{display:block;}
     </div>
   </div>
 
+  <!-- 交易熱度 -->
+  <div class="panel">
+    <div class="ph"><div class="ph-title">🔥 交易熱度總覽</div><button class="btn-sm" onclick="renderHeat()">重新整理</button></div>
+    <div class="pb" style="padding:0;overflow-x:auto">
+      <table class="mkt-table" id="heatTable">
+        <thead><tr><th>標的</th><th>持有人</th><th>總持倉</th><th>做空人</th><th>人氣</th></tr></thead>
+        <tbody id="heatBody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- 消息記錄 -->
   <div class="panel">
     <div class="ph"><div class="ph-title">📜 世界消息記錄</div><button class="btn-sm" onclick="clearLog()">清除</button></div>
@@ -1662,7 +1673,65 @@ async function fullReset(){
   push();renderAll();buildEvtGrid();
 }
 
-function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderLog();}
+function renderHeat(){
+  if(!W)return;
+  const tbody=document.getElementById('heatBody');if(!tbody)return;
+  tbody.innerHTML='';
+
+  // 統計每個標的的持有情況
+  const stats={};
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    stats[a.id]={asset:a,holders:[],totalQty:0,shorters:[]};
+  });
+  W.players.forEach(p=>{
+    // 多單持倉
+    Object.keys(p.portfolio).forEach(id=>{
+      const pos=p.portfolio[id];
+      const qty=typeof pos==='number'?pos:(pos?.qty||0);
+      if(qty>0&&stats[id]){
+        stats[id].holders.push(p.name);
+        stats[id].totalQty+=qty;
+      }
+    });
+    // 空單
+    (p.shorts||[]).forEach(s=>{
+      if(stats[s.assetId])stats[s.assetId].shorters.push(p.name);
+    });
+  });
+
+  // 依持有人數排序（多→少），零持倉排最後
+  const sorted=Object.values(stats).sort((a,b)=>{
+    const diff=b.holders.length-a.holders.length;
+    return diff!==0?diff:b.totalQty-a.totalQty;
+  });
+
+  const maxH=Math.max(1,...sorted.map(s=>s.holders.length));
+
+  sorted.forEach(s=>{
+    const {asset,holders,totalQty,shorters}=s;
+    const hCount=holders.length;
+    const sCount=shorters.length;
+    const barW=Math.round(hCount/maxH*100);
+    const barCol=hCount===0?'var(--parch3)':hCount>=4?'var(--up)':hCount>=2?'var(--gold2)':'var(--dn)';
+    const holderStr=holders.length?holders.join('、'):'<span style="color:var(--ink3);font-size:11px">無人持有</span>';
+    const shortStr=shorters.length?`<span style="color:var(--gold2)">${shorters.join('、')}</span>`:'—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td><span style="font-size:14px;margin-right:4px">${asset.icon}</span><strong style="font-size:12px">${asset.name}</strong></td>
+      <td><span style="font-size:13px;font-weight:700;color:${barCol}">${hCount}人</span><div style="font-size:11px;color:var(--ink3);margin-top:2px">${holderStr}</div></td>
+      <td><strong style="font-size:13px">${totalQty>0?totalQty.toLocaleString():'—'}</strong></td>
+      <td style="font-size:12px">${shortStr}</td>
+      <td style="min-width:80px">
+        <div style="height:8px;background:var(--parch3);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${barW}%;background:${barCol};transition:width .3s"></div>
+        </div>
+        <div style="font-size:10px;color:var(--ink3);margin-top:2px">${barW}%</div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderLog();renderHeat();}
 
 // 啟動
 if(SURL){document.getElementById('setupOverlay').classList.add('hidden');document.getElementById('scriptUrlInput').value=SURL;init();}
