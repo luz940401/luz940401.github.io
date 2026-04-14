@@ -225,6 +225,39 @@ canvas{display:block;}
   </div>
 </div>
 
+<!-- GM 公告發佈 -->
+<div class="panel" style="margin-bottom:14px">
+  <div class="ph" style="background:linear-gradient(135deg,#2a1a00,#3e2800);border-bottom-color:#b8860b">
+    <div class="ph-title" style="color:#f5e9ce;font-size:14px">📣 GM 公告發佈</div>
+    <span style="font-size:11px;color:rgba(245,233,206,0.6)">僅發佈消息・不改股價・不推進時間</span>
+  </div>
+  <div class="pb" style="padding:12px 16px">
+    <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+          <select id="announceCat" style="background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none;flex-shrink:0">
+            <option value="ev">⚡ 世界事件</option>
+            <option value="good">📈 利多消息</option>
+            <option value="bad">📉 利空消息</option>
+            <option value="warn">⚠ 官方警示</option>
+            <option value="time">📋 公告通知</option>
+          </select>
+          <input type="text" id="announcePrefix" placeholder="標題（選填，如：皇家交易所公告）" style="flex:1;min-width:140px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none">
+        </div>
+        <textarea id="announceText" placeholder="輸入公告內容…（可多行，支援 emoji）" style="width:100%;min-height:60px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:9px 12px;font-family:'Noto Sans TC',sans-serif;font-size:14px;outline:none;resize:vertical"></textarea>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-width:110px">
+        <button class="btn btn-gold" style="margin:0;padding:11px 18px;font-size:14px" onclick="postAnnouncement()">📣 發佈</button>
+        <button class="btn btn-ghost" style="margin:0;font-size:11px" onclick="document.getElementById('announceText').value='';document.getElementById('announcePrefix').value=''">清除</button>
+      </div>
+    </div>
+    <div id="recentAnnouncements" style="margin-top:8px;display:none">
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;margin-bottom:4px">最近發佈</div>
+      <div id="recentAnnouncementList" style="max-height:80px;overflow-y:auto"></div>
+    </div>
+  </div>
+</div>
+
 <div class="g2">
 <div>
   <!-- 時間 -->
@@ -305,8 +338,31 @@ canvas{display:block;}
 
   <!-- 趨勢狀態 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">📈 市場趨勢狀態</div><span style="font-size:12px;color:var(--ink3)">自動更新</span></div>
-    <div class="pb" style="padding:10px 14px"><div id="trendStatus"></div></div>
+    <div class="ph">
+      <div class="ph-title">📈 市場趨勢狀態</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button class="btn-sm" id="trendEditToggle" onclick="toggleTrendEdit()" style="border-color:var(--purple);color:var(--purple)">✏ 手動調整趨勢</button>
+        <span style="font-size:12px;color:var(--ink3)">自動更新</span>
+      </div>
+    </div>
+    <div class="pb" style="padding:10px 14px">
+      <div id="trendStatus"></div>
+      <!-- 手動趨勢調整區 -->
+      <div id="trendEditArea" style="display:none;margin-top:12px;border-top:1px dashed var(--parch3);padding-top:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--purple);letter-spacing:1px;margin-bottom:8px">✏ 手動設定趨勢偏向</div>
+        <div style="background:rgba(123,45,139,0.06);border:1px solid rgba(123,45,139,0.2);padding:9px 12px;font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.7">
+          偏向範圍 <strong>-10 ~ +10</strong>（正數看漲、負數看跌）。持續天數設定此趨勢維持幾日後重新隨機。設定後不影響現有股價，從下次推進起生效。
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="btn-sm" onclick="filterTrendEdit('all')" id="tef_all" style="border-color:var(--ink3);color:var(--ink3)">全部</button>
+          <button class="btn-sm" onclick="filterTrendEdit('up')" id="tef_up" style="border-color:var(--up);color:var(--up)">只看漲趨勢</button>
+          <button class="btn-sm" onclick="filterTrendEdit('dn')" id="tef_dn" style="border-color:var(--dn);color:var(--dn)">只看跌趨勢</button>
+          <button class="btn-sm" onclick="resetAllTrends()" style="border-color:var(--gold);color:var(--gold);margin-left:auto">↺ 全部重置</button>
+        </div>
+        <div id="trendEditList" style="max-height:320px;overflow-y:auto"></div>
+        <button class="btn btn-purple" style="margin-top:10px" onclick="applyTrendEdits()">✅ 套用趨勢設定</button>
+      </div>
+    </div>
   </div>
 
   <!-- 手動調價 -->
@@ -440,6 +496,9 @@ canvas{display:block;}
 const URL_KEY='gran_script_url', LOCAL_KEY='gran_world_v4';
 const SEASONS=['深冬','初春','春','暮春','初夏','盛夏','暑末','初秋','金秋','暮秋','初冬','隆冬'];
 const DAILY_LIMIT=0.10;
+// 趨勢編輯面板狀態（需早於 renderTrendStatus 宣告）
+var trendEditOpen=false;
+var trendEditFilter='all';
 
 // ═══════════════════════════════════════════════════════
 //  38 個標的
@@ -838,21 +897,6 @@ async function pull(){
 async function push(){
   if(!SURL||busy)return;busy=true;setSS('spin','儲存中…');
   try{
-    // ── 先拉一次最新雲端資料，把玩家寫進去的 log 合併進來 ──
-    const latest=await (async()=>{
-      try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();return j.ok?j.data:null;}catch{return null;}
-    })();
-    if(latest&&latest.log&&latest.log.length>0){
-      // 統一格式後再 merge
-      const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
-      const localLog=(W.log||[]).map(normalize);
-      const latestLog=latest.log.map(normalize);
-      W.log=localLog;
-      const missing=latestLog.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
-      if(missing.length>0)W.log=[...missing,...localLog];
-    }
-    // log 上限
-    if(W.log.length>200)W.log=W.log.slice(0,200);
     W.lastSaved=Date.now();
     await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
     setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
@@ -933,14 +977,24 @@ function afterLoad(){
   document.getElementById('setY').value=W.gameYear||1;
   document.getElementById('setD').value=W.gameDay||1;
   renderAll();
+  updateRecentAnnouncements();
   if(!W.log.length)gmLog('ev','═══ 格蘭大陸皇家交易所 GM 控制台啟動（新版 38 標的）═══');
 }
 setInterval(async()=>{
   if(!SURL||busy)return;
   const c=await pull();
-  if(c&&c.lastSaved>(W?.lastSaved||0)){
-    W=c;  // 直接信任雲端，GM push 時已經做過 merge 了
+  if(!c)return;
+  if(c.lastSaved>(W?.lastSaved||0)){
+    // 雲端比本地新（玩家剛下單）→ 完全信任雲端
+    W=c;
     renderAll();
+  } else if(c.lastSaved===(W?.lastSaved||0)){
+    // 同版本：把雲端有但本地沒有的 log 條目（玩家交易）同步進來
+    const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
+    const localLog=(W.log||[]).map(normalize);
+    const cloudLog=(c.log||[]).map(normalize);
+    const missing=cloudLog.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
+    if(missing.length>0){W.log=[...missing,...localLog];renderLog();}
   }
 },10000);
 
@@ -1494,6 +1548,8 @@ function renderTrendStatus(){
     </div>`;
   });
   html+='</div>';el.innerHTML=html;
+  // 如果趨勢編輯面板開著，同步重建（不覆蓋使用者正在輸入的值）
+  if(trendEditOpen) buildTrendEditList();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1637,7 +1693,21 @@ function checkAutoEvents(){
 // ═══════════════════════════════════════════════════════
 function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>200)W.log.pop();renderLog();}
 function gmLog(type,text){addLog(type,text,true);}
-function renderLog(){const b=document.getElementById('logBox');b.innerHTML='';W.log.forEach(e=>{const d=document.createElement('div');d.className=`log-e ${e.type}`;d.innerHTML=`<span class="lt">[${e.time}]</span>${e.text}`;b.appendChild(d);});}
+function renderLog(){
+  const b=document.getElementById('logBox');b.innerHTML='';
+  W.log.forEach((e,i)=>{
+    const d=document.createElement('div');
+    d.className=`log-e ${e.type}`;
+    d.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
+    d.innerHTML=`<span><span class="lt">[${e.time}]</span>${e.text}${e.gmOnly?'<span style="font-size:9px;color:var(--ink3);margin-left:4px">[GM]</span>':''}</span>`+
+      `<button onclick="deleteLog(${i})" style="flex-shrink:0;padding:1px 6px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer;line-height:1.4" title="刪除此條">✕</button>`;
+    b.appendChild(d);
+  });
+}
+function deleteLog(i){
+  W.log.splice(i,1);
+  push();renderLog();
+}
 function clearLog(){W.log=[];push();renderLog();}
 function dedupeLog(){
   const before=W.log.length;
@@ -1750,6 +1820,161 @@ function renderHeat(){
 }
 
 function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderLog();renderHeat();}
+
+// ═══════════════════════════════════════════════════════
+//  GM 公告發佈
+// ═══════════════════════════════════════════════════════
+function postAnnouncement(){
+  const text = document.getElementById('announceText').value.trim();
+  if(!text){alert('請輸入公告內容');return;}
+  const prefix = document.getElementById('announcePrefix').value.trim();
+  const cat = document.getElementById('announceCat').value;
+  const full = prefix ? `【${prefix}】${text}` : text;
+  addLog(cat, full);
+  push();
+  // 清空輸入
+  document.getElementById('announceText').value='';
+  // 更新最近發佈區
+  updateRecentAnnouncements();
+  // 閃爍反饋
+  const btn = document.querySelector('#announceText');
+  if(btn){ btn.style.borderColor='var(--dn)'; setTimeout(()=>btn.style.borderColor='',800); }
+}
+
+function updateRecentAnnouncements(){
+  const area = document.getElementById('recentAnnouncements');
+  const list = document.getElementById('recentAnnouncementList');
+  if(!area||!list)return;
+  const recent = (W.log||[]).slice(0,5);
+  if(!recent.length){area.style.display='none';return;}
+  area.style.display='block';
+  list.innerHTML = recent.map(e=>`
+    <div style="display:flex;gap:6px;align-items:baseline;padding:2px 0;border-bottom:1px solid rgba(222,206,150,0.3);font-size:12px">
+      <span style="color:var(--ink3);font-size:10px;flex-shrink:0">[${e.time}]</span>
+      <span style="color:var(--ink2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${e.text}</span>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+//  手動趨勢調整
+// ═══════════════════════════════════════════════════════
+
+function toggleTrendEdit(){
+  trendEditOpen = !trendEditOpen;
+  const area = document.getElementById('trendEditArea');
+  const btn = document.getElementById('trendEditToggle');
+  if(trendEditOpen){
+    area.style.display='block';
+    btn.style.background='rgba(123,45,139,0.15)';
+    buildTrendEditList();
+  } else {
+    area.style.display='none';
+    btn.style.background='';
+  }
+}
+
+function filterTrendEdit(f){
+  trendEditFilter = f;
+  ['all','up','dn'].forEach(k=>{
+    const b = document.getElementById('tef_'+k);
+    if(b) b.style.fontWeight = k===f?'900':'700';
+  });
+  buildTrendEditList();
+}
+
+function buildTrendEditList(){
+  if(!W||!W.market)return;
+  const el = document.getElementById('trendEditList');
+  el.innerHTML='';
+  const M = W.market;
+  const assets = W.assets.filter(a=>!a.delisted);
+
+  assets.forEach(a=>{
+    const T = M.trends[a.id];
+    if(!T)return;
+    if(trendEditFilter==='up' && T.bias<=0.01) return;
+    if(trendEditFilter==='dn' && T.bias>=-0.01) return;
+
+    const biasPct = (T.bias*100).toFixed(1);
+    const arrow = T.bias>0.04?'↑↑':T.bias>0.01?'↑':T.bias<-0.04?'↓↓':T.bias<-0.01?'↓':'→';
+    const cls = T.bias>0.01?'var(--up)':T.bias<-0.01?'var(--dn)':'var(--ink3)';
+
+    const row = document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 6px;border-bottom:1px solid rgba(222,206,150,0.4);flex-wrap:wrap';
+    row.innerHTML=`
+      <span style="font-size:16px;flex-shrink:0">${a.icon}</span>
+      <span style="flex:1;font-size:11px;font-weight:700;min-width:90px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" title="${a.name}">${a.name}</span>
+      <span style="font-size:12px;font-weight:700;color:${cls};min-width:40px;text-align:center">${arrow} ${biasPct>0?'+':''}${biasPct}%</span>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <label style="font-size:10px;color:var(--ink3)">偏向%</label>
+        <input type="number" id="te_bias_${a.id}" value="${biasPct}" min="-10" max="10" step="0.5"
+          style="width:62px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.6);padding:4px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;text-align:center">
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <label style="font-size:10px;color:var(--ink3)">持續</label>
+        <input type="number" id="te_dur_${a.id}" value="${T.duration}" min="1" max="60" step="1"
+          style="width:48px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.6);padding:4px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;text-align:center">
+        <label style="font-size:10px;color:var(--ink3)">日</label>
+      </div>
+      <div style="display:flex;gap:3px;flex-shrink:0">
+        <button onclick="quickSetTrend('${a.id}',0.08,10)" style="padding:3px 7px;border:1px solid var(--up);color:var(--up);background:rgba(192,57,43,0.06);cursor:pointer;font-size:10px;font-weight:700">強漲</button>
+        <button onclick="quickSetTrend('${a.id}',-0.08,10)" style="padding:3px 7px;border:1px solid var(--dn);color:var(--dn);background:rgba(39,174,96,0.06);cursor:pointer;font-size:10px;font-weight:700">強跌</button>
+        <button onclick="quickSetTrend('${a.id}',0,5)" style="padding:3px 7px;border:1px solid var(--ink3);color:var(--ink3);background:transparent;cursor:pointer;font-size:10px">盤整</button>
+      </div>`;
+    el.appendChild(row);
+  });
+}
+
+function quickSetTrend(id, bias, dur){
+  const bi = document.getElementById('te_bias_'+id);
+  const di = document.getElementById('te_dur_'+id);
+  if(bi) bi.value = (bias*100).toFixed(1);
+  if(di) di.value = dur;
+}
+
+function applyTrendEdits(){
+  if(!W||!W.market)return;
+  const M = W.market;
+  let count = 0;
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const bi = document.getElementById('te_bias_'+a.id);
+    const di = document.getElementById('te_dur_'+a.id);
+    if(!bi||!di)return;
+    const T = M.trends[a.id];if(!T)return;
+    const newBias = Math.max(-0.10, Math.min(0.10, parseFloat(bi.value)/100||0));
+    const newDur  = Math.max(1, Math.min(60, parseInt(di.value)||5));
+    const oldBias = T.bias;
+    if(Math.abs(newBias - oldBias) > 0.001 || newDur !== T.duration){
+      T.bias = newBias;
+      T.duration = newDur;
+      T.momentum = newBias * 0.4;
+      count++;
+      const dir = newBias>0.01?'看漲':newBias<-0.01?'看跌':'盤整';
+      gmLog('ev', `📊 GM 手動設定趨勢：${a.name} → ${dir}（${newBias>=0?'+':''}${(newBias*100).toFixed(1)}%，持續${newDur}日）`);
+    }
+  });
+  if(!count){alert('未偵測到任何修改');return;}
+  push(); renderAll();
+  // 重建列表以反映最新值
+  buildTrendEditList();
+  alert(`✅ 已套用 ${count} 項趨勢設定！`);
+}
+
+function resetAllTrends(){
+  if(!confirm('確定重置所有趨勢到隨機值？'))return;
+  if(!W||!W.market)return;
+  const M = W.market;
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const bb = a.baseBias||0;
+    const T = M.trends[a.id];
+    if(!T)return;
+    T.bias = bb + (Math.random()-0.5)*0.06;
+    T.duration = Math.floor(Math.random()*10)+4;
+    T.momentum = T.bias*0.3;
+  });
+  gmLog('ev','↺ GM 重置所有標的趨勢為隨機值');
+  push(); renderAll(); buildTrendEditList();
+}
 
 // 啟動
 if(SURL){document.getElementById('setupOverlay').classList.add('hidden');document.getElementById('scriptUrlInput').value=SURL;init();}
