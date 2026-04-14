@@ -843,11 +843,13 @@ async function push(){
       try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();return j.ok?j.data:null;}catch{return null;}
     })();
     if(latest&&latest.log&&latest.log.length>0){
-      const localLog=W.log||[];
-      const missing=latest.log.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
-      if(missing.length>0){
-        W.log=[...missing,...localLog];
-      }
+      // 統一格式後再 merge
+      const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
+      const localLog=(W.log||[]).map(normalize);
+      const latestLog=latest.log.map(normalize);
+      W.log=localLog;
+      const missing=latestLog.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
+      if(missing.length>0)W.log=[...missing,...localLog];
     }
     // log 上限
     if(W.log.length>200)W.log=W.log.slice(0,200);
@@ -1639,6 +1641,13 @@ function renderLog(){const b=document.getElementById('logBox');b.innerHTML='';W.
 function clearLog(){W.log=[];push();renderLog();}
 function dedupeLog(){
   const before=W.log.length;
+  // 先把舊格式 Y141D27 統一轉成 141年第27日
+  W.log=W.log.map(e=>{
+    const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);
+    if(m)return{...e,time:`${m[1]}年第${m[2]}日`};
+    return e;
+  });
+  // 再去重
   const seen=new Set();
   W.log=W.log.filter(e=>{
     const key=e.time+'|'+e.text;
@@ -1647,7 +1656,7 @@ function dedupeLog(){
   });
   const removed=before-W.log.length;
   push();renderLog();
-  alert(`✅ 去除重複完成！移除了 ${removed} 筆重複記錄，剩餘 ${W.log.length} 筆。`);
+  alert(`✅ 完成！格式統一＋去除重複，移除了 ${removed} 筆，剩餘 ${W.log.length} 筆。`);
 }
 
 async function fullReset(){
