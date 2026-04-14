@@ -838,21 +838,6 @@ async function pull(){
 async function push(){
   if(!SURL||busy)return;busy=true;setSS('spin','儲存中…');
   try{
-    // ── 先拉一次最新雲端資料，把玩家寫進去的 log 合併進來 ──
-    const latest=await (async()=>{
-      try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();return j.ok?j.data:null;}catch{return null;}
-    })();
-    if(latest&&latest.log&&latest.log.length>0){
-      // 統一格式後再 merge
-      const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
-      const localLog=(W.log||[]).map(normalize);
-      const latestLog=latest.log.map(normalize);
-      W.log=localLog;
-      const missing=latestLog.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
-      if(missing.length>0)W.log=[...missing,...localLog];
-    }
-    // log 上限
-    if(W.log.length>200)W.log=W.log.slice(0,200);
     W.lastSaved=Date.now();
     await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
     setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
@@ -938,9 +923,18 @@ function afterLoad(){
 setInterval(async()=>{
   if(!SURL||busy)return;
   const c=await pull();
-  if(c&&c.lastSaved>(W?.lastSaved||0)){
-    W=c;  // 直接信任雲端，GM push 時已經做過 merge 了
+  if(!c)return;
+  if(c.lastSaved>(W?.lastSaved||0)){
+    // 雲端比本地新（玩家剛下單）→ 完全信任雲端
+    W=c;
     renderAll();
+  } else if(c.lastSaved===(W?.lastSaved||0)){
+    // 同版本：把雲端有但本地沒有的 log 條目（玩家交易）同步進來
+    const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
+    const localLog=(W.log||[]).map(normalize);
+    const cloudLog=(c.log||[]).map(normalize);
+    const missing=cloudLog.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
+    if(missing.length>0){W.log=[...missing,...localLog];renderLog();}
   }
 },10000);
 
@@ -1637,7 +1631,21 @@ function checkAutoEvents(){
 // ═══════════════════════════════════════════════════════
 function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>200)W.log.pop();renderLog();}
 function gmLog(type,text){addLog(type,text,true);}
-function renderLog(){const b=document.getElementById('logBox');b.innerHTML='';W.log.forEach(e=>{const d=document.createElement('div');d.className=`log-e ${e.type}`;d.innerHTML=`<span class="lt">[${e.time}]</span>${e.text}`;b.appendChild(d);});}
+function renderLog(){
+  const b=document.getElementById('logBox');b.innerHTML='';
+  W.log.forEach((e,i)=>{
+    const d=document.createElement('div');
+    d.className=`log-e ${e.type}`;
+    d.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
+    d.innerHTML=`<span><span class="lt">[${e.time}]</span>${e.text}${e.gmOnly?'<span style="font-size:9px;color:var(--ink3);margin-left:4px">[GM]</span>':''}</span>`+
+      `<button onclick="deleteLog(${i})" style="flex-shrink:0;padding:1px 6px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer;line-height:1.4" title="刪除此條">✕</button>`;
+    b.appendChild(d);
+  });
+}
+function deleteLog(i){
+  W.log.splice(i,1);
+  push();renderLog();
+}
 function clearLog(){W.log=[];push();renderLog();}
 function dedupeLog(){
   const before=W.log.length;
