@@ -421,7 +421,13 @@ canvas{display:block;}
 
   <!-- 消息記錄 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">📜 世界消息記錄</div><button class="btn-sm" onclick="clearLog()">清除</button></div>
+    <div class="ph">
+      <div class="ph-title">📜 世界消息記錄</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sm" onclick="dedupeLog()" style="border-color:var(--purple);color:var(--purple)">🧹 去除重複</button>
+        <button class="btn-sm" onclick="clearLog()">清除全部</button>
+      </div>
+    </div>
     <div class="pb" style="padding:10px 14px"><div class="log-box" id="logBox"></div></div>
   </div>
 </div>
@@ -1628,9 +1634,21 @@ function checkAutoEvents(){
 //  Log
 // ═══════════════════════════════════════════════════════
 function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>200)W.log.pop();renderLog();}
-function gmLog(type,text){addLog(type,text,true);}  // GM 專用，玩家看不到
+function gmLog(type,text){addLog(type,text,true);}
 function renderLog(){const b=document.getElementById('logBox');b.innerHTML='';W.log.forEach(e=>{const d=document.createElement('div');d.className=`log-e ${e.type}`;d.innerHTML=`<span class="lt">[${e.time}]</span>${e.text}`;b.appendChild(d);});}
 function clearLog(){W.log=[];push();renderLog();}
+function dedupeLog(){
+  const before=W.log.length;
+  const seen=new Set();
+  W.log=W.log.filter(e=>{
+    const key=e.time+'|'+e.text;
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
+  const removed=before-W.log.length;
+  push();renderLog();
+  alert(`✅ 去除重複完成！移除了 ${removed} 筆重複記錄，剩餘 ${W.log.length} 筆。`);
+}
 
 async function fullReset(){
   const step1=confirm('⚠ 確定要清空所有資料？\n\n包含：38個標的價格歸零、玩家持倉清空、消息記錄刪除。\n\n此操作無法復原！');
