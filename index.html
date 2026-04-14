@@ -838,11 +838,8 @@ async function push(){
     })();
     if(latest&&latest.log&&latest.log.length>0){
       const localLog=W.log||[];
-      const localKeys=new Set(localLog.map(e=>e.time+'|'+e.text));
-      const missing=latest.log.filter(e=>!localKeys.has(e.time+'|'+e.text));
+      const missing=latest.log.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
       if(missing.length>0){
-        W.log=[...localLog,...missing].sort((a,b)=>0); // 保持原順序，missing 放後面
-        // 重新按時間排序（unshift 的最新在前）
         W.log=[...missing,...localLog];
       }
     }
@@ -934,13 +931,7 @@ setInterval(async()=>{
   if(!SURL||busy)return;
   const c=await pull();
   if(c&&c.lastSaved>(W?.lastSaved||0)){
-    // 合併 log：保留本地 GM 的 log，再補入雲端有但本地沒有的條目
-    const localLog=W?.log||[];
-    const localKeys=new Set(localLog.map(e=>e.time+'|'+e.text));
-    const incoming=c.log||[];
-    const missing=incoming.filter(e=>!localKeys.has(e.time+'|'+e.text));
-    W=c;
-    if(missing.length>0)W.log=[...localLog,...missing];
+    W=c;  // 直接信任雲端，GM push 時已經做過 merge 了
     renderAll();
   }
 },10000);
