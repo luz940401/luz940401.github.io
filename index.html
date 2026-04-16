@@ -1159,7 +1159,7 @@ function applyTime(){
   W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
   gmLog('time',`GM 設定時間 → ${ds()}`);push();refreshTime();
 }
-function adv(n){
+async function adv(n){
   for(let i=0;i<n;i++){
     W.gameDay=(W.gameDay||1)+1;
     if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
@@ -1168,7 +1168,7 @@ function adv(n){
   }
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
-  addLog('time',`⏱ 時間推進 ${n} 日 → ${ds()}`);push();renderAll();
+  addLog('time',`⏱ 時間推進 ${n} 日 → ${ds()}`);await push();renderAll();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1242,7 +1242,7 @@ function calcCorrelationPcts(filledPcts){
   return result;
 }
 
-function applyPcts(pcts,label){
+async function applyPcts(pcts,label){
   // 計算空白標的的關聯漲跌（±0~3%）
   const corrPcts=calcCorrelationPcts(pcts);
   // 合併：有填的用填的，空白的用關聯
@@ -1290,7 +1290,7 @@ function applyPcts(pcts,label){
     const actual=(a.price-prev)/prev;
     return `${a.name} ${actual>=0?'↑':'↓'}${Math.abs(actual*100).toFixed(1)}%`;
   }).join('  ');
-  if(aff)addLog('ev',`　${aff}`);push();renderAll();
+  if(aff)addLog('ev',`　${aff}`);await push();renderAll();
 }
 function buildEvtGrid(){
   const el=document.getElementById('evtPctGrid');el.innerHTML='';
@@ -1325,7 +1325,7 @@ function delPreset(i){if(!confirm('確定刪除？'))return;W.presetEvents.splic
 // ═══════════════════════════════════════════════════════
 //  IPO 與下市
 // ═══════════════════════════════════════════════════════
-function doIPO(){
+async function doIPO(){
   const name=document.getElementById('ipoName').value.trim();
   const icon=document.getElementById('ipoIcon').value.trim()||'📌';
   const price=parseInt(document.getElementById('ipoPrice').value)||300;
@@ -1340,10 +1340,10 @@ function doIPO(){
   if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0};}
   addLog('ev',`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）${desc?'— '+desc:''}`);
   document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';document.getElementById('ipoDesc').value='';
-  push();renderAll();buildEvtGrid();
+  await push();renderAll();buildEvtGrid();
 }
 
-function doDelistAsset(id){
+async function doDelistAsset(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
   if(!confirm(`確定宣告「${a.name}」下市？持有玩家將損失全部持倉。`))return;
   const residual=parseFloat(prompt(`設定殘值比例（0~1，0 表示全損，0.1 表示退回 10% 本金）`,'0'))||0;
@@ -1362,7 +1362,7 @@ function doDelistAsset(id){
     }
   });
   addLog('warn',`📛 ${a.name} 正式下市（殘值比例 ${(residual*100).toFixed(0)}%）`);
-  push();renderAll();buildEvtGrid();
+  await push();renderAll();buildEvtGrid();
 }
 
 function renderDelistList(){
@@ -1395,9 +1395,9 @@ function buildManual(){
     el.appendChild(r);
   });
 }
-function applyManual(){
+async function applyManual(){
   W.assets.forEach(a=>{if(a.delisted)return;const v=parseInt(document.getElementById('mp_'+a.id)?.value);if(!isNaN(v)&&v>0&&v!==a.price){const o=a.price;a.price=v;a.history.push(v);gmLog('time',`GM 調整《${a.name}》：${o.toLocaleString()} → ${v.toLocaleString()} G`);}});
-  push();renderAll();
+  await push();renderAll();
 }
 
 // ── 隱形漲跌調整（不記錄消息）──
@@ -1411,7 +1411,7 @@ function buildSilentGrid(){
   });
 }
 
-function applySilent(){
+async function applySilent(){
   let changed=0;
   W.assets.forEach(a=>{
     if(a.delisted)return;
@@ -1442,7 +1442,7 @@ function applySilent(){
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
   addLog('time',`⏱ 時間推進 1 日 → ${ds()}`);
-  push();renderAll();
+  await push();renderAll();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1704,12 +1704,12 @@ function renderLog(){
     b.appendChild(d);
   });
 }
-function deleteLog(i){
+async function deleteLog(i){
   W.log.splice(i,1);
-  push();renderLog();
+  await push();renderLog();
 }
-function clearLog(){W.log=[];push();renderLog();}
-function dedupeLog(){
+async function clearLog(){W.log=[];await push();renderLog();}
+async function dedupeLog(){
   const before=W.log.length;
   // 先把舊格式 Y141D27 統一轉成 141年第27日
   W.log=W.log.map(e=>{
@@ -1725,7 +1725,7 @@ function dedupeLog(){
     seen.add(key);return true;
   });
   const removed=before-W.log.length;
-  push();renderLog();
+  await push();renderLog();
   alert(`✅ 完成！格式統一＋去除重複，移除了 ${removed} 筆，剩餘 ${W.log.length} 筆。`);
 }
 
@@ -1758,7 +1758,7 @@ async function fullReset(){
 
   addLog('warn','═══ GM 執行全資料重置，遊戲重新開始 ═══');
   alert('✅ 重置完成！所有資料已清空，使用 38 個新標的重新開始。');
-  push();renderAll();buildEvtGrid();
+  await push();renderAll();buildEvtGrid();
 }
 
 function renderHeat(){
@@ -1932,7 +1932,7 @@ function quickSetTrend(id, bias, dur){
   if(di) di.value = dur;
 }
 
-function applyTrendEdits(){
+async function applyTrendEdits(){
   if(!W||!W.market)return;
   const M = W.market;
   let count = 0;
@@ -1954,13 +1954,13 @@ function applyTrendEdits(){
     }
   });
   if(!count){alert('未偵測到任何修改');return;}
-  push(); renderAll();
+  await push();renderAll();
   // 重建列表以反映最新值
   buildTrendEditList();
   alert(`✅ 已套用 ${count} 項趨勢設定！`);
 }
 
-function resetAllTrends(){
+async function resetAllTrends(){
   if(!confirm('確定重置所有趨勢到隨機值？'))return;
   if(!W||!W.market)return;
   const M = W.market;
@@ -1973,7 +1973,7 @@ function resetAllTrends(){
     T.momentum = T.bias*0.3;
   });
   gmLog('ev','↺ GM 重置所有標的趨勢為隨機值');
-  push(); renderAll(); buildTrendEditList();
+  await push();renderAll(); buildTrendEditList();
 }
 
 // 啟動
