@@ -895,10 +895,14 @@ async function pull(){
 }
 
 let pushPending=false;
+let _pushResolvers=[];
 async function push(){
   if(!SURL){localStorage.setItem(LOCAL_KEY,JSON.stringify(W));return;}
-  // 如果正在儲存，標記 pending，等這次完成後再存一次
-  if(busy){pushPending=true;return;}
+  // 如果正在儲存，標記 pending 並回傳一個 Promise，等本次完成後自動再存一次
+  if(busy){
+    pushPending=true;
+    return new Promise(res=>_pushResolvers.push(res));
+  }
   busy=true;setSS('spin','儲存中…');
   try{
     W.lastSaved=Date.now();
@@ -910,6 +914,8 @@ async function push(){
   }catch(e){setSS('err','儲存失敗');localStorage.setItem(LOCAL_KEY,JSON.stringify(W));}
   finally{
     busy=false;
+    // 通知等待者
+    const resolvers=[..._pushResolvers];_pushResolvers=[];resolvers.forEach(r=>r());
     // 如果有 pending 的存檔請求，立刻再存一次
     if(pushPending){pushPending=false;push();}
   }
@@ -1292,6 +1298,14 @@ async function applyPcts(pcts,label){
     }
   });
 
+  // ★ 推進一日（事件觸發代表新的一天發生的事）
+  // 這樣 log 時間戳正確，PLAYER 端的 lastSaved 比較也能偵測到更新
+  W.gameDay=(W.gameDay||1)+1;
+  if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
+  W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+  document.getElementById('setY').value=W.gameYear;
+  document.getElementById('setD').value=W.gameDay;
+
   addLog('ev',`⚡ 事件觸發：${label}`);
   // log 只顯示 GM 有填值的標的
   const aff=W.assets.filter(a=>!a.delisted&&pcts[a.id]!==undefined).map(a=>{
@@ -1302,7 +1316,7 @@ async function applyPcts(pcts,label){
   }).join('  ');
   if(aff)addLog('ev',`　${aff}`);
   renderAll(); // 先立即更新 GM 畫面
-  await push(); // 再存雲端（新的 push 有 queue 機制，不會被丟棄）
+  await push(); // 再存雲端（push 現在會正確等待 busy 解除）
 }
 function buildEvtGrid(){
   const el=document.getElementById('evtPctGrid');el.innerHTML='';
@@ -1453,7 +1467,10 @@ async function applySilent(){
   W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
-  addLog('time',`⏱ 時間推進 1 日 → ${ds()}`);
+  // 隱形推動：只寫 gmOnly log（玩家看不到），確保 lastSaved 更新讓 PLAYER 端能偵測到
+  gmLog('time',`🌫 GM 隱形推動 → ${ds()}`);
+  // ★ 同時強制更新 lastSaved，確保 PLAYER 端輪詢能感知到變化
+  W.lastSaved=Date.now();
   await push();renderAll();
 }
 
