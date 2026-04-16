@@ -1467,10 +1467,8 @@ async function applySilent(){
   W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
-  // 隱形推動：只寫 gmOnly log（玩家看不到），確保 lastSaved 更新讓 PLAYER 端能偵測到
-  gmLog('time',`🌫 GM 隱形推動 → ${ds()}`);
-  // ★ 同時強制更新 lastSaved，確保 PLAYER 端輪詢能感知到變化
-  W.lastSaved=Date.now();
+  // 玩家看到正常的「時間推進」訊息，不知道 GM 有偷偷調整股價
+  addLog('time',`⏱ 時間推進 1 日 → ${ds()}`);
   await push();renderAll();
 }
 
