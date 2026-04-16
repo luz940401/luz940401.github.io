@@ -894,15 +894,25 @@ async function pull(){
   catch(e){setSS('err','無法連線');return null;}
 }
 
+let pushPending=false;
 async function push(){
-  if(!SURL||busy)return;busy=true;setSS('spin','儲存中…');
+  if(!SURL){localStorage.setItem(LOCAL_KEY,JSON.stringify(W));return;}
+  // 如果正在儲存，標記 pending，等這次完成後再存一次
+  if(busy){pushPending=true;return;}
+  busy=true;setSS('spin','儲存中…');
   try{
     W.lastSaved=Date.now();
-    await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
-    setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
-    localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
+    const resp=await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
+    if(resp.ok){
+      setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
+      localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
+    }else{setSS('err','儲存失敗');}
   }catch(e){setSS('err','儲存失敗');localStorage.setItem(LOCAL_KEY,JSON.stringify(W));}
-  finally{busy=false;}
+  finally{
+    busy=false;
+    // 如果有 pending 的存檔請求，立刻再存一次
+    if(pushPending){pushPending=false;push();}
+  }
 }
 
 function makeDefault(){
@@ -1290,7 +1300,9 @@ async function applyPcts(pcts,label){
     const actual=(a.price-prev)/prev;
     return `${a.name} ${actual>=0?'↑':'↓'}${Math.abs(actual*100).toFixed(1)}%`;
   }).join('  ');
-  if(aff)addLog('ev',`　${aff}`);await push();renderAll();
+  if(aff)addLog('ev',`　${aff}`);
+  renderAll(); // 先立即更新 GM 畫面
+  await push(); // 再存雲端（新的 push 有 queue 機制，不會被丟棄）
 }
 function buildEvtGrid(){
   const el=document.getElementById('evtPctGrid');el.innerHTML='';
@@ -1301,7 +1313,7 @@ function buildEvtGrid(){
   });
 }
 function clearForm(){document.getElementById('evtName').value='';document.getElementById('evtDesc').value='';document.getElementById('inferBox').classList.add('hidden');W.assets.forEach(a=>{const e=document.getElementById('epct_'+a.id);if(e)e.value='';});}
-function fireNow(){const name=document.getElementById('evtName').value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}applyPcts(p,name);}
+async function fireNow(){const name=document.getElementById('evtName').value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}await applyPcts(p,name);}
 function savePreset(){
   const name=document.getElementById('evtName').value.trim();if(!name){alert('請輸入事件名稱');return;}
   const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}
