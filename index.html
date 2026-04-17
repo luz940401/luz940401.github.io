@@ -279,6 +279,8 @@ canvas{display:block;}
         <button class="btn btn-gold" onclick="adv(30)">+30 日</button>
         <button class="btn btn-gold" onclick="adv(90)">+90 日</button>
       </div>
+      <button class="btn btn-ghost" id="undoBtn" onclick="undoLast()" style="margin-top:4px;border-color:var(--up);color:var(--up);opacity:0.5;cursor:not-allowed" disabled>↩ 撤銷上一步</button>
+      <div id="undoLabel" style="font-size:11px;color:var(--ink3);text-align:center;margin-top:2px;min-height:16px"></div>
 
       <!-- 自動推進 -->
       <div class="ae-toggle-wrap" style="margin-bottom:8px">
@@ -313,6 +315,45 @@ canvas{display:block;}
           <span class="toggle-slider"></span>
         </label>
       </div>
+    </div>
+  </div>
+
+  <!-- 排程系統 -->
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">🗓 排程系統</div>
+      <span style="font-size:11px;color:var(--ink3)" id="schedNextLabel"></span>
+    </div>
+    <div class="pb" style="padding:14px 16px">
+      <div class="notice" style="border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05);color:var(--ink3);margin-bottom:12px">
+        設定現實時間到了自動觸發。GM 頁面需保持開啟瀏覽器分頁（或背景執行）。
+      </div>
+      <div style="background:rgba(255,255,255,0.15);border:1px solid var(--parch3);padding:12px;margin-bottom:12px">
+        <div class="sec">新增排程</div>
+        <div class="g2">
+          <div class="field"><label>現實日期</label><input type="date" id="schDate"></div>
+          <div class="field"><label>現實時間</label><input type="time" id="schTime" value="20:00"></div>
+        </div>
+        <div class="field">
+          <label>觸發動作</label>
+          <select id="schAction" onchange="onSchActionChange()">
+            <option value="adv">⏱ 單純推進 1 日（系統自動跑市場）</option>
+            <option value="adv_event">⚡ 推進 1 日＋觸發事件</option>
+            <option value="event_only">📣 只觸發事件（不推進時間）</option>
+          </select>
+        </div>
+        <div id="schEventArea" style="display:none">
+          <div class="field">
+            <label>事件名稱</label>
+            <input type="text" id="schEvtName" placeholder="例：銀翼軍宣布聖戰">
+          </div>
+          <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">各標的漲跌幅（留空 = 系統自動聯想）</div>
+          <div class="evt-pct-grid" id="schPctGrid"></div>
+        </div>
+        <button class="btn btn-gold" style="margin-top:8px" onclick="addSchedule()">＋ 加入排程</button>
+      </div>
+      <div class="sec">排程列表</div>
+      <div id="schedList"><div style="font-size:13px;color:var(--ink3)">尚無排程</div></div>
     </div>
   </div>
 
@@ -416,9 +457,14 @@ canvas{display:block;}
           <div class="field"><label>波動性（0.04~0.22）</label><input type="number" id="ipoVol" value="0.10" step="0.01" min="0.04" max="0.22"></div>
           <div class="field"><label>類別</label><input type="text" id="ipoCat" placeholder="戰鬥"></div>
         </div>
-        <div class="field"><label>上市公告</label><textarea id="ipoDesc" placeholder="描述這個標的的背景與投資邏輯…" style="min-height:50px"></textarea></div>
+        <div class="field"><label>上市公告（消息欄顯示）</label><textarea id="ipoDesc" placeholder="描述這次上市的背景…" style="min-height:50px"></textarea></div>
+        <div class="field"><label>標的簡介（玩家點開後看到的介紹）</label><textarea id="ipoIntro" placeholder="例：由前聖騎士組成的傭兵集團，以高完成率著稱…" style="min-height:60px"></textarea></div>
         <button class="btn btn-purple" onclick="doIPO()">🚀 宣告上市</button>
       </div>
+      <hr class="divider">
+      <div class="sec">編輯標的簡介</div>
+      <div class="notice" style="margin-bottom:10px">修改後玩家點開該標的時會看到新的介紹文字。</div>
+      <div id="descEditList"></div>
       <hr class="divider">
       <div class="sec">下市管理</div>
       <div id="delistList"></div>
@@ -990,6 +1036,8 @@ async function init(){
 function afterLoad(){
   buildEvtGrid();
   buildSilentGrid();
+  buildSchPctGrid();
+  if(!W.schedules) W.schedules=[];
   document.getElementById('setY').value=W.gameYear||1;
   document.getElementById('setD').value=W.gameDay||1;
   renderAll();
@@ -1176,6 +1224,7 @@ function applyTime(){
   gmLog('time',`GM 設定時間 → ${ds()}`);push();refreshTime();
 }
 async function adv(n){
+  saveUndoSnapshot(`推進 ${n} 日（${ds()}）`);
   for(let i=0;i<n;i++){
     W.gameDay=(W.gameDay||1)+1;
     if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
@@ -1259,6 +1308,7 @@ function calcCorrelationPcts(filledPcts){
 }
 
 async function applyPcts(pcts,label){
+  saveUndoSnapshot(`事件觸發：${label}（${ds()}）`);
   // 計算空白標的的關聯漲跌（±0~3%）
   const corrPcts=calcCorrelationPcts(pcts);
   // 合併：有填的用填的，空白的用關聯
@@ -1358,15 +1408,57 @@ async function doIPO(){
   const vol=parseFloat(document.getElementById('ipoVol').value)||0.10;
   const cat=document.getElementById('ipoCat').value.trim()||'特殊';
   const desc=document.getElementById('ipoDesc').value.trim();
+  const intro=document.getElementById('ipoIntro').value.trim();
   if(!name){alert('請輸入標的名稱');return;}
   const id='ipo_'+Date.now();
   const newAsset={id,name,icon,price,cat,vol,baseBias:0,history:[price]};
+  if(intro) newAsset.desc=intro; // 把簡介直接存在 asset 物件上
   W.assets.push(newAsset);
+  // 同時存到 W.assetDescs（統一覆蓋用）
+  if(!W.assetDescs) W.assetDescs={};
+  if(intro) W.assetDescs[id]=intro;
   // 初始化趨勢
   if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0};}
   addLog('ev',`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）${desc?'— '+desc:''}`);
-  document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';document.getElementById('ipoDesc').value='';
-  await push();renderAll();buildEvtGrid();
+  document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';
+  document.getElementById('ipoDesc').value='';document.getElementById('ipoIntro').value='';
+  await push();renderAll();buildEvtGrid();buildSchPctGrid();
+}
+
+// ── 標的簡介編輯列表 ──
+function renderDescEditList(){
+  const el=document.getElementById('descEditList');if(!el||!W)return;
+  if(!W.assetDescs)W.assetDescs={};
+  el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const current=W.assetDescs[a.id]||a.desc||'';
+    const row=document.createElement('div');
+    row.style.cssText='margin-bottom:10px;padding:10px;border:1px solid var(--parch3);background:rgba(255,255,255,0.15)';
+    row.innerHTML=`
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:16px">${a.icon}</span>
+        <span style="font-size:12px;font-weight:700;flex:1">${a.name}</span>
+        <span style="font-size:10px;color:var(--ink3)">${a.cat}</span>
+      </div>
+      <textarea id="desc_${a.id}" style="width:100%;min-height:52px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;resize:vertical"
+        placeholder="輸入簡介…">${current}</textarea>
+      <button onclick="saveDesc('${a.id}')" style="margin-top:5px;padding:4px 14px;border:1px solid var(--gold);color:var(--gold2);background:rgba(184,134,11,0.07);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">儲存</button>`;
+    el.appendChild(row);
+  });
+}
+
+async function saveDesc(id){
+  if(!W.assetDescs)W.assetDescs={};
+  const val=document.getElementById('desc_'+id)?.value.trim()||'';
+  W.assetDescs[id]=val;
+  // 同步到 asset 物件
+  const a=W.assets.find(x=>x.id===id);
+  if(a) a.desc=val;
+  gmLog('ev',`✏ GM 更新《${a?.name||id}》標的簡介`);
+  await push();
+  // 視覺回饋
+  const btn=document.querySelector(`button[onclick="saveDesc('${id}')"]`);
+  if(btn){btn.textContent='✓ 已儲存';btn.style.borderColor='var(--dn)';btn.style.color='var(--dn)';setTimeout(()=>{btn.textContent='儲存';btn.style.borderColor='var(--gold)';btn.style.color='var(--gold2)';},1500);}
 }
 
 async function doDelistAsset(id){
@@ -1439,6 +1531,10 @@ function buildSilentGrid(){
 
 async function applySilent(){
   let changed=0;
+  // 先檢查有沒有填值，再存 snapshot
+  const preview=W.assets.filter(a=>{if(a.delisted)return false;const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);return !isNaN(raw);});
+  if(!preview.length){alert('請至少輸入一個標的的漲跌幅');return;}
+  saveUndoSnapshot(`隱形推動（${ds()}）`);
   W.assets.forEach(a=>{
     if(a.delisted)return;
     const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);
@@ -1846,7 +1942,7 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderLog();renderHeat();}
+function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderLog();renderHeat();renderSchedules();}
 
 // ═══════════════════════════════════════════════════════
 //  GM 公告發佈
@@ -2006,6 +2102,188 @@ async function resetAllTrends(){
 // 啟動
 if(SURL){document.getElementById('setupOverlay').classList.add('hidden');document.getElementById('scriptUrlInput').value=SURL;init();}
 setInterval(()=>{const n=new Date();document.getElementById('gmClock').textContent=`現實 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;},1000);
+
+// ═══════════════════════════════════════════════════════
+//  撤銷系統（只保留 1 步）
+// ═══════════════════════════════════════════════════════
+let _undoSnapshot = null;
+
+function saveUndoSnapshot(label){
+  _undoSnapshot = {label, data: JSON.parse(JSON.stringify(W))};
+  const btn = document.getElementById('undoBtn');
+  const lbl = document.getElementById('undoLabel');
+  if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
+  if(lbl) lbl.textContent = `可撤銷：${label}`;
+}
+
+async function undoLast(){
+  if(!_undoSnapshot){ alert('沒有可撤銷的操作'); return; }
+  if(!confirm(`確定撤銷「${_undoSnapshot.label}」？`)) return;
+  W = _undoSnapshot.data;
+  _undoSnapshot = null;
+  const btn = document.getElementById('undoBtn');
+  const lbl = document.getElementById('undoLabel');
+  if(btn){ btn.disabled=true; btn.style.opacity='0.5'; btn.style.cursor='not-allowed'; }
+  if(lbl) lbl.textContent = '';
+  document.getElementById('setY').value = W.gameYear;
+  document.getElementById('setD').value = W.gameDay;
+  addLog('warn','↩ GM 撤銷了上一步操作');
+  await push(); renderAll();
+}
+
+// ═══════════════════════════════════════════════════════
+//  排程系統
+// ═══════════════════════════════════════════════════════
+// W.schedules = [{id, dateTime(ms), action, evtName, pcts, fired}]
+
+function onSchActionChange(){
+  const v = document.getElementById('schAction').value;
+  document.getElementById('schEventArea').style.display = (v==='adv') ? 'none' : 'block';
+}
+
+function buildSchPctGrid(){
+  const el = document.getElementById('schPctGrid'); if(!el||!W) return;
+  el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const r=document.createElement('div'); r.className='evt-pct-row';
+    r.innerHTML=`<span class="elabel">${a.icon} ${a.name}</span><input type="number" id="sch_epct_${a.id}" placeholder="%" step="1">`;
+    el.appendChild(r);
+  });
+}
+
+function getSchPcts(){
+  const p={};
+  if(!W) return p;
+  W.assets.forEach(a=>{
+    if(a.delisted) return;
+    const v=parseFloat(document.getElementById('sch_epct_'+a.id)?.value);
+    if(!isNaN(v)) p[a.id]=v/100;
+  });
+  return p;
+}
+
+function addSchedule(){
+  const dateVal = document.getElementById('schDate').value;
+  const timeVal = document.getElementById('schTime').value;
+  if(!dateVal||!timeVal){ alert('請填入日期與時間'); return; }
+  const dt = new Date(dateVal+'T'+timeVal+':00').getTime();
+  if(dt <= Date.now()){ alert('請選擇未來的時間'); return; }
+
+  const action = document.getElementById('schAction').value;
+  const evtName = document.getElementById('schEvtName')?.value.trim()||'';
+  const pcts = (action!=='adv') ? getSchPcts() : {};
+
+  if(!W.schedules) W.schedules=[];
+  W.schedules.push({
+    id: Date.now(),
+    dateTime: dt,
+    action,
+    evtName: evtName||'排程事件',
+    pcts,
+    fired: false
+  });
+  W.schedules.sort((a,b)=>a.dateTime-b.dateTime);
+
+  // 清空輸入
+  document.getElementById('schDate').value='';
+  document.getElementById('schEvtName') && (document.getElementById('schEvtName').value='');
+  W.assets.forEach(a=>{const e=document.getElementById('sch_epct_'+a.id);if(e)e.value='';});
+
+  push(); renderSchedules();
+}
+
+function delSchedule(id){
+  if(!W.schedules) return;
+  W.schedules = W.schedules.filter(s=>s.id!==id);
+  push(); renderSchedules();
+}
+
+function renderSchedules(){
+  const el = document.getElementById('schedList'); if(!el) return;
+  const scheds = (W?.schedules||[]).filter(s=>!s.fired);
+  if(!scheds.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink3)">尚無排程</div>'; updateSchedNextLabel(); return; }
+
+  el.innerHTML='';
+  scheds.forEach(s=>{
+    const dt = new Date(s.dateTime);
+    const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const actionLabel = s.action==='adv'?'推進1日': s.action==='adv_event'?'推進＋事件':'只觸發事件';
+    const pctSummary = Object.entries(s.pcts||{}).filter(([,v])=>v!==0).slice(0,3)
+      .map(([id,v])=>{ const a=W.assets.find(x=>x.id===id); return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:'' }).filter(Boolean).join('  ');
+
+    const row = document.createElement('div');
+    row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid var(--parch3);margin-bottom:6px;background:rgba(255,255,255,0.15);flex-wrap:wrap';
+    row.innerHTML=`
+      <div style="font-size:18px;flex-shrink:0">🕐</div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${dtStr} — ${s.evtName}</div>
+        <div style="font-size:11px;color:var(--gold2);margin-top:2px">${actionLabel}${pctSummary?' · '+pctSummary:''}</div>
+      </div>
+      <button onclick="delSchedule(${s.id})" style="padding:4px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">刪除</button>`;
+    el.appendChild(row);
+  });
+  updateSchedNextLabel();
+}
+
+function updateSchedNextLabel(){
+  const el = document.getElementById('schedNextLabel'); if(!el) return;
+  const next = (W?.schedules||[]).filter(s=>!s.fired).sort((a,b)=>a.dateTime-b.dateTime)[0];
+  if(!next){ el.textContent=''; return; }
+  const diff = next.dateTime - Date.now();
+  if(diff<=0){ el.textContent='即將觸發…'; return; }
+  const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+  el.textContent=`下次：${h>0?h+'時':''}${m}分${s}秒後`;
+}
+
+// 每秒檢查排程
+setInterval(async()=>{
+  if(!W||!W.schedules) return;
+  updateSchedNextLabel();
+  const now = Date.now();
+  let triggered = false;
+  for(const s of W.schedules){
+    if(s.fired || s.dateTime > now) continue;
+    s.fired = true;
+    triggered = true;
+    gmLog('ev', `🗓 排程觸發：${s.evtName}`);
+
+    if(s.action==='adv'||s.action==='adv_event'){
+      saveUndoSnapshot(`排程推進（${s.evtName}）`);
+      for(let i=0;i<1;i++){
+        W.gameDay=(W.gameDay||1)+1;
+        if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
+        W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+        rollMkt(); checkAutoEvents();
+      }
+      document.getElementById('setY').value=W.gameYear;
+      document.getElementById('setD').value=W.gameDay;
+      addLog('time',`⏱ 時間推進 1 日 → ${ds()}（排程自動）`);
+    }
+
+    if(s.action==='adv_event'||s.action==='event_only'){
+      const pcts = (s.pcts&&Object.keys(s.pcts).length) ? s.pcts : null;
+      if(pcts){
+        await applyPcts(pcts, s.evtName);
+      } else {
+        // 留空 = 用自動聯想（根據事件名稱）
+        const txt = s.evtName.toLowerCase();
+        const sc={}; W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=0;});
+        let hits=0;
+        INFER_RULES.forEach(rule=>{
+          if(rule.kw.some(k=>txt.includes(k))){ hits++;
+            Object.entries(rule.fx).forEach(([id,v])=>{if(sc[id]!==undefined)sc[id]+=v;});
+          }
+        });
+        if(!hits) W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=Math.round(Math.random()*6-3);});
+        else if(hits>1) Object.keys(sc).forEach(id=>sc[id]=Math.round(sc[id]/hits*1.3));
+        const autoPcts={};
+        Object.entries(sc).forEach(([id,v])=>{if(v!==0)autoPcts[id]=v/100;});
+        await applyPcts(autoPcts, s.evtName);
+      }
+    }
+  }
+  if(triggered){ await push(); renderAll(); renderSchedules(); }
+}, 1000);
 </script>
 </body>
 </html>
