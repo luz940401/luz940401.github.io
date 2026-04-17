@@ -2223,54 +2223,10 @@ function updateSchedNextLabel(){
   el.textContent=`下次：${h>0?h+'時':''}${m}分${s}秒後`;
 }
 
-// 每秒檢查排程
-setInterval(async()=>{
+// 每秒更新排程倒數顯示（不執行排程，由 Apps Script 伺服器端負責執行）
+setInterval(()=>{
   if(!W||!W.schedules) return;
   updateSchedNextLabel();
-  const now = Date.now();
-  let triggered = false;
-  for(const s of W.schedules){
-    if(s.fired || s.dateTime > now) continue;
-    s.fired = true;
-    triggered = true;
-    gmLog('ev', `🗓 排程觸發：${s.evtName}`);
-
-    if(s.action==='adv'||s.action==='adv_event'){
-      saveUndoSnapshot(`排程推進（${s.evtName}）`);
-      for(let i=0;i<1;i++){
-        W.gameDay=(W.gameDay||1)+1;
-        if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
-        W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
-        rollMkt(); checkAutoEvents();
-      }
-      document.getElementById('setY').value=W.gameYear;
-      document.getElementById('setD').value=W.gameDay;
-      addLog('time',`⏱ 時間推進 1 日 → ${ds()}（排程自動）`);
-    }
-
-    if(s.action==='adv_event'||s.action==='event_only'){
-      const pcts = (s.pcts&&Object.keys(s.pcts).length) ? s.pcts : null;
-      if(pcts){
-        await applyPcts(pcts, s.evtName);
-      } else {
-        // 留空 = 用自動聯想（根據事件名稱）
-        const txt = s.evtName.toLowerCase();
-        const sc={}; W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=0;});
-        let hits=0;
-        INFER_RULES.forEach(rule=>{
-          if(rule.kw.some(k=>txt.includes(k))){ hits++;
-            Object.entries(rule.fx).forEach(([id,v])=>{if(sc[id]!==undefined)sc[id]+=v;});
-          }
-        });
-        if(!hits) W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=Math.round(Math.random()*6-3);});
-        else if(hits>1) Object.keys(sc).forEach(id=>sc[id]=Math.round(sc[id]/hits*1.3));
-        const autoPcts={};
-        Object.entries(sc).forEach(([id,v])=>{if(v!==0)autoPcts[id]=v/100;});
-        await applyPcts(autoPcts, s.evtName);
-      }
-    }
-  }
-  if(triggered){ await push(); renderAll(); renderSchedules(); }
 }, 1000);
 </script>
 </body>
