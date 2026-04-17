@@ -103,6 +103,15 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .evt-pct-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(222,206,150,0.3);}
 .evt-pct-row .elabel{font-size:12px;font-weight:500;flex:1;color:var(--ink2);}
 .evt-pct-row input{width:72px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.5);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;}
+/* 快速情境按鈕 */
+.qscen-wrap{margin-bottom:10px;}
+.qscen-title{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;}
+.qscen-row{display:flex;gap:5px;flex-wrap:wrap;}
+.qscen-btn{padding:5px 11px;border:1px solid var(--parch3);background:rgba(255,255,255,0.2);color:var(--ink2);font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.qscen-btn:hover{border-color:var(--gold);background:rgba(184,134,11,0.12);color:var(--ink);}
+.qscen-btn.util{border-color:var(--parch3);color:var(--ink3);font-weight:500;}
+.qscen-btn.util:hover{border-color:var(--ink3);background:rgba(0,0,0,0.05);}
+.qscen-sep{width:1px;background:var(--parch3);margin:0 2px;flex-shrink:0;}
 .infer-box{background:rgba(123,45,139,0.06);border:1px solid rgba(123,45,139,0.25);padding:12px 14px;margin:10px 0;font-size:13px;color:var(--ink2);line-height:1.7;}
 .infer-box.hidden{display:none;}
 .infer-tag{font-size:11px;font-weight:700;color:var(--purple);margin-bottom:6px;display:block;}
@@ -299,22 +308,6 @@ canvas{display:block;}
           <span class="toggle-slider"></span>
         </label>
       </div>
-
-      <div class="ae-toggle-wrap">
-        <div style="flex:1">
-          <div class="ae-toggle-label">⚡ 自動世界事件</div>
-          <div class="ae-toggle-sub">開啟後，每次推進時有機率自動觸發</div>
-          <div class="ae-pct-row">
-            <span>觸發機率</span>
-            <input type="range" id="aePctSlider" min="5" max="80" value="35" oninput="document.getElementById('aePctVal').textContent=this.value+'%'">
-            <span class="ae-pct-val" id="aePctVal">35%</span>
-          </div>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="aeEnabled" checked onchange="onAeToggle(this)">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
     </div>
   </div>
 
@@ -326,7 +319,7 @@ canvas{display:block;}
     </div>
     <div class="pb" style="padding:14px 16px">
       <div class="notice" style="border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05);color:var(--ink3);margin-bottom:12px">
-        設定現實時間到了自動觸發。GM 頁面需保持開啟瀏覽器分頁（或背景執行）。
+        設定現實時間到了自動觸發。排程由 Google 伺服器執行，<strong>不需要保持分頁開著</strong>。
       </div>
       <div style="background:rgba(255,255,255,0.15);border:1px solid var(--parch3);padding:12px;margin-bottom:12px">
         <div class="sec">新增排程</div>
@@ -335,21 +328,16 @@ canvas{display:block;}
           <div class="field"><label>現實時間</label><input type="time" id="schTime" value="20:00"></div>
         </div>
         <div class="field">
-          <label>觸發動作</label>
-          <select id="schAction" onchange="onSchActionChange()">
-            <option value="adv">⏱ 單純推進 1 日（系統自動跑市場）</option>
-            <option value="adv_event">⚡ 推進 1 日＋觸發事件</option>
-            <option value="event_only">📣 只觸發事件（不推進時間）</option>
-          </select>
+          <label>事件名稱（選填）</label>
+          <input type="text" id="schEvtName" placeholder="留空 = 玩家只看到「時間推進」">
         </div>
-        <div id="schEventArea" style="display:none">
-          <div class="field">
-            <label>事件名稱</label>
-            <input type="text" id="schEvtName" placeholder="例：銀翼軍宣布聖戰">
-          </div>
-          <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">各標的漲跌幅（留空 = 系統自動聯想）</div>
-          <div class="evt-pct-grid" id="schPctGrid"></div>
+        <!-- 快速情境（排程用） -->
+        <div class="qscen-wrap">
+          <div class="qscen-title">⚡ 快速情境填入</div>
+          <div class="qscen-row" id="qscenRowSch"></div>
         </div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">各標的漲跌幅（選填，留空全部 = 系統照趨勢自動跑）</div>
+        <div class="evt-pct-grid" id="schPctGrid"></div>
         <button class="btn btn-gold" style="margin-top:8px" onclick="addSchedule()">＋ 加入排程</button>
       </div>
       <div class="sec">排程列表</div>
@@ -429,6 +417,11 @@ canvas{display:block;}
       <div class="infer-box hidden" id="inferBox">
         <span class="infer-tag">✨ 聯想分析（已自動填入，可手動調整）</span>
         <div id="inferReason"></div>
+      </div>
+      <!-- 快速情境 -->
+      <div class="qscen-wrap" style="margin-top:10px">
+        <div class="qscen-title">⚡ 快速情境填入</div>
+        <div class="qscen-row" id="qscenRow"></div>
       </div>
       <div class="sec" style="margin-top:4px">各標的漲跌幅（正漲・負跌・每日限 ±10%・留空不影響）</div>
       <div class="evt-pct-grid" id="evtPctGrid"></div>
@@ -1229,7 +1222,7 @@ async function adv(n){
     W.gameDay=(W.gameDay||1)+1;
     if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
     W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
-    rollMkt();checkAutoEvents();
+    rollMkt();
   }
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
@@ -2136,11 +2129,6 @@ async function undoLast(){
 // ═══════════════════════════════════════════════════════
 // W.schedules = [{id, dateTime(ms), action, evtName, pcts, fired}]
 
-function onSchActionChange(){
-  const v = document.getElementById('schAction').value;
-  document.getElementById('schEventArea').style.display = (v==='adv') ? 'none' : 'block';
-}
-
 function buildSchPctGrid(){
   const el = document.getElementById('schPctGrid'); if(!el||!W) return;
   el.innerHTML='';
@@ -2169,16 +2157,14 @@ function addSchedule(){
   const dt = new Date(dateVal+'T'+timeVal+':00').getTime();
   if(dt <= Date.now()){ alert('請選擇未來的時間'); return; }
 
-  const action = document.getElementById('schAction').value;
   const evtName = document.getElementById('schEvtName')?.value.trim()||'';
-  const pcts = (action!=='adv') ? getSchPcts() : {};
+  const pcts = getSchPcts();
 
   if(!W.schedules) W.schedules=[];
   W.schedules.push({
     id: Date.now(),
     dateTime: dt,
-    action,
-    evtName: evtName||'排程事件',
+    evtName,
     pcts,
     fired: false
   });
@@ -2207,7 +2193,9 @@ function renderSchedules(){
   scheds.forEach(s=>{
     const dt = new Date(s.dateTime);
     const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-    const actionLabel = s.action==='adv'?'推進1日': s.action==='adv_event'?'推進＋事件':'只觸發事件';
+    const hasName = !!s.evtName;
+    const hasPcts = s.pcts && Object.keys(s.pcts).length > 0;
+    const actionLabel = !hasName && !hasPcts ? '純推進' : !hasName && hasPcts ? '靜默漲跌' : '事件觸發';
     const pctSummary = Object.entries(s.pcts||{}).filter(([,v])=>v!==0).slice(0,3)
       .map(([id,v])=>{ const a=W.assets.find(x=>x.id===id); return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:'' }).filter(Boolean).join('  ');
 
