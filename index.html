@@ -459,6 +459,12 @@ canvas{display:block;}
       <div class="notice" style="margin-bottom:10px">修改後玩家點開該標的時會看到新的介紹文字。</div>
       <div id="descEditList"></div>
       <hr class="divider">
+      <div class="sec">⏸ 暫停交易管理</div>
+      <div class="notice" style="margin-bottom:10px;border-color:rgba(192,57,43,0.3);background:rgba(192,57,43,0.04)">
+        暫停期間股價不動、玩家無法買賣。建議先透過公告告知玩家。
+      </div>
+      <div id="suspendList"></div>
+      <hr class="divider">
       <div class="sec">下市管理</div>
       <div id="delistList"></div>
     </div>
@@ -1117,6 +1123,8 @@ function rollMkt(eventBiasFn){
 
   W.assets.forEach(a=>{
     if(a.delisted)return;
+    // 暫停交易的標的：股價不動
+    if(W.suspended&&W.suspended.includes(a.id))return;
     const T=M.trends[a.id];if(!T)return;
     T.duration--;
     if(T.duration<=0){
@@ -1144,26 +1152,49 @@ function rollMkt(eventBiasFn){
     const noise=(Math.random()-0.5)*a.vol*0.8;
     let total=T.bias+sectorBias+T.momentum*0.4+noise+evBias;
 
+    // ── 均線回歸力：價格偏離 MA20 越遠，回歸壓力越強 ──
+    if(a.history.length>=20){
+      const ma20=a.history.slice(-20).reduce((s,v)=>s+v,0)/20;
+      const devPct=(a.price-ma20)/ma20; // 偏離 MA20 的百分比
+      // 偏離超過 15% 才開始施加回歸力，最大回歸力 ±3%
+      if(Math.abs(devPct)>0.15){
+        const revForce=-devPct*0.18; // 方向與偏離相反
+        total+=Math.max(-0.03,Math.min(0.03,revForce));
+        // 同時壓縮趨勢偏向，讓它自然轉向
+        if(devPct>0.20&&T.bias>0) T.bias*=0.85;
+        if(devPct<-0.20&&T.bias<0) T.bias*=0.85;
+      }
+    }
+
+    // ── 連漲/連跌超過 5 日自動觸發整理：動能衰減 ──
+    if(a.history.length>=6){
+      const recent=a.history.slice(-6);
+      const allUp=recent.every((v,i)=>i===0||v>recent[i-1]);
+      const allDn=recent.every((v,i)=>i===0||v<recent[i-1]);
+      if(allUp||allDn){
+        // 連續單向超過5日：動能折半，偏向壓縮
+        T.momentum*=0.5;
+        T.bias*=0.7;
+      }
+    }
+
     // ── 價格保護：跌深自動反彈 ──
     const base=ASSETS0.find(x=>x.id===a.id);
     if(base){
       const basePrice=base.price;
       const ratio=a.price/basePrice;
       if(ratio<0.35){
-        // 跌破 35%：強制大力反彈（+4~8%），覆蓋趨勢
         total=0.04+Math.random()*0.04;
-        T.bias=Math.abs(T.bias)*0.3+0.03; // 強制轉正偏向
+        T.bias=Math.abs(T.bias)*0.3+0.03;
         T.momentum=0.03;
       }else if(ratio<0.50){
-        // 跌破 50%：強反彈力（+2~5%）疊加
         const bounceForce=0.02+Math.random()*0.03;
         total=Math.max(total+bounceForce, bounceForce);
-        if(T.bias<0)T.bias=T.bias*0.4; // 壓制負偏向
+        if(T.bias<0)T.bias=T.bias*0.4;
       }else if(ratio<0.65){
-        // 跌破 65%：溫和回彈力疊加
         const softBounce=0.008+Math.random()*0.012;
         total=total+softBounce;
-        if(T.bias<-0.04)T.bias=T.bias*0.7; // 稍微壓制過強的負偏向
+        if(T.bias<-0.04)T.bias=T.bias*0.7;
       }
     }
 
@@ -1935,7 +1966,42 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderLog();renderHeat();renderSchedules();}
+function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
+
+// ── 暫停交易 ──
+function renderSuspendList(){
+  const el=document.getElementById('suspendList');if(!el||!W)return;
+  if(!W.suspended)W.suspended=[];
+  el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const isSuspended=W.suspended.includes(a.id);
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--parch3);flex-wrap:wrap';
+    row.innerHTML=`
+      <span style="font-size:16px">${a.icon}</span>
+      <span style="flex:1;font-size:12px;font-weight:700">${a.name}</span>
+      ${isSuspended?'<span style="font-size:10px;background:var(--up);color:#fff;padding:2px 8px;font-weight:700">暫停中</span>':''}
+      <button onclick="toggleSuspend('${a.id}')"
+        style="padding:4px 12px;border:1px solid ${isSuspended?'var(--dn)':'var(--up)'};color:${isSuspended?'var(--dn)':'var(--up)'};background:transparent;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">
+        ${isSuspended?'▶ 恢復交易':'⏸ 暫停交易'}
+      </button>`;
+    el.appendChild(row);
+  });
+}
+
+async function toggleSuspend(id){
+  if(!W.suspended)W.suspended=[];
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  const isSuspended=W.suspended.includes(id);
+  if(isSuspended){
+    W.suspended=W.suspended.filter(x=>x!==id);
+    addLog('warn',`▶ ${a.icon} ${a.name} 恢復正常交易`);
+  } else {
+    W.suspended.push(id);
+    addLog('warn',`⏸ ${a.icon} ${a.name} 交易暫停公告`);
+  }
+  await push();renderAll();
+}
 
 // ═══════════════════════════════════════════════════════
 //  GM 公告發佈
