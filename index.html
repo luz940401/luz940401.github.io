@@ -467,6 +467,17 @@ canvas{display:block;}
       <hr class="divider">
       <div class="sec">下市管理</div>
       <div id="delistList"></div>
+      <hr class="divider">
+      <div class="sec">📝 補記世界事件</div>
+      <div class="notice" style="margin-bottom:10px;border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05)">
+        手動補記過去發生的事件到世界事件紀錄，不影響股價。
+      </div>
+      <div class="field"><label>遊戲年份</label><input type="number" id="backfillYear" min="1" value="1" style="width:100%"></div>
+      <div class="field"><label>遊戲日期（第幾日）</label><input type="number" id="backfillDay" min="1" value="1" style="width:100%"></div>
+      <div class="field"><label>事件名稱／內容</label><input type="text" id="backfillText" placeholder="例：⚡ 銀翼軍宣布聖戰" style="width:100%"></div>
+      <button class="btn btn-gold" onclick="addBackfillEvent()">📝 補記</button>
+      <div class="sec" style="margin-top:14px">已補記列表</div>
+      <div id="backfillList" style="max-height:200px;overflow-y:auto;font-size:12px;color:var(--ink3)"></div>
     </div>
   </div>
 
@@ -984,7 +995,7 @@ function makeDefault(){
       {id:'p6',name:'冒險者六',cash:1500,portfolio:{},realizedPnL:0},
     ],
     gameYear:1,gameDay:1,gameMonth:1,
-    presetEvents:[],log:[],lastSaved:Date.now(),
+    presetEvents:[],log:[],eventLog:[],lastSaved:Date.now(),
     market:initMarketState(),
   };
 }
@@ -1018,6 +1029,7 @@ function migrateAssets(world){
     p.shorts=p.shorts.filter(s=>validIds.has(s.assetId)||s.assetId.startsWith('ipo_'));
   });
 
+  if(!world.eventLog)world.eventLog=[];
   if(!world.gameDay)world.gameDay=world.gameMonth||1;
   if(!world.market)world.market=initMarketState();
 
@@ -1389,6 +1401,7 @@ async function applyPcts(pcts,label){
   document.getElementById('setD').value=W.gameDay;
 
   addLog('ev',`⚡ 事件觸發：${label}`);
+  addEventLog(`⚡ ${label}`);
   // log 只顯示 GM 有填值的標的
   const aff=W.assets.filter(a=>!a.delisted&&pcts[a.id]!==undefined).map(a=>{
     const h=a.history;
@@ -1452,6 +1465,7 @@ async function doIPO(){
   // 初始化趨勢
   if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0};}
   addLog('ev',`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）${desc?'— '+desc:''}`);
+  addEventLog(`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）`);
   document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';
   document.getElementById('ipoDesc').value='';document.getElementById('ipoIntro').value='';
   await push();renderAll();buildEvtGrid();buildSchPctGrid();
@@ -1526,6 +1540,7 @@ async function doDelistAsset(id){
     }
   });
   addLog('warn',`📛 ${a.name} 正式下市（殘值比例 ${(residual*100).toFixed(0)}%）`);
+  addEventLog(`📛 ${a.name} 正式下市`);
   await push();renderAll();buildEvtGrid();
 }
 
@@ -1857,6 +1872,7 @@ function checkAutoEvents(){
     }
   });
   addLog('ev',`🌍 自動事件：${evt.name}`);
+  addEventLog(`🌍 ${evt.name}`);
   const aff=W.assets.filter(a=>!a.delisted&&evt.pcts[a.id]!==undefined)
     .map(a=>`${a.name} ${evt.pcts[a.id]>=0?'↑':'↓'}${Math.min(Math.abs(evt.pcts[a.id]*100),10).toFixed(0)}%`).join('　');
   if(aff)addLog('ev',`　${aff}`);
@@ -1866,7 +1882,56 @@ function checkAutoEvents(){
 // ═══════════════════════════════════════════════════════
 //  Log
 // ═══════════════════════════════════════════════════════
-function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>200)W.log.pop();renderLog();}
+function addEventLog(text){
+  if(!W.eventLog)W.eventLog=[];
+  const t=`${W.gameYear}年第${W.gameDay||1}日`;
+  W.eventLog.unshift({text,time:t});
+  // 永久保留，不設上限
+}
+
+function addBackfillEvent(){
+  const year=parseInt(document.getElementById('backfillYear').value)||1;
+  const day=parseInt(document.getElementById('backfillDay').value)||1;
+  const text=document.getElementById('backfillText').value.trim();
+  if(!text){alert('請輸入事件內容');return;}
+  if(!W.eventLog)W.eventLog=[];
+  const time=`${year}年第${day}日`;
+  W.eventLog.unshift({text,time});
+  // 依時間排序（新的在前）
+  W.eventLog.sort((a,b)=>{
+    const pa=a.time.match(/(\d+)年第(\d+)日/);
+    const pb=b.time.match(/(\d+)年第(\d+)日/);
+    if(!pa||!pb)return 0;
+    const ya=parseInt(pa[1]),da=parseInt(pa[2]);
+    const yb=parseInt(pb[1]),db=parseInt(pb[2]);
+    return (yb*360+db)-(ya*360+da);
+  });
+  document.getElementById('backfillText').value='';
+  gmLog('ev',`📝 GM 補記事件：${text}（${time}）`);
+  renderBackfillList();
+  push();
+}
+
+function renderBackfillList(){
+  const el=document.getElementById('backfillList');if(!el||!W)return;
+  const items=(W.eventLog||[]).filter(e=>e._backfill!==false);
+  if(!items.length){el.innerHTML='<div style="padding:6px 0;color:var(--ink3)">尚無補記事件</div>';return;}
+  el.innerHTML=(W.eventLog||[]).slice(0,20).map((e,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid var(--parch3)">
+      <span style="flex:1">[${e.time}] ${e.text}</span>
+      <button onclick="deleteBackfill(${i})" style="padding:1px 8px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer">✕</button>
+    </div>`).join('');
+}
+
+function deleteBackfill(i){
+  if(!W.eventLog||!W.eventLog[i])return;
+  if(!confirm(`刪除「${W.eventLog[i].text}」？`))return;
+  W.eventLog.splice(i,1);
+  renderBackfillList();
+  push();
+}
+
+function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>100)W.log.pop();renderLog();}
 function gmLog(type,text){addLog(type,text,true);}
 function renderLog(){
   const b=document.getElementById('logBox');b.innerHTML='';
