@@ -951,7 +951,13 @@ async function push(){
   busy=true;setSS('spin','儲存中…');
   try{
     W.lastSaved=Date.now();
-    const resp=await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
+    // 傳到雲端前，剔除 GM 專屬資訊（玩家不應看到）
+    const worldForCloud=JSON.parse(JSON.stringify(W));
+    if(worldForCloud.market){delete worldForCloud.market.trends;delete worldForCloud.market.cycle;delete worldForCloud.market.cycleDir;delete worldForCloud.market.cycleDur;delete worldForCloud.market.researchTimer;delete worldForCloud.market.prophecyTimer;}
+    delete worldForCloud.schedules;
+    delete worldForCloud.presetEvents;
+    if(worldForCloud.log){worldForCloud.log=worldForCloud.log.filter(e=>!e.gmOnly);}
+    const resp=await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:worldForCloud})});
     if(resp.ok){
       setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
       localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
@@ -1341,6 +1347,8 @@ async function applyPcts(pcts,label){
   // 對每個標的直接套用精確漲跌幅（不走 rollMkt 亂數引擎）
   W.assets.forEach(a=>{
     if(a.delisted)return;
+    // 暫停交易的標的：股價凍結
+    if(W.suspended&&W.suspended.includes(a.id))return;
     const basePct=allPcts[a.id];
     if(basePct===undefined)return;
     const prevPrice=a.history.length>1?a.history[a.history.length-1]:a.price;
@@ -1456,19 +1464,33 @@ function renderDescEditList(){
   el.innerHTML='';
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const current=W.assetDescs[a.id]||a.desc||'';
+    const uid='descrow_'+a.id;
     const row=document.createElement('div');
-    row.style.cssText='margin-bottom:10px;padding:10px;border:1px solid var(--parch3);background:rgba(255,255,255,0.15)';
+    row.style.cssText='margin-bottom:6px;border:1px solid var(--parch3);background:rgba(255,255,255,0.15)';
     row.innerHTML=`
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <div onclick="toggleDescRow('${uid}')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;user-select:none;" title="點擊展開／收合">
         <span style="font-size:16px">${a.icon}</span>
         <span style="font-size:12px;font-weight:700;flex:1">${a.name}</span>
         <span style="font-size:10px;color:var(--ink3)">${a.cat}</span>
+        <span id="${uid}_arrow" style="font-size:11px;color:var(--ink3);margin-left:4px">▶</span>
       </div>
-      <textarea id="desc_${a.id}" style="width:100%;min-height:52px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;resize:vertical"
-        placeholder="輸入簡介…">${current}</textarea>
-      <button onclick="saveDesc('${a.id}')" style="margin-top:5px;padding:4px 14px;border:1px solid var(--gold);color:var(--gold2);background:rgba(184,134,11,0.07);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">儲存</button>`;
+      <div id="${uid}" style="display:none;padding:0 10px 10px">
+        ${current?`<div style="font-size:11px;color:var(--ink3);margin-bottom:5px;padding:4px 6px;background:rgba(184,134,11,0.07);border-left:2px solid var(--gold)">${current.replace(/\n/g,'<br>')}</div>`:''}
+        <textarea id="desc_${a.id}" style="width:100%;min-height:52px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;resize:vertical"
+          placeholder="輸入簡介…">${current}</textarea>
+        <button onclick="saveDesc('${a.id}')" style="margin-top:5px;padding:4px 14px;border:1px solid var(--gold);color:var(--gold2);background:rgba(184,134,11,0.07);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">儲存</button>
+      </div>`;
     el.appendChild(row);
   });
+}
+
+function toggleDescRow(uid){
+  const body=document.getElementById(uid);
+  const arrow=document.getElementById(uid+'_arrow');
+  if(!body)return;
+  const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  if(arrow)arrow.textContent=open?'▶':'▼';
 }
 
 async function saveDesc(id){
@@ -1615,7 +1637,10 @@ function renderWealth(){
       <td><span class="${unr>=0?'pnl-pos':'pnl-neg'}">${unr>=0?'+':''}${Math.round(unr).toLocaleString()} G</span></td>
       <td><span class="${rlz>=0?'pnl-pos':'pnl-neg'}">${rlz>=0?'+':''}${Math.round(rlz).toLocaleString()} G</span></td>
       <td style="font-weight:700;color:var(--gold2)">${(p.cash+pv).toLocaleString()} G</td>
-      <td><button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">重置</button></td>`;
+      <td style="white-space:nowrap">
+        <button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">重置</button>
+        <button class="btn-danger" style="font-size:10px;padding:4px 8px;margin-left:4px" onclick="deleteP(${i})">刪除</button>
+      </td>`;
     tb.appendChild(tr);
   });
   const sel=document.getElementById('goldTarget');const cur=sel.value;
@@ -1624,10 +1649,11 @@ function renderWealth(){
 }
 function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
 function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];push();renderWealth();}
+function deleteP(i){if(!confirm(`確定刪除玩家「${W.players[i].name}」？\n此操作無法復原，所有持倉與金幣將一併刪除。`))return;W.players.splice(i,1);push();renderWealth();}
 function giveGold(){
   const t=document.getElementById('goldTarget').value,g=parseInt(document.getElementById('goldAmt').value);if(!g)return;
-  if(t==='all'){W.players.forEach(p=>p.cash+=g);addLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
-  else{const idx=parseInt(t);W.players[idx].cash+=g;addLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
+  if(t==='all'){W.players.forEach(p=>p.cash+=g);gmLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
+  else{const idx=parseInt(t);W.players[idx].cash+=g;gmLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
   document.getElementById('goldAmt').value='';push();renderWealth();
 }
 function addPlayer(){
@@ -1817,6 +1843,8 @@ function checkAutoEvents(){
   const evt=drawEvent();
   W.assets.forEach(a=>{
     if(a.delisted||evt.pcts[a.id]===undefined)return;
+    // 暫停交易的標的：股價凍結，不受自動事件影響
+    if(W.suspended&&W.suspended.includes(a.id))return;
     const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,evt.pcts[a.id]));
     const noise=(Math.random()*0.01-0.005);
     a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
@@ -2236,8 +2264,7 @@ function addSchedule(){
   });
   W.schedules.sort((a,b)=>a.dateTime-b.dateTime);
 
-  // 清空輸入
-  document.getElementById('schDate').value='';
+  // 清空輸入（保留日期，方便連續新增同日不同時間的排程）
   document.getElementById('schEvtName') && (document.getElementById('schEvtName').value='');
   W.assets.forEach(a=>{const e=document.getElementById('sch_epct_'+a.id);if(e)e.value='';});
 
