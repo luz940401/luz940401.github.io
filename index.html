@@ -103,15 +103,6 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .evt-pct-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(222,206,150,0.3);}
 .evt-pct-row .elabel{font-size:12px;font-weight:500;flex:1;color:var(--ink2);}
 .evt-pct-row input{width:72px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.5);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;}
-/* 快速情境按鈕 */
-.qscen-wrap{margin-bottom:10px;}
-.qscen-title{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;margin-bottom:6px;}
-.qscen-row{display:flex;gap:5px;flex-wrap:wrap;}
-.qscen-btn{padding:5px 11px;border:1px solid var(--parch3);background:rgba(255,255,255,0.2);color:var(--ink2);font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.qscen-btn:hover{border-color:var(--gold);background:rgba(184,134,11,0.12);color:var(--ink);}
-.qscen-btn.util{border-color:var(--parch3);color:var(--ink3);font-weight:500;}
-.qscen-btn.util:hover{border-color:var(--ink3);background:rgba(0,0,0,0.05);}
-.qscen-sep{width:1px;background:var(--parch3);margin:0 2px;flex-shrink:0;}
 .infer-box{background:rgba(123,45,139,0.06);border:1px solid rgba(123,45,139,0.25);padding:12px 14px;margin:10px 0;font-size:13px;color:var(--ink2);line-height:1.7;}
 .infer-box.hidden{display:none;}
 .infer-tag{font-size:11px;font-weight:700;color:var(--purple);margin-bottom:6px;display:block;}
@@ -134,29 +125,6 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .pnl-neg{color:var(--dn);font-weight:700;}
 /* IPO 表單 */
 .ipo-form{background:rgba(123,45,139,0.05);border:1px solid rgba(123,45,139,0.2);padding:14px;margin-bottom:12px;}
-/* 自動事件 */
-.ae-toast{position:fixed;bottom:20px;right:20px;z-index:3000;background:var(--parch);border:2px solid var(--gold);box-shadow:0 4px 20px rgba(0,0,0,0.5);max-width:320px;width:calc(100vw - 40px);animation:toastIn .3s ease;}
-.ae-toast.hidden{display:none;}
-@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.ae-toast-head{background:linear-gradient(135deg,#3a0808,#5a1212);padding:10px 14px;display:flex;align-items:center;gap:8px;}
-.ae-toast-icon{font-size:20px;}
-.ae-toast-title{color:#f5e9ce;font-size:13px;font-weight:700;}
-.ae-toast-time{color:rgba(245,233,206,0.55);font-size:11px;margin-left:auto;}
-.ae-toast-body{padding:12px 14px 10px;}
-.ae-toast-name{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;}
-.ae-toast-affects{font-size:12px;color:var(--ink3);line-height:1.8;}
-.ae-toggle-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(184,134,11,0.06);border:1px solid rgba(184,134,11,0.2);margin-bottom:12px;}
-.ae-toggle-label{font-size:13px;color:var(--ink2);flex:1;}
-.ae-toggle-sub{font-size:11px;color:var(--ink3);margin-top:2px;}
-.toggle-switch{position:relative;width:44px;height:24px;flex-shrink:0;}
-.toggle-switch input{opacity:0;width:0;height:0;}
-.toggle-slider{position:absolute;inset:0;background:var(--parch3);border-radius:24px;cursor:pointer;transition:.3s;}
-.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;}
-.toggle-switch input:checked+.toggle-slider{background:var(--dn);}
-.toggle-switch input:checked+.toggle-slider:before{transform:translateX(20px);}
-.ae-pct-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink3);margin-top:8px;}
-.ae-pct-row input[type=range]{flex:1;accent-color:var(--gold);}
-.ae-pct-val{font-weight:700;color:var(--gold2);min-width:36px;text-align:right;}
 /* 趨勢面板 */
 .asset-row-mini{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--parch3);margin-bottom:7px;background:rgba(255,255,255,0.2);flex-wrap:wrap;}
 .asset-row-mini .icon{font-size:18px;flex-shrink:0;}
@@ -180,17 +148,6 @@ canvas{display:block;}
 </head>
 <body>
 
-<!-- 自動事件 Toast -->
-<div class="ae-toast hidden" id="aeToast">
-  <div class="ae-toast-head">
-    <span class="ae-toast-icon" id="aeIcon">⚡</span>
-    <span class="ae-toast-title">世界自動事件</span>
-    <span class="ae-toast-time" id="aeTime"></span>
-  </div>
-  <div class="ae-toast-body">
-    <div class="ae-toast-name" id="aeName"></div>
-    <div class="ae-toast-affects" id="aeAffects"></div>
-  </div>
 </div>
 
 <!-- 走勢圖 Modal -->
@@ -290,25 +247,7 @@ canvas{display:block;}
       </div>
       <button class="btn btn-ghost" id="undoBtn" onclick="undoLast()" style="margin-top:4px;border-color:var(--up);color:var(--up);opacity:0.5;cursor:not-allowed" disabled>↩ 撤銷上一步</button>
       <div id="undoLabel" style="font-size:11px;color:var(--ink3);text-align:center;margin-top:2px;min-height:16px"></div>
-
-      <!-- 自動推進 -->
-      <div class="ae-toggle-wrap" style="margin-bottom:8px">
-        <div style="flex:1">
-          <div class="ae-toggle-label">⏱ 自動推進時間</div>
-          <div class="ae-toggle-sub">每 6 小時自動推進 1 日</div>
-          <div class="ae-pct-row" style="margin-top:6px">
-            <span id="autoAdvCountdown" style="font-size:13px;font-weight:700;color:var(--gold2);min-width:80px">已暫停</span>
-            <div style="flex:1;height:4px;background:var(--parch3);border-radius:2px;overflow:hidden;margin:0 8px">
-              <div id="autoAdvBar" style="height:100%;background:var(--gold);width:0%;transition:width 1s linear"></div>
-            </div>
-          </div>
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="autoAdvEnabled" onchange="onAutoAdvToggle(this)">
-          <span class="toggle-slider"></span>
-        </label>
-      </div>
-    </div>
+</div>
   </div>
 
   <!-- 排程系統 -->
@@ -319,7 +258,7 @@ canvas{display:block;}
     </div>
     <div class="pb" style="padding:14px 16px">
       <div class="notice" style="border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05);color:var(--ink3);margin-bottom:12px">
-        設定現實時間到了自動觸發。排程由 Google 伺服器執行，<strong>不需要保持分頁開著</strong>。
+        設定現實時間到了自動觸發。請讓 GM 控制台保持開啟，系統會每秒檢查到期排程。
       </div>
       <div style="background:rgba(255,255,255,0.15);border:1px solid var(--parch3);padding:12px;margin-bottom:12px">
         <div class="sec">新增排程</div>
@@ -330,11 +269,6 @@ canvas{display:block;}
         <div class="field">
           <label>事件名稱（選填）</label>
           <input type="text" id="schEvtName" placeholder="留空 = 玩家只看到「時間推進」">
-        </div>
-        <!-- 快速情境（排程用） -->
-        <div class="qscen-wrap">
-          <div class="qscen-title">⚡ 快速情境填入</div>
-          <div class="qscen-row" id="qscenRowSch"></div>
         </div>
         <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">各標的漲跌幅（選填，留空全部 = 系統照趨勢自動跑）</div>
         <div class="evt-pct-grid" id="schPctGrid"></div>
@@ -417,11 +351,6 @@ canvas{display:block;}
       <div class="infer-box hidden" id="inferBox">
         <span class="infer-tag">✨ 聯想分析（已自動填入，可手動調整）</span>
         <div id="inferReason"></div>
-      </div>
-      <!-- 快速情境 -->
-      <div class="qscen-wrap" style="margin-top:10px">
-        <div class="qscen-title">⚡ 快速情境填入</div>
-        <div class="qscen-row" id="qscenRow"></div>
       </div>
       <div class="sec" style="margin-top:4px">各標的漲跌幅（正漲・負跌・每日限 ±10%・留空不影響）</div>
       <div class="evt-pct-grid" id="evtPctGrid"></div>
@@ -887,45 +816,6 @@ const INFER_RULES=[
 // ═══════════════════════════════════════════════════════
 //  內建自動事件池
 // ═══════════════════════════════════════════════════════
-const BUILTIN_EVENTS=[
-  {name:'陸斯坎海盜封鎖劍灣',icon:'🏴‍☠️',
-   pcts:{northtrade:0.09,mercenary:0.08,ironforge:0.05,harbor:-0.10,spice:-0.09,airtravel:-0.08,brew:-0.06,shipyard:-0.05},
-   reason:'陸斯坎海盜大規模出動，劍灣航線封鎖，正規貿易崩跌，走私商會獲利。'},
-  {name:'冰風谷寒流南下',icon:'❄️',
-   pcts:{grain:0.10,herb:0.07,brew:0.05,ironforge:-0.06,shipyard:-0.07,harbor:-0.06,arcanergs:-0.04,watchmen:-0.05},
-   reason:'冰風谷寒流突破北境防線，農業全毀，港口結冰，能源中斷。'},
-  {name:'博德之門議會醜聞',icon:'⚖️',
-   pcts:{harbor:-0.08,brew:-0.06,spice:-0.07,mercenary:0.07,prison:0.08,law12:0.05,northtrade:0.05},
-   reason:'博德之門議會舞弊爆發，城門關閉，執法機構需求增加。'},
-  {name:'亨德爾之石發現新礦脈',icon:'⛏️',
-   pcts:{mining:0.10,ironforge:0.08,magitools:0.06,metalex:0.05,mstone:-0.09,relic:0.07,adventure:0.06},
-   reason:'矮人工坊深挖發現純度極高的新型礦脈，供給暴增，礦石交易所因此跌價。'},
-  {name:'永恆沼地毒霧蔓延',icon:'☠️',
-   pcts:{herb:0.10,temple:0.09,lifetree:0.07,alchemy:0.08,harbor:-0.06,airtravel:-0.05,archmage:0.05},
-   reason:'永恆沼地詛咒毒霧向外擴散，醫療需求暴增，主要商路中斷。'},
-  {name:'銀月城月亮祭典',icon:'🌙',
-   pcts:{brew:0.07,spice:0.06,airtravel:0.06,lifetree:0.05,harbor:0.05,law12:0.04,starobs:0.05},
-   reason:'銀月城月亮祭典吸引全大陸朝聖者，消費與交通全面熱絡。'},
-  {name:'巨魔部族南下劫掠',icon:'👹',
-   pcts:{mercenary:0.10,ironforge:0.08,temple:0.09,adventure:0.09,grain:0.07,harbor:-0.08,airtravel:-0.07},
-   reason:'巨魔部族從巨魔咆哮森林南下，亡者平原村莊遭摧毀，軍事需求激增。'},
-  {name:'星辰峰魔法陣異常',icon:'✨',
-   pcts:{guardian:0.10,starobs:0.09,archmage:0.08,spellres:0.07,relic:0.07,airtravel:-0.06,arcanergs:-0.05},
-   reason:'星辰峰魔法陣突然啟動，周邊魔法道具失靈，大量研究者湧入。'},
-  {name:'龍牙堡競技大賽',icon:'🏆',
-   pcts:{mercenary:0.06,ironforge:0.07,brew:0.08,airtravel:0.05,harbor:0.05,adventure:0.06,spice:0.05},
-   reason:'龍牙堡十年一次武術競技，全大陸觀眾湧入，商業活動熱絡。'},
-  {name:'深水城爆發黑水鼠疫',icon:'🐀',
-   pcts:{herb:0.10,temple:0.10,lifetree:0.08,alchemy:0.07,harbor:-0.09,brew:-0.09,grain:-0.05},
-   reason:'深水城下層區爆發黑水鼠疫，港口隔離，醫療需求暴增。'},
-  {name:'裂罪遺跡封印鬆動',icon:'💀',
-   pcts:{temple:0.10,antimagic:0.09,silverwing:0.09,adventure:0.08,harbor:-0.10,airtravel:-0.08,brew:-0.07},
-   reason:'裂罪遺跡七大罪封印出現鬆動，邪教聚集，海域出現靈體，恐慌蔓延。'},
-  {name:'艾雷茲開闢新魔法航線',icon:'⚡',
-   pcts:{airtravel:0.10,archmage:0.07,arcanergs:0.06,harbor:0.06,spice:0.06,landroute:-0.06,shipyard:-0.05},
-   reason:'艾雷茲最高魔導議會開放新型傳送網路，飛行航線大幅擴張，陸路運輸受壓。'},
-];
-
 // ═══════════════════════════════════════════════════════
 //  同步狀態
 // ═══════════════════════════════════════════════════════
@@ -1026,15 +916,26 @@ function migrateAssets(world){
   if(!world.eventLog)world.eventLog=[];
   if(!world.gameDay)world.gameDay=world.gameMonth||1;
   if(!world.market)world.market=initMarketState();
-  if(!world.market.trends)world.market=initMarketState(); // 雲端資料缺少 trends 時重建
+  // trends 不存在時只補初始值，不重置整個 market（避免 cycle/timer 歸零）
+  if(!world.market.trends)world.market.trends={};
+  if(world.market.cycle===undefined)world.market.cycle=0;
+  if(world.market.cycleDir===undefined)world.market.cycleDir=1;
+  if(world.market.cycleDur===undefined)world.market.cycleDur=10;
+  if(world.market.researchTimer===undefined)world.market.researchTimer=20;
+  if(world.market.prophecyTimer===undefined)world.market.prophecyTimer=15;
   if(!world.presetEvents)world.presetEvents=[];
   if(!world.schedules)world.schedules=[];
 
-  // 趨勢狀態也補入缺少的新標的
-  ASSETS0.forEach(t=>{
-    if(!world.market.trends[t.id]){
-      const bb=t.baseBias||0;
-      world.market.trends[t.id]={bias:bb,duration:Math.floor(Math.random()*10)+4,momentum:0};
+  // 趨勢狀態也補入缺少的新標的（含 ASSETS0 與 IPO 標的）
+  world.assets.filter(a=>!a.delisted).forEach(a=>{
+    if(!world.market.trends[a.id]){
+      const bb=a.baseBias||0;
+      world.market.trends[a.id]={bias:bb,duration:Math.floor(Math.random()*10)+4,momentum:0,slump:0,volatility:'normal',volDays:0};
+    }else{
+      const T=world.market.trends[a.id];
+      if(T.slump===undefined)T.slump=0;
+      if(!T.volatility)T.volatility='normal';
+      if(T.volDays===undefined)T.volDays=0;
     }
   });
 
@@ -1087,7 +988,7 @@ function initMarketState(){
   ASSETS0.forEach(a=>{
     const bb=a.baseBias||0;
     const initBias=bb+(Math.random()-0.5)*0.06;
-    trends[a.id]={bias:initBias,duration:Math.floor(Math.random()*10)+4,momentum:initBias*0.3};
+    trends[a.id]={bias:initBias,duration:Math.floor(Math.random()*10)+4,momentum:initBias*0.3,slump:0,volatility:'normal',volDays:0};
   });
   return{trends,cycle:(Math.random()-0.5)*0.4,cycleDir:Math.random()>0.5?1:-1,cycleDur:Math.floor(Math.random()*12)+6,
     researchTimer:Math.floor(Math.random()*20)+20,  // 法術研究週期
@@ -1140,7 +1041,18 @@ function rollMkt(eventBiasFn){
     if(a.delisted)return;
     // 暫停交易的標的：股價不動
     if(W.suspended&&W.suspended.includes(a.id))return;
-    const T=M.trends[a.id];if(!T)return;
+    // trends 不存在時自動補入，不跳過
+    if(!M.trends[a.id]){
+      const bb=a.baseBias||0;
+      M.trends[a.id]={bias:bb,duration:Math.floor(Math.random()*10)+4,momentum:0};
+    }
+    const T=M.trends[a.id];
+    if(T.slump===undefined)T.slump=0;          // 低迷期：防止跌深股票被無腦攤平凹回
+    if(!T.volatility)T.volatility='normal';    // calm / normal / volatile
+    if(T.volDays===undefined)T.volDays=0;      // 事件後波動冷卻天數
+    if(T.volDays>0)T.volDays--;
+    else if(T.volatility==='volatile')T.volatility='normal';
+
     T.duration--;
     if(T.duration<=0){
       const bb=a.baseBias||0;
@@ -1164,13 +1076,16 @@ function rollMkt(eventBiasFn){
     const evBias=eventBiasFn?(eventBiasFn(a)||0):0;
     T.momentum=T.momentum*0.75+T.bias*0.4;
     T.momentum=Math.max(-0.08,Math.min(0.08,T.momentum));
-    const noise=(Math.random()-0.5)*a.vol*0.8;
+    const volMul=T.volatility==='volatile'?1.45:T.volatility==='calm'?0.72:1;
+    const noise=(Math.random()-0.5)*a.vol*0.8*volMul;
     let total=T.bias+sectorBias+T.momentum*0.4+noise+evBias;
+    let maDev=null, streakDir=0, streakLen=0;
 
     // ── 均線回歸力：價格偏離 MA20 越遠，回歸壓力越強 ──
     if(a.history.length>=20){
       const ma20=a.history.slice(-20).reduce((s,v)=>s+v,0)/20;
       const devPct=(a.price-ma20)/ma20; // 偏離 MA20 的百分比
+      maDev=devPct;
       // 偏離超過 15% 才開始施加回歸力，最大回歸力 ±3%
       if(Math.abs(devPct)>0.15){
         const revForce=-devPct*0.18; // 方向與偏離相反
@@ -1179,6 +1094,7 @@ function rollMkt(eventBiasFn){
         if(devPct>0.20&&T.bias>0) T.bias*=0.85;
         if(devPct<-0.20&&T.bias<0) T.bias*=0.85;
       }
+      if(devPct>0.28&&total>0)total*=0.45; // 過熱時不再無限制井噴
     }
 
     // ── 連漲/連跌超過 5 日自動觸發整理：動能衰減 ──
@@ -1186,10 +1102,16 @@ function rollMkt(eventBiasFn){
       const recent=a.history.slice(-6);
       const allUp=recent.every((v,i)=>i===0||v>recent[i-1]);
       const allDn=recent.every((v,i)=>i===0||v<recent[i-1]);
+      streakDir=allUp?1:allDn?-1:0;
+      streakLen=streakDir?recent.length-1:0;
       if(allUp||allDn){
         // 連續單向超過5日：動能折半，偏向壓縮
         T.momentum*=0.5;
         T.bias*=0.7;
+        if(allUp&&total>0)total*=0.65;
+        if(allDn&&maDev!==null&&maDev<-0.12&&Math.random()<0.16){
+          T.slump=Math.max(T.slump,Math.floor(Math.random()*14)+8); // 8~21 日低迷
+        }
       }
     }
 
@@ -1211,6 +1133,18 @@ function rollMkt(eventBiasFn){
         total=total+softBounce;
         if(T.bias<-0.04)T.bias=T.bias*0.7;
       }
+    }
+
+    // ── 低迷期：跌勢股票可能卡住一段時間，避免攤平必勝 ──
+    if(T.slump>0){
+      T.slump--;
+      if(total>0)total*=0.35; // 仍可能反彈，但力道弱
+      total-=0.004+Math.random()*0.010;
+      T.bias=Math.min(T.bias,-0.01);
+      T.momentum=Math.min(T.momentum,0);
+      if(T.slump===0&&T.volatility==='normal')T.volatility='calm';
+    }else if(maDev!==null&&maDev<-0.22&&streakDir<0&&Math.random()<0.10){
+      T.slump=Math.floor(Math.random()*12)+6;
     }
 
     total=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,total));
@@ -1346,8 +1280,8 @@ function calcCorrelationPcts(filledPcts){
   return result;
 }
 
-async function applyPcts(pcts,label){
-  saveUndoSnapshot(`事件觸發：${label}（${ds()}）`);
+async function applyPcts(pcts,label,opts={}){
+  saveUndoSnapshot(`${opts.silent?'排程靜默調整':'事件觸發'}：${label}（${ds()}）`);
   // 計算空白標的的關聯漲跌（±0~3%）
   const corrPcts=calcCorrelationPcts(pcts);
   // 合併：有填的用填的，空白的用關聯
@@ -1383,9 +1317,14 @@ async function applyPcts(pcts,label){
     if(W.market&&W.market.trends[a.id]){
       const evDir=finalPct>0?1:-1;
       const evStrength=Math.abs(finalPct);
-      W.market.trends[a.id].bias=evDir*Math.min(0.09,evStrength*0.7);
-      W.market.trends[a.id].duration=Math.floor(Math.random()*10)+5;
-      W.market.trends[a.id].momentum=evDir*Math.min(0.07,evStrength*0.5);
+      const T=W.market.trends[a.id];
+      T.bias=evDir*Math.min(0.09,evStrength*0.7);
+      T.duration=Math.floor(Math.random()*10)+5;
+      T.momentum=evDir*Math.min(0.07,evStrength*0.5);
+      T.volatility='volatile';
+      T.volDays=Math.floor(Math.random()*5)+4;
+      if(finalPct>0.035)T.slump=0;
+      if(finalPct<-0.065)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*8)+4);
     }
   });
 
@@ -1397,8 +1336,11 @@ async function applyPcts(pcts,label){
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
 
-  addLog('ev',`⚡ 事件觸發：${label}`);
-  addEventLog(`⚡ ${label}`);
+  if(opts.silent) addLog('time',`⏱ 時間推進 1 日 → ${ds()}`);
+  else{
+    addLog('ev',`⚡ 世界事件：${label}`);
+    addEventLog(`⚡ ${label}`);
+  }
   // log 只顯示 GM 有填值的標的
   const aff=W.assets.filter(a=>!a.delisted&&pcts[a.id]!==undefined).map(a=>{
     const h=a.history;
@@ -1406,7 +1348,7 @@ async function applyPcts(pcts,label){
     const actual=(a.price-prev)/prev;
     return `${a.name} ${actual>=0?'↑':'↓'}${Math.abs(actual*100).toFixed(1)}%`;
   }).join('  ');
-  if(aff)addLog('ev',`　${aff}`);
+  if(aff&&!opts.silent)addLog('ev',`　${aff}`);
   renderAll(); // 先立即更新 GM 畫面
   await push(); // 再存雲端（push 現在會正確等待 busy 解除）
 }
@@ -1460,7 +1402,7 @@ async function doIPO(){
   if(!W.assetDescs) W.assetDescs={};
   if(intro) W.assetDescs[id]=intro;
   // 初始化趨勢
-  if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0};}
+  if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0,slump:0,volatility:'normal',volDays:0};}
   addLog('ev',`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）${desc?'— '+desc:''}`);
   addEventLog(`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）`);
   document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';
@@ -1606,9 +1548,14 @@ async function applySilent(){
     // 同時更新趨勢偏向，讓後續幾日延續方向
     if(W.market&&W.market.trends[a.id]){
       const dir=clamped>0?1:-1;
-      W.market.trends[a.id].bias=dir*Math.min(0.07,Math.abs(clamped)*0.6);
-      W.market.trends[a.id].duration=Math.floor(Math.random()*6)+3;
-      W.market.trends[a.id].momentum=dir*Math.min(0.05,Math.abs(clamped)*0.4);
+      const T=W.market.trends[a.id];
+      T.bias=dir*Math.min(0.07,Math.abs(clamped)*0.6);
+      T.duration=Math.floor(Math.random()*6)+3;
+      T.momentum=dir*Math.min(0.05,Math.abs(clamped)*0.4);
+      T.volatility='volatile';
+      T.volDays=Math.floor(Math.random()*4)+3;
+      if(clamped>0.03)T.slump=0;
+      if(clamped<-0.06)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*6)+4);
     }
     changed++;
     // 清空輸入框
@@ -1711,7 +1658,8 @@ function drawSpk(a,cid){const c=document.getElementById(cid);if(!c)return;const 
 // ═══════════════════════════════════════════════════════
 function renderTrendStatus(){
   const el=document.getElementById('trendStatus');if(!el)return;
-  if(!W.market||!W.market.trends){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">尚未初始化</div>';return;}
+  if(!W.market){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">尚未初始化</div>';return;}
+  if(!W.market.trends)W.market.trends={};
   const M=W.market;
   const cycleVal=(M.cycle*100).toFixed(0);
   const cycleCls=M.cycle>0.2?'pnl-pos':M.cycle<-0.2?'pnl-neg':'';
@@ -1726,10 +1674,11 @@ function renderTrendStatus(){
     const biasPct=(T.bias*100).toFixed(1);
     const cls=T.bias>0.01?'pnl-pos':T.bias<-0.01?'pnl-neg':'';
     const arrow=T.bias>0.04?'↑↑':T.bias>0.01?'↑':T.bias<-0.04?'↓↓':T.bias<-0.01?'↓':'→';
+    const micro=T.slump>0?` · 低迷${T.slump}日`:T.volatility==='volatile'?` · 高波動${T.volDays||0}日`:T.volatility==='calm'?' · 冷卻':'';
     html+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid rgba(222,206,150,0.3);font-size:11px">
       <span>${a.icon}</span><span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${a.name}</span>
       <span style="font-weight:700" class="${cls}">${arrow}</span>
-      <span style="color:var(--ink3);min-width:60px;text-align:right">${biasPct}%/${T.duration}日</span>
+      <span style="color:var(--ink3);min-width:96px;text-align:right">${biasPct}%/${T.duration}日${micro}</span>
     </div>`;
   });
   html+='</div>';el.innerHTML=html;
@@ -1742,7 +1691,7 @@ function renderTrendStatus(){
 // ═══════════════════════════════════════════════════════
 function openChart(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
-  const ch=gc(a),h=a.history,hi=Math.max(...h),lo=Math.min(...h),cur=h[h.length-1],first=h[0],tot=(cur-first)/first*100;
+  const ch=gc(a),h=a.history;let hi=h[0],lo=h[0];for(let i=1;i<h.length;i++){if(h[i]>hi)hi=h[i];if(h[i]<lo)lo=h[i];}const cur=h[h.length-1],first=h[0],tot=(cur-first)/first*100;
   document.getElementById('modalTitle').textContent=`${a.icon} ${a.name} 走勢圖`;
   document.getElementById('modalStats').innerHTML=`
     <div class="mstat"><div class="mstat-val" style="color:${chCol(ch)}">${cur.toLocaleString()} G</div><div class="mstat-lbl">現價</div></div>
@@ -1756,8 +1705,22 @@ function openChart(id){
 function closeModal(e){if(e&&e.target!==document.getElementById('chartModal'))return;document.getElementById('chartModal').classList.add('hidden');}
 function drawFull(a){
   const c=document.getElementById('modalChart');const w=c.parentElement.clientWidth-40;c.width=w;c.height=240;
-  const ctx=c.getContext('2d');const d=a.history;if(d.length<2)return;
-  const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;
+  const ctx=c.getContext('2d');const raw=a.history;if(raw.length<2)return;
+
+  // 降採樣：超過 600 點時，用 LTTB 降採樣至 600 點，保留峰谷形態
+  const MAX_PTS=600;
+  let d=raw;
+  if(raw.length>MAX_PTS){
+    const step=raw.length/MAX_PTS;
+    d=[];for(let i=0;i<MAX_PTS;i++){const idx=Math.min(raw.length-1,Math.round(i*step));d.push(raw[idx]);}
+    d[d.length-1]=raw[raw.length-1]; // 確保最後一點是最新價
+  }
+
+  // 用 reduce 取代 Math.min/max(...d) 避免超大陣列棧溢出
+  let mn=d[0],mx=d[0];
+  for(let i=1;i<d.length;i++){if(d[i]<mn)mn=d[i];if(d[i]>mx)mx=d[i];}
+  const rng=mx-mn||1;
+
   const pl=54,pr=10,pt=14,pb=26,cw=w-pl-pr,ch2=240-pt-pb;
   const px=i=>pl+(i/(d.length-1))*cw,py=v=>pt+(1-(v-mn)/rng)*ch2;
   ctx.clearRect(0,0,w,240);
@@ -1767,115 +1730,17 @@ function drawFull(a){
   ctx.beginPath();d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.lineTo(px(d.length-1),pt+ch2);ctx.lineTo(px(0),pt+ch2);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
   ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2.5;d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
   [[0,d[0]],[d.length-1,d[d.length-1]]].forEach(([i,v])=>{ctx.beginPath();ctx.arc(px(i),py(v),4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();});
-  const xs=Math.max(1,Math.floor(d.length/8));ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';
-  for(let i=0;i<d.length;i+=xs)ctx.fillText(`T${i+1}`,px(i),238);
+  // X 軸標籤：顯示實際的原始天數（T1, T120, T240...）
+  const totalDays=raw.length;
+  const xs=Math.max(1,Math.floor(d.length/8));
+  const rawStep=totalDays/d.length;
+  ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';
+  for(let i=0;i<d.length;i+=xs){const dayLabel=Math.round(i*rawStep)+1;ctx.fillText(`T${dayLabel}`,px(i),238);}
 }
 
 // ═══════════════════════════════════════════════════════
 //  自動事件
 // ═══════════════════════════════════════════════════════
-let aeToastTimer=null;
-function onAeToggle(cb){}
-
-// ═══════════════════════════════════════════════════════
-//  自動推進系統
-//  每 60 秒自動推進 1 日，GM 可隨時暫停/繼續
-// ═══════════════════════════════════════════════════════
-const AUTO_ADV_INTERVAL = 21600; // 秒（6小時）
-let autoAdvTimer = null;
-let autoAdvRemaining = AUTO_ADV_INTERVAL;
-let autoAdvTick = null;
-
-function onAutoAdvToggle(cb){
-  if(cb.checked){
-    startAutoAdv();
-  } else {
-    stopAutoAdv();
-  }
-}
-
-function startAutoAdv(){
-  stopAutoAdv(); // 先清除舊的
-  autoAdvRemaining = AUTO_ADV_INTERVAL;
-  updateAdvUI();
-
-  autoAdvTick = setInterval(()=>{
-    autoAdvRemaining--;
-    updateAdvUI();
-    if(autoAdvRemaining <= 0){
-      autoAdvRemaining = AUTO_ADV_INTERVAL;
-      adv(1); // 推進 1 日（含事件判斷）
-    }
-  }, 1000);
-}
-
-function stopAutoAdv(){
-  if(autoAdvTick){ clearInterval(autoAdvTick); autoAdvTick=null; }
-  autoAdvRemaining = AUTO_ADV_INTERVAL;
-  const bar = document.getElementById('autoAdvBar');
-  const label = document.getElementById('autoAdvCountdown');
-  if(bar) bar.style.width = '0%';
-  if(label) label.textContent = '已暫停';
-}
-
-function updateAdvUI(){
-  const bar = document.getElementById('autoAdvBar');
-  const label = document.getElementById('autoAdvCountdown');
-  if(!bar || !label) return;
-  const pct = ((AUTO_ADV_INTERVAL - autoAdvRemaining) / AUTO_ADV_INTERVAL) * 100;
-  bar.style.width = pct + '%';
-  const h = Math.floor(autoAdvRemaining / 3600);
-  const m = Math.floor((autoAdvRemaining % 3600) / 60);
-  const s = autoAdvRemaining % 60;
-  const hStr = h > 0 ? `${h}時` : '';
-  const mStr = m > 0 ? `${m}分` : '';
-  const sStr = `${s}秒`;
-  label.textContent = `${hStr}${mStr}${sStr}後推進`;
-}
-function drawEvent(){
-  const hasPresets=W.presetEvents&&W.presetEvents.length>0;
-  if(hasPresets&&Math.random()<0.5){const ev=W.presetEvents[Math.floor(Math.random()*W.presetEvents.length)];return{name:ev.name,icon:'📜',pcts:ev.pcts,reason:ev.desc||'來自預設事件庫。'};}
-  const ev=BUILTIN_EVENTS[Math.floor(Math.random()*BUILTIN_EVENTS.length)];return{...ev};
-}
-function showAeToast(evt){
-  document.getElementById('aeIcon').textContent=evt.icon;
-  document.getElementById('aeName').textContent=evt.name;
-  document.getElementById('aeTime').textContent=`${W.gameYear}年第${W.gameDay}日`;
-  const lines=Object.entries(evt.pcts).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]))
-    .map(([id,v])=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return'';const sign=v>=0?'+':'';const col=v>=0?'var(--up)':'var(--dn)';return`<span style="margin-right:8px">${a.icon}<span style="color:${col};font-weight:700">${sign}${(v*100).toFixed(0)}%</span></span>`;}).join('');
-  document.getElementById('aeAffects').innerHTML=lines||'';
-  const toast=document.getElementById('aeToast');toast.classList.remove('hidden');
-  if(aeToastTimer)clearTimeout(aeToastTimer);
-  aeToastTimer=setTimeout(()=>toast.classList.add('hidden'),6000);
-}
-function checkAutoEvents(){
-  const enabled=document.getElementById('aeEnabled')?.checked??true;if(!enabled)return;
-  const pct=parseInt(document.getElementById('aePctSlider')?.value)||35;
-  if(Math.random()*100>=pct)return;
-  const evt=drawEvent();
-  W.assets.forEach(a=>{
-    if(a.delisted||evt.pcts[a.id]===undefined)return;
-    // 暫停交易的標的：股價凍結，不受自動事件影響
-    if(W.suspended&&W.suspended.includes(a.id))return;
-    const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,evt.pcts[a.id]));
-    const noise=(Math.random()*0.01-0.005);
-    a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
-    a.history.push(a.price);
-    if(W.market&&W.market.trends[a.id]){
-      const evDir=clamped>0?1:-1;const evStrength=Math.abs(clamped);
-      W.market.trends[a.id].bias=evDir*Math.min(0.09,evStrength*0.7);
-      W.market.trends[a.id].duration=Math.floor(Math.random()*10)+5;
-      W.market.trends[a.id].momentum=evDir*Math.min(0.07,evStrength*0.5);
-    }
-  });
-  addLog('ev',`🌍 自動事件：${evt.name}`);
-  addEventLog(`🌍 ${evt.name}`);
-  const aff=W.assets.filter(a=>!a.delisted&&evt.pcts[a.id]!==undefined)
-    .map(a=>`${a.name} ${evt.pcts[a.id]>=0?'↑':'↓'}${Math.min(Math.abs(evt.pcts[a.id]*100),10).toFixed(0)}%`).join('　');
-  if(aff)addLog('ev',`　${aff}`);
-  setTimeout(()=>showAeToast(evt),300);
-}
-
 // ═══════════════════════════════════════════════════════
 //  Log
 // ═══════════════════════════════════════════════════════
@@ -2220,6 +2085,9 @@ async function applyTrendEdits(){
       T.bias = newBias;
       T.duration = newDur;
       T.momentum = newBias * 0.4;
+      if(newBias>0.02)T.slump=0;
+      T.volatility = Math.abs(newBias)>0.04?'volatile':(T.volatility||'normal');
+      T.volDays = Math.abs(newBias)>0.04?Math.max(T.volDays||0,3):(T.volDays||0);
       count++;
       const dir = newBias>0.01?'看漲':newBias<-0.01?'看跌':'盤整';
       gmLog('ev', `📊 GM 手動設定趨勢：${a.name} → ${dir}（${newBias>=0?'+':''}${(newBias*100).toFixed(1)}%，持續${newDur}日）`);
@@ -2243,6 +2111,9 @@ async function resetAllTrends(){
     T.bias = bb + (Math.random()-0.5)*0.06;
     T.duration = Math.floor(Math.random()*10)+4;
     T.momentum = T.bias*0.3;
+    T.slump = 0;
+    T.volatility = 'normal';
+    T.volDays = 0;
   });
   gmLog('ev','↺ GM 重置所有標的趨勢為隨機值');
   await push();renderAll(); buildTrendEditList();
@@ -2378,9 +2249,40 @@ function updateSchedNextLabel(){
   el.textContent=`下次：${h>0?h+'時':''}${m}分${s}秒後`;
 }
 
-// 每秒更新排程倒數顯示（不執行排程，由 Apps Script 伺服器端負責執行）
+let scheduleRunning=false;
+async function runDueSchedules(){
+  if(scheduleRunning||!W||!W.schedules)return;
+  const due=W.schedules.filter(s=>!s.fired&&s.dateTime<=Date.now()).sort((a,b)=>a.dateTime-b.dateTime);
+  if(!due.length)return;
+  scheduleRunning=true;
+  try{
+    for(const s of due){
+      if(s.fired)continue;
+      s.fired=true;
+      const hasName=!!(s.evtName&&s.evtName.trim());
+      const hasPcts=s.pcts&&Object.keys(s.pcts).length>0;
+      if(hasPcts){
+        await applyPcts(s.pcts,hasName?s.evtName:'時間推進',{silent:!hasName});
+      }else if(hasName){
+        await adv(1);
+        addLog('ev',`⚡ 世界事件：${s.evtName}`);
+        addEventLog(`⚡ ${s.evtName}`);
+      }else{
+        await adv(1);
+      }
+      gmLog('time',`🗓 排程已執行：${hasName?s.evtName:'時間推進'}`);
+      await push();
+    }
+  }finally{
+    scheduleRunning=false;
+    renderSchedules();
+  }
+}
+
+// 每秒更新排程倒數顯示並執行到期排程
 setInterval(()=>{
   if(!W||!W.schedules) return;
+  runDueSchedules();
   updateSchedNextLabel();
 }, 1000);
 </script>
