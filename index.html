@@ -295,7 +295,11 @@ canvas{display:block;}
         輸入漲跌幅直接套用，<strong>不會記錄進消息欄</strong>。<br>玩家只會看到「時間推進」，不知道發生了什麼。
       </div>
       <div class="evt-pct-grid" id="silentPctGrid"></div>
-      <button class="btn btn-purple" style="margin-top:12px" onclick="applySilent()">🌫 靜默套用</button>
+      <div class="g2" style="margin-top:12px">
+        <button class="btn btn-red" onclick="fillSilentLimit(1)">&#20840;&#37096;&#22635;&#28466;&#20572; +10%</button>
+        <button class="btn btn-green" onclick="fillSilentLimit(-1)">&#20840;&#37096;&#22635;&#36300;&#20572; -10%</button>
+      </div>
+      <button class="btn btn-purple" style="margin-top:12px" onclick="applySilent()">&#127787; &#38748;&#40664;&#22871;&#29992;</button>
     </div>
   </div>
 
@@ -825,6 +829,9 @@ const chCol=ch=>ch>=0?upCol:dnCol;
 const sn=d=>{const m=Math.floor(((d-1)%360)/30);return SEASONS[m]+'之日';};
 const ds=()=>`格蘭曆 第${W.gameYear}年 第${W.gameDay||1}日`;
 const gc=a=>{const h=a.history;return h.length<2?0:(h[h.length-1]-h[h.length-2])/h[h.length-2];};
+const clampDailyPct=pct=>Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
+const isManualLimitPct=pct=>Math.abs(pct)>=DAILY_LIMIT-0.000001;
+const manualLimitPct=pct=>Math.sign(pct||0)*DAILY_LIMIT;
 const isLimitUp=a=>gc(a)>=DAILY_LIMIT*0.98;
 const isLimitDn=a=>gc(a)<=-DAILY_LIMIT*0.98;
 
@@ -1298,18 +1305,22 @@ async function applyPcts(pcts,label,opts={}){
 
     let finalPct;
     if(pcts[a.id]!==undefined){
-      // GM 有填值：以填入值為基礎，加上 ±0~1% 的隨機小數
-      const sign=pcts[a.id]>=0?1:-1;
-      const base=Math.abs(pcts[a.id]);
-      const jitter=Math.random()*0.01; // 0 ~ 1%
-      finalPct=sign*(base+jitter);
+      // Manual +/-10% locks exactly; no extra random jitter.
+      if(isManualLimitPct(pcts[a.id])){
+        finalPct=manualLimitPct(pcts[a.id]);
+      }else{
+        const sign=pcts[a.id]>=0?1:-1;
+        const base=Math.abs(pcts[a.id]);
+        const jitter=Math.random()*0.01; // 0 ~ 1%
+        finalPct=sign*(base+jitter);
+      }
     } else {
       // 空白：用關聯計算出的 ±0~3%（已含雜訊）
       finalPct=basePct;
     }
 
     // 漲跌停限制 ±10%
-    finalPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,finalPct));
+    finalPct=clampDailyPct(finalPct);
     a.price=Math.max(1,Math.round(prevPrice*(1+finalPct)));
     a.history.push(a.price);
 
@@ -1528,6 +1539,12 @@ function buildSilentGrid(){
     el.appendChild(r);
   });
 }
+function fillSilentLimit(dir){
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const inp=document.getElementById('sp_'+a.id);
+    if(inp)inp.value=dir>0?'10':'-10';
+  });
+}
 
 async function applySilent(){
   let changed=0;
@@ -1540,22 +1557,22 @@ async function applySilent(){
     const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);
     if(isNaN(raw))return;
     const pct=raw/100;
-    // 受每日漲跌停限制
-    const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
-    const noise=(Math.random()*0.006-0.003);
-    a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
+    // Manual +/-10% locks exactly; no hidden noise.
+    const clamped=clampDailyPct(pct);
+    const appliedPct=isManualLimitPct(pct)?manualLimitPct(pct):clampDailyPct(clamped+(Math.random()*0.006-0.003));
+    a.price=Math.max(1,Math.round(a.price*(1+appliedPct)));
     a.history.push(a.price);
     // 同時更新趨勢偏向，讓後續幾日延續方向
     if(W.market&&W.market.trends[a.id]){
-      const dir=clamped>0?1:-1;
+      const dir=appliedPct>0?1:-1;
       const T=W.market.trends[a.id];
-      T.bias=dir*Math.min(0.07,Math.abs(clamped)*0.6);
+      T.bias=dir*Math.min(0.07,Math.abs(appliedPct)*0.6);
       T.duration=Math.floor(Math.random()*6)+3;
-      T.momentum=dir*Math.min(0.05,Math.abs(clamped)*0.4);
+      T.momentum=dir*Math.min(0.05,Math.abs(appliedPct)*0.4);
       T.volatility='volatile';
       T.volDays=Math.floor(Math.random()*4)+3;
-      if(clamped>0.03)T.slump=0;
-      if(clamped<-0.06)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*6)+4);
+      if(appliedPct>0.03)T.slump=0;
+      if(appliedPct<-0.06)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*6)+4);
     }
     changed++;
     // 清空輸入框
