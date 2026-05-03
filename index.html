@@ -135,7 +135,16 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .intraday-target-input{width:76px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;text-align:right;}
 .intraday-vol-select{width:112px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;}
 .intraday-batch-box{width:100%;min-height:88px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:8px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;resize:vertical;color:var(--ink);}
+.group-tools{display:grid;grid-template-columns:1.2fr .7fr .9fr auto;gap:8px;align-items:end;margin-bottom:10px}
+.group-card{border:1px solid var(--parch3);background:rgba(255,255,255,.34);border-radius:8px;padding:10px;margin:8px 0}
+.group-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.group-name-input{flex:1;min-width:150px;border:1px solid var(--parch3);background:rgba(255,255,255,.55);border-radius:7px;padding:7px 9px;font-weight:800;color:var(--ink)}
+.group-assets{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:5px 10px;max-height:210px;overflow:auto;padding-top:4px}
+.group-asset-check{font-size:12px;color:var(--ink);display:flex;align-items:center;gap:6px;min-width:0}
+.group-asset-check input{width:auto}
+.group-asset-check span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:700px){.intraday-mini-chart{width:130px;height:48px}.intraday-vol-select{width:96px}.intraday-target-input{width:64px}}
+@media(max-width:700px){.group-tools{grid-template-columns:1fr}.group-assets{grid-template-columns:1fr}}
 .log-box{max-height:200px;overflow-y:auto;border:1px solid var(--parch3);padding:10px;background:rgba(255,255,255,0.12);}
 .log-box::-webkit-scrollbar{width:4px;}.log-box::-webkit-scrollbar-thumb{background:var(--parch3);}
 .log-e{padding:6px 10px;margin-bottom:4px;border-left:3px solid var(--parch3);font-size:13px;color:var(--ink3);line-height:1.5;}
@@ -295,15 +304,15 @@ canvas{display:block;}
   <!-- 日內盤控制 -->
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">⏱ 日內盤控制（08:00 → 22:00）</div>
+      <div class="ph-title">⏱ 日內盤控制（08:00 → 00:00）</div>
       <span id="intradayStatusLabel" style="font-size:12px;color:var(--ink3)">尚未開盤</span>
     </div>
     <div class="pb">
-      <div class="notice">GM 只需要設定「目標收盤漲跌幅」與「波動程度」。盤中會每小時用目前價格交易，22:00 收盤時會收斂到目標。</div>
+      <div class="notice">GM 只需要設定「目標收盤漲跌幅」與「波動程度」。盤中會每小時用目前價格交易，00:00 收盤時會收斂到目標。</div>
       <div class="g3">
         <button class="btn btn-gold" onclick="intradayOpen()">08:00 開盤</button>
         <button class="btn btn-purple" onclick="intradayStep()">推進一小時</button>
-        <button class="btn btn-red" onclick="intradayClose()">22:00 收盤</button>
+        <button class="btn btn-red" onclick="intradayClose()">00:00 收盤</button>
       </div>
       <div class="g3">
         <button class="btn btn-ghost" onclick="intradayRandomTargets()">全市場隨機 -2% ~ +2%</button>
@@ -312,7 +321,7 @@ canvas{display:block;}
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin:6px 0 12px;font-size:12px;color:var(--ink3)">
         <input type="checkbox" id="intradayAutoToggle" checked onchange="saveIntradayAutoPref()" style="width:auto">
-        <label for="intradayAutoToggle">依現實時間自動執行（GM 頁面開著時：08 開盤、09~21 跳動、22 收盤）</label>
+        <label for="intradayAutoToggle">依現實時間自動執行（GM 頁面開著時：08 開盤、09~23 跳動、00 收盤）</label>
       </div>
       <div class="notice" style="margin-bottom:10px">
         <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:1px;margin-bottom:6px">批次事件目標</div>
@@ -325,6 +334,33 @@ canvas{display:block;}
           <tbody id="intradayPlanBody"></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">族群管理與批次指令</div>
+      <button class="btn-sm" onclick="addAssetGroup()">新增族群</button>
+    </div>
+    <div class="pb">
+      <div class="notice">把標的勾進同一個族群後，可以一次設定整個族群今天的目標漲跌幅與日內波動。</div>
+      <div class="group-tools">
+        <div class="field"><label>族群</label><select id="groupCommandSelect"></select></div>
+        <div class="field"><label>目標漲跌幅 %</label><input type="number" id="groupCommandPct" min="-10" max="10" step="0.5" value="3"></div>
+        <div class="field"><label>波動</label><select id="groupCommandVol"></select></div>
+        <button class="btn btn-purple" onclick="applyGroupCommand()">套用族群指令</button>
+      </div>
+      <div class="g3" style="margin-bottom:10px">
+        <button class="btn btn-red" onclick="applyGroupPreset(10,'violent')">族群強勢漲停</button>
+        <button class="btn btn-gold" onclick="applyGroupPreset(0,'choppy')">族群震盪</button>
+        <button class="btn btn-ghost" onclick="applyGroupPreset(0,'quiet')">族群沒波動</button>
+      </div>
+      <div class="g3" style="margin-bottom:10px">
+        <button class="btn btn-purple" onclick="applyGroupPreset(5,'buyThenSell')">先拉後殺</button>
+        <button class="btn btn-purple" onclick="applyGroupPreset(-5,'sellThenBuy')">先殺後拉</button>
+        <button class="btn btn-red" onclick="applyGroupPreset(-10,'violent')">族群弱勢跌停</button>
+      </div>
+      <div id="assetGroupList"></div>
     </div>
   </div>
 
@@ -522,17 +558,17 @@ canvas{display:block;}
 const URL_KEY='gran_script_url', LOCAL_KEY='gran_world_v4';
 const SEASONS=['深冬','初春','春','暮春','初夏','盛夏','暑末','初秋','金秋','暮秋','初冬','隆冬'];
 const DAILY_LIMIT=0.10;
-const INTRADAY_SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00 收盤'];
+const INTRADAY_SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00 收盤'];
 const INTRADAY_TICKS_PER_HOUR=8;
 const INTRADAY_PATTERNS={
-  neutral:{name:'一般自然盤',pull:.18,noise:1},
-  choppy:{name:'震盪',pull:.16,noise:1.75,zigzag:true},
-  calm:{name:'平穩',pull:.28,noise:.45},
-  flat:{name:'窄幅盤整',pull:.38,noise:.25},
-  quiet:{name:'沒波動',pull:.85,noise:0},
-  violent:{name:'劇烈',pull:.13,noise:2.35,zigzag:true},
-  sellThenBuy:{name:'先殺後拉',pull:.22,noise:1.25,shape:'sellThenBuy'},
-  buyThenSell:{name:'先拉後殺',pull:.22,noise:1.25,shape:'buyThenSell'}
+  neutral:{name:'一般自然盤',pull:.55,noise:.75},
+  choppy:{name:'震盪',pull:.48,noise:1.15,zigzag:true,zig:.014,wave:.018},
+  calm:{name:'平穩',pull:.70,noise:.28},
+  flat:{name:'窄幅盤整',pull:.78,noise:.16,range:.012},
+  quiet:{name:'沒波動',pull:1,noise:0},
+  violent:{name:'劇烈',pull:.38,noise:1.85,zigzag:true,zig:.022,wave:.026},
+  sellThenBuy:{name:'先殺後拉',pull:.82,noise:.72,shape:'sellThenBuy',shock:.065},
+  buyThenSell:{name:'先拉後殺',pull:.82,noise:.72,shape:'buyThenSell',shock:.065}
 };
 // 趨勢編輯面板狀態（需早於 renderTrendStatus 宣告）
 var trendEditOpen=false;
@@ -613,6 +649,31 @@ const SECTOR_GROUPS={
   // 神聖防禦：危機反向受益
   holy:      ['temple','silverwing','antimagic','lifetree'],
 };
+
+const SECTOR_NAMES={civilian:'民生',military:'戰鬥',trade:'貿易',magic:'魔法',industrial:'工業',research:'研究',holy:'信仰醫療'};
+function groupIdFromName(name){return 'grp_'+String(name||'group').replace(/[^\w\u4e00-\u9fa5]+/g,'_').slice(0,28);}
+function defaultAssetGroups(assetList=ASSETS0){
+  const used=new Set(), groups=[];
+  Object.entries(SECTOR_GROUPS).forEach(([key,ids])=>{
+    const assetIds=ids.filter(id=>assetList.some(a=>a.id===id));
+    if(assetIds.length){groups.push({id:groupIdFromName(key),name:SECTOR_NAMES[key]||key,assetIds});assetIds.forEach(id=>used.add(id));}
+  });
+  const byCat={};
+  assetList.forEach(a=>{if(used.has(a.id))return;const k=a.cat||'未分類';(byCat[k]||(byCat[k]=[])).push(a.id);});
+  Object.entries(byCat).forEach(([name,assetIds])=>groups.push({id:groupIdFromName(name),name,assetIds}));
+  return groups;
+}
+function ensureAssetGroups(world=W){
+  if(!world)return[];
+  const activeIds=new Set((world.assets||[]).filter(a=>!a.delisted).map(a=>a.id));
+  if(!Array.isArray(world.assetGroups)||!world.assetGroups.length)world.assetGroups=defaultAssetGroups(world.assets||ASSETS0);
+  world.assetGroups=world.assetGroups.map((g,i)=>({
+    id:g.id||groupIdFromName(g.name||('group_'+i)),
+    name:g.name||('族群 '+(i+1)),
+    assetIds:[...new Set((g.assetIds||[]).filter(id=>activeIds.has(id)))]
+  }));
+  return world.assetGroups;
+}
 
 // ═══════════════════════════════════════════════════════
 //  38 個標的完整事件聯動規則
@@ -934,6 +995,7 @@ function makeDefault(){
     gameYear:1,gameDay:1,gameMonth:1,
     presetEvents:[],log:[],eventLog:[],lastSaved:Date.now(),
     market:initMarketState(),
+    assetGroups:defaultAssetGroups(ASSETS0),
   };
 }
 
@@ -979,6 +1041,7 @@ function migrateAssets(world){
   if(!world.market.intraday)world.market.intraday=null;
   if(!world.presetEvents)world.presetEvents=[];
   if(!world.schedules)world.schedules=[];
+  ensureAssetGroups(world);
 
   // 趨勢狀態也補入缺少的新標的（含 ASSETS0 與 IPO 標的）
   world.assets.filter(a=>!a.delisted).forEach(a=>{
@@ -1040,7 +1103,7 @@ function saveUrl(){const u=document.getElementById('scriptUrlInput').value.trim(
 function localMode(){SURL='';document.getElementById('setupOverlay').classList.add('hidden');setSS('','本地模式');const loc=localStorage.getItem(LOCAL_KEY);W=loc?migrateAssets(JSON.parse(loc)):makeDefault();afterLoad();}
 
 // ═══════════════════════════════════════════════════════
-//  日內盤（08:00 → 22:00）
+//  日內盤（08:00 → 00:00）
 // ═══════════════════════════════════════════════════════
 function intradayKey(){return `${W.gameYear||1}-${W.gameDay||1}`;}
 function intradaySession(){
@@ -1087,21 +1150,39 @@ function intradayStep(){
   gmLog('time',`⏱ 日內盤推進至 ${INTRADAY_SLOTS[step]}`);
   push();renderAll();
 }
+function clampPct(v){return Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,v));}
+function intradayDesiredPct(targetPct,progress,cfg,step){
+  const p=Math.max(0,Math.min(1,progress));
+  if(cfg.shape==='sellThenBuy'){
+    const trough=-Math.max(Math.abs(targetPct)+0.025,cfg.shock||0.065);
+    if(p<=0.28)return clampPct(trough*(p/0.28));
+    const t=(p-0.28)/0.72;
+    return clampPct(trough+(targetPct-trough)*Math.pow(t,0.72));
+  }
+  if(cfg.shape==='buyThenSell'){
+    const peak=Math.max(Math.abs(targetPct)+0.025,cfg.shock||0.065);
+    if(p<=0.28)return clampPct(peak*(p/0.28));
+    const t=(p-0.28)/0.72;
+    return clampPct(peak+(targetPct-peak)*Math.pow(t,0.72));
+  }
+  let desired=targetPct*p;
+  if(cfg.wave)desired+=Math.sin(Math.PI*2*p*2.25)*cfg.wave*(1-Math.abs(p-.5)*.35);
+  if(cfg.zigzag)desired+=(step%2===0?1:-1)*(cfg.zig||0.012);
+  if(typeof cfg.range==='number'&&Math.abs(desired)>cfg.range)desired=Math.sign(desired)*cfg.range;
+  return clampPct(desired);
+}
 function intradayStepAsset(a,step){
   const S=intradaySession(), P=intradayPlan(a), cfg=INTRADAY_PATTERNS[P.volatility]||INTRADAY_PATTERNS.neutral;
   const last=intradayLastPoint(P);
   const targetPct=Math.max(-0.10,Math.min(0.10,P.targetPct||0));
   const progress=step/(INTRADAY_SLOTS.length-1);
   const limitUp=Math.round(P.prevClose*1.1), limitDown=Math.max(1,Math.round(P.prevClose*0.9));
-  let shaped=targetPct*progress;
-  if(cfg.shape==='sellThenBuy')shaped=targetPct*progress-Math.sin(Math.PI*progress)*0.035;
-  if(cfg.shape==='buyThenSell')shaped=targetPct*progress+Math.sin(Math.PI*progress)*0.035;
+  const shaped=intradayDesiredPct(targetPct,progress,cfg,step);
   const targetPrice=P.prevClose*(1+shaped);
   const pull=(targetPrice-last.price)/P.prevClose*(cfg.pull||0.18);
-  const zig=cfg.zigzag?(step%2===0?0.010:-0.010):0;
   const noiseBase=0.014*(a.vol||0.1)*10*(cfg.noise||0);
   const hourNoise=(Math.random()-0.5)*noiseBase;
-  let hourMove=Math.max(-0.055,Math.min(0.055,pull+zig+hourNoise));
+  let hourMove=Math.max(-0.075,Math.min(0.075,pull+hourNoise));
   let hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,last.price*(1+hourMove))));
   if(step===INTRADAY_SLOTS.length-1)hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,P.prevClose*(1+targetPct))));
   let tickPrice=last.price;
@@ -1193,13 +1274,15 @@ async function runIntradayAuto(force=false){
   if(!W||busy)return;
   const now=new Date(), hour=now.getHours(), today=now.toDateString();
   let S=intradaySession();
-  if(hour>=22&&S.lastClosedRealDate===today)return;
+  const isCloseHour=hour===0;
+  if(isCloseHour&&S.lastClosedRealDate===today)return;
   if(S.lastAutoRun===`${today}-${hour}`&&!force)return;
-  if(hour<8||hour>22)return;
+  if(!isCloseHour&&(hour<8||hour>23))return;
   if(S.dateKey!==intradayKey()||S.status==='closed'||S.status==='idle'){intradayOpen();S=intradaySession();}
-  while((intradaySession().slot||0)<Math.min(hour-8,INTRADAY_SLOTS.length-1))intradayStep();
+  const targetSlot=isCloseHour?INTRADAY_SLOTS.length-1:Math.min(hour-8,INTRADAY_SLOTS.length-1);
+  while((intradaySession().slot||0)<targetSlot)intradayStep();
   S=intradaySession();
-  if(hour>=22&&S.status==='open'){S.lastClosedRealDate=today;intradayClose();}
+  if(isCloseHour&&S.status==='open'){S.lastClosedRealDate=today;intradayClose();}
   S.lastAutoRun=`${today}-${hour}`;
 }
 
@@ -1897,6 +1980,71 @@ function renderIntradayPlans(){
     drawIntradaySpark(a,`idspk_${a.id}`);
   });
 }
+function renderAssetGroups(){
+  const list=document.getElementById('assetGroupList'), sel=document.getElementById('groupCommandSelect'), volSel=document.getElementById('groupCommandVol');
+  if(!list||!sel||!W)return;
+  const groups=ensureAssetGroups(W), assets=W.assets.filter(a=>!a.delisted);
+  sel.innerHTML=groups.map(g=>`<option value="${g.id}">${g.name}（${g.assetIds.length}）</option>`).join('');
+  if(volSel&&!volSel.dataset.ready){
+    volSel.innerHTML=Object.entries(INTRADAY_PATTERNS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
+    volSel.value='neutral';volSel.dataset.ready='1';
+  }
+  list.innerHTML=groups.map(g=>`
+    <div class="group-card">
+      <div class="group-head">
+        <input class="group-name-input" value="${g.name}" onchange="renameAssetGroup('${g.id}',this.value)">
+        <span style="font-size:12px;color:var(--ink3)">${g.assetIds.length} 支標的</span>
+        <button class="btn-sm" onclick="deleteAssetGroup('${g.id}')">刪除</button>
+      </div>
+      <div class="group-assets">
+        ${assets.map(a=>`<label class="group-asset-check"><input type="checkbox" ${g.assetIds.includes(a.id)?'checked':''} onchange="toggleAssetGroup('${g.id}','${a.id}',this.checked)"><span>${a.name}</span></label>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function addAssetGroup(){
+  ensureAssetGroups(W);
+  const name=(prompt('新族群名稱','新族群')||'').trim();
+  if(!name)return;
+  let id=groupIdFromName(name), n=1;
+  while(W.assetGroups.some(g=>g.id===id)){id=groupIdFromName(name+'_'+(++n));}
+  W.assetGroups.push({id,name,assetIds:[]});
+  push();renderAssetGroups();
+}
+function renameAssetGroup(gid,name){
+  const g=ensureAssetGroups(W).find(x=>x.id===gid);if(!g)return;
+  g.name=(name||'未命名族群').trim();
+  push();renderAssetGroups();
+}
+function deleteAssetGroup(gid){
+  const g=ensureAssetGroups(W).find(x=>x.id===gid);if(!g)return;
+  if(!confirm(`刪除族群「${g.name}」？標的不會被刪除。`))return;
+  W.assetGroups=W.assetGroups.filter(x=>x.id!==gid);
+  push();renderAssetGroups();
+}
+function toggleAssetGroup(gid,aid,checked){
+  const g=ensureAssetGroups(W).find(x=>x.id===gid);if(!g)return;
+  const set=new Set(g.assetIds||[]);
+  checked?set.add(aid):set.delete(aid);
+  g.assetIds=[...set];
+  push();renderAssetGroups();
+}
+function selectedGroup(){return ensureAssetGroups(W).find(g=>g.id===document.getElementById('groupCommandSelect')?.value);}
+function applyGroupPreset(pct,vol){const p=document.getElementById('groupCommandPct'),v=document.getElementById('groupCommandVol');if(p)p.value=pct;if(v)v.value=vol;applyGroupCommand();}
+function applyGroupCommand(){
+  const g=selectedGroup();if(!g){alert('請先選擇族群');return;}
+  const pct=Math.max(-10,Math.min(10,parseFloat(document.getElementById('groupCommandPct')?.value)||0));
+  const vol=document.getElementById('groupCommandVol')?.value||'neutral';
+  let ok=0;
+  g.assetIds.forEach(id=>{
+    const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return;
+    const P=intradayPlan(a);
+    P.targetPct=pct/100;
+    P.volatility=INTRADAY_PATTERNS[vol]?vol:'neutral';
+    ok++;
+  });
+  gmLog('ev',`族群指令：${g.name} ${pct>=0?'+':''}${pct}% / ${(INTRADAY_PATTERNS[vol]||INTRADAY_PATTERNS.neutral).name}，共 ${ok} 支`);
+  push();renderAll();
+}
 function drawIntradaySpark(a,cid){
   const c=document.getElementById(cid);if(!c)return;
   const ctx=c.getContext('2d'), P=intradayPlan(a), pts=P.points||[];
@@ -2190,7 +2338,7 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();renderIntradayPlans();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
+function renderAll(){refreshTime();renderMkt();renderIntradayPlans();renderAssetGroups();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
 
 // ── 暫停交易 ──
 function renderSuspendList(){
