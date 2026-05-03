@@ -131,6 +131,11 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .asset-row-mini .aname{font-size:12px;font-weight:700;flex:1;min-width:80px;}
 .asset-row-mini .cur{font-size:13px;font-weight:700;min-width:72px;text-align:right;color:var(--ink2);}
 .asset-row-mini input{width:90px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.5);padding:4px 7px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;}
+.intraday-mini-chart{width:180px;height:54px;display:block;background:rgba(255,255,255,0.16);border:1px solid rgba(222,206,150,.65);}
+.intraday-target-input{width:76px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;text-align:right;}
+.intraday-vol-select{width:112px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;}
+.intraday-batch-box{width:100%;min-height:88px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:8px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;resize:vertical;color:var(--ink);}
+@media(max-width:700px){.intraday-mini-chart{width:130px;height:48px}.intraday-vol-select{width:96px}.intraday-target-input{width:64px}}
 .log-box{max-height:200px;overflow-y:auto;border:1px solid var(--parch3);padding:10px;background:rgba(255,255,255,0.12);}
 .log-box::-webkit-scrollbar{width:4px;}.log-box::-webkit-scrollbar-thumb{background:var(--parch3);}
 .log-e{padding:6px 10px;margin-bottom:4px;border-left:3px solid var(--parch3);font-size:13px;color:var(--ink3);line-height:1.5;}
@@ -287,6 +292,42 @@ canvas{display:block;}
     </div>
   </div>
 
+  <!-- 日內盤控制 -->
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">⏱ 日內盤控制（08:00 → 22:00）</div>
+      <span id="intradayStatusLabel" style="font-size:12px;color:var(--ink3)">尚未開盤</span>
+    </div>
+    <div class="pb">
+      <div class="notice">GM 只需要設定「目標收盤漲跌幅」與「波動程度」。盤中會每小時用目前價格交易，22:00 收盤時會收斂到目標。</div>
+      <div class="g3">
+        <button class="btn btn-gold" onclick="intradayOpen()">08:00 開盤</button>
+        <button class="btn btn-purple" onclick="intradayStep()">推進一小時</button>
+        <button class="btn btn-red" onclick="intradayClose()">22:00 收盤</button>
+      </div>
+      <div class="g3">
+        <button class="btn btn-ghost" onclick="intradayRandomTargets()">全市場隨機 -2% ~ +2%</button>
+        <button class="btn btn-ghost" onclick="intradayZeroTargets()">全市場目標歸零</button>
+        <button class="btn btn-ghost" onclick="runIntradayAuto(true)">立即檢查自動排程</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0 12px;font-size:12px;color:var(--ink3)">
+        <input type="checkbox" id="intradayAutoToggle" checked onchange="saveIntradayAutoPref()" style="width:auto">
+        <label for="intradayAutoToggle">依現實時間自動執行（GM 頁面開著時：08 開盤、09~21 跳動、22 收盤）</label>
+      </div>
+      <div class="notice" style="margin-bottom:10px">
+        <div style="font-size:11px;font-weight:900;color:var(--gold);letter-spacing:1px;margin-bottom:6px">批次事件目標</div>
+        <textarea id="intradayBatchText" class="intraday-batch-box" placeholder="每行一筆：標的名稱或ID 漲跌幅 波動&#10;例：守望者 -6 震盪&#10;例：spellres 4 劇烈&#10;波動可填：一般、震盪、平穩、盤整、沒波動、劇烈、先殺後拉、先拉後殺"></textarea>
+        <button class="btn btn-purple" style="margin-top:8px" onclick="applyIntradayBatch()">套用批次事件目標</button>
+      </div>
+      <div style="overflow-x:auto;max-height:360px">
+        <table class="mkt-table">
+          <thead><tr><th>標的</th><th>目前</th><th>目標收盤%</th><th>波動</th><th>日內</th></tr></thead>
+          <tbody id="intradayPlanBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- 隱形漲跌調整 -->
   <div class="panel">
     <div class="ph"><div class="ph-title">🌫 隱形漲跌調整</div></div>
@@ -295,11 +336,7 @@ canvas{display:block;}
         輸入漲跌幅直接套用，<strong>不會記錄進消息欄</strong>。<br>玩家只會看到「時間推進」，不知道發生了什麼。
       </div>
       <div class="evt-pct-grid" id="silentPctGrid"></div>
-      <div class="g2" style="margin-top:12px">
-        <button class="btn btn-red" onclick="fillSilentLimit(1)">&#20840;&#37096;&#22635;&#28466;&#20572; +10%</button>
-        <button class="btn btn-green" onclick="fillSilentLimit(-1)">&#20840;&#37096;&#22635;&#36300;&#20572; -10%</button>
-      </div>
-      <button class="btn btn-purple" style="margin-top:12px" onclick="applySilent()">&#127787; &#38748;&#40664;&#22871;&#29992;</button>
+      <button class="btn btn-purple" style="margin-top:12px" onclick="applySilent()">🌫 靜默套用</button>
     </div>
   </div>
 
@@ -485,6 +522,18 @@ canvas{display:block;}
 const URL_KEY='gran_script_url', LOCAL_KEY='gran_world_v4';
 const SEASONS=['深冬','初春','春','暮春','初夏','盛夏','暑末','初秋','金秋','暮秋','初冬','隆冬'];
 const DAILY_LIMIT=0.10;
+const INTRADAY_SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00 收盤'];
+const INTRADAY_TICKS_PER_HOUR=8;
+const INTRADAY_PATTERNS={
+  neutral:{name:'一般自然盤',pull:.18,noise:1},
+  choppy:{name:'震盪',pull:.16,noise:1.75,zigzag:true},
+  calm:{name:'平穩',pull:.28,noise:.45},
+  flat:{name:'窄幅盤整',pull:.38,noise:.25},
+  quiet:{name:'沒波動',pull:.85,noise:0},
+  violent:{name:'劇烈',pull:.13,noise:2.35,zigzag:true},
+  sellThenBuy:{name:'先殺後拉',pull:.22,noise:1.25,shape:'sellThenBuy'},
+  buyThenSell:{name:'先拉後殺',pull:.22,noise:1.25,shape:'buyThenSell'}
+};
 // 趨勢編輯面板狀態（需早於 renderTrendStatus 宣告）
 var trendEditOpen=false;
 var trendEditFilter='all';
@@ -829,9 +878,6 @@ const chCol=ch=>ch>=0?upCol:dnCol;
 const sn=d=>{const m=Math.floor(((d-1)%360)/30);return SEASONS[m]+'之日';};
 const ds=()=>`格蘭曆 第${W.gameYear}年 第${W.gameDay||1}日`;
 const gc=a=>{const h=a.history;return h.length<2?0:(h[h.length-1]-h[h.length-2])/h[h.length-2];};
-const clampDailyPct=pct=>Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
-const isManualLimitPct=pct=>Math.abs(pct)>=DAILY_LIMIT-0.000001;
-const manualLimitPct=pct=>Math.sign(pct||0)*DAILY_LIMIT;
 const isLimitUp=a=>gc(a)>=DAILY_LIMIT*0.98;
 const isLimitDn=a=>gc(a)<=-DAILY_LIMIT*0.98;
 
@@ -930,6 +976,7 @@ function migrateAssets(world){
   if(world.market.cycleDur===undefined)world.market.cycleDur=10;
   if(world.market.researchTimer===undefined)world.market.researchTimer=20;
   if(world.market.prophecyTimer===undefined)world.market.prophecyTimer=15;
+  if(!world.market.intraday)world.market.intraday=null;
   if(!world.presetEvents)world.presetEvents=[];
   if(!world.schedules)world.schedules=[];
 
@@ -960,8 +1007,12 @@ function afterLoad(){
   buildSilentGrid();
   buildSchPctGrid();
   if(!W.schedules) W.schedules=[];
+  if(!W.market)W.market=initMarketState();
+  intradaySession();
   document.getElementById('setY').value=W.gameYear||1;
   document.getElementById('setD').value=W.gameDay||1;
+  const auto=document.getElementById('intradayAutoToggle');
+  if(auto&&localStorage.getItem('gran_intraday_auto')!==null)auto.checked=localStorage.getItem('gran_intraday_auto')==='1';
   renderAll();
   updateRecentAnnouncements();
   if(!W.log.length)gmLog('ev','═══ 格蘭大陸皇家交易所 GM 控制台啟動（新版 38 標的）═══');
@@ -983,9 +1034,174 @@ setInterval(async()=>{
     if(missing.length>0){W.log=[...missing,...localLog];renderLog();}
   }
 },10000);
+setInterval(()=>{runIntradayAuto(false);},60000);
 
 function saveUrl(){const u=document.getElementById('scriptUrlInput').value.trim();if(!u.startsWith('https://script.google.com')){alert('請輸入正確的 Apps Script 網址');return;}SURL=u;localStorage.setItem(URL_KEY,u);document.getElementById('setupOverlay').classList.add('hidden');init();}
 function localMode(){SURL='';document.getElementById('setupOverlay').classList.add('hidden');setSS('','本地模式');const loc=localStorage.getItem(LOCAL_KEY);W=loc?migrateAssets(JSON.parse(loc)):makeDefault();afterLoad();}
+
+// ═══════════════════════════════════════════════════════
+//  日內盤（08:00 → 22:00）
+// ═══════════════════════════════════════════════════════
+function intradayKey(){return `${W.gameYear||1}-${W.gameDay||1}`;}
+function intradaySession(){
+  if(!W.market)W.market=initMarketState();
+  if(!W.market.intraday)W.market.intraday={dateKey:intradayKey(),status:'idle',slot:0,plans:{}};
+  if(!W.market.intraday.plans)W.market.intraday.plans={};
+  return W.market.intraday;
+}
+function intradayPlan(a){
+  const S=intradaySession();
+  if(!S.plans[a.id]){
+    S.plans[a.id]={prevClose:a.price,targetPct:0,volatility:'neutral',points:[{slot:0,price:a.price,major:true}]};
+  }
+  const P=S.plans[a.id];
+  if(typeof P.targetPct!=='number')P.targetPct=0;
+  if(!P.volatility)P.volatility='neutral';
+  if(!P.points||!P.points.length)P.points=[{slot:0,price:P.prevClose||a.price,major:true}];
+  if(!P.prevClose)P.prevClose=P.points[0].price||a.price;
+  return P;
+}
+function intradayLastPoint(P){return P.points[P.points.length-1];}
+function intradayAvg(P){return P.points.reduce((s,p)=>s+p.price,0)/Math.max(1,P.points.length);}
+function intradayOpen(){
+  if(!W.market)W.market=initMarketState();
+  const old=W.market.intraday;
+  const oldPlans=old?.plans||{};
+  const plans={};
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const keep=oldPlans[a.id]||{};
+    const prev=a.price;
+    plans[a.id]={prevClose:prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
+  });
+  W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
+  gmLog('time',`⏱ 日內盤開盤：${ds()} 08:00`);
+  push();renderAll();
+}
+function intradayStep(){
+  let S=intradaySession();
+  if(S.status!=='open'){intradayOpen();S=intradaySession();}
+  const step=(S.slot||0)+1;
+  if(step>=INTRADAY_SLOTS.length){intradayClose();return;}
+  W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
+  S.slot=step;
+  gmLog('time',`⏱ 日內盤推進至 ${INTRADAY_SLOTS[step]}`);
+  push();renderAll();
+}
+function intradayStepAsset(a,step){
+  const S=intradaySession(), P=intradayPlan(a), cfg=INTRADAY_PATTERNS[P.volatility]||INTRADAY_PATTERNS.neutral;
+  const last=intradayLastPoint(P);
+  const targetPct=Math.max(-0.10,Math.min(0.10,P.targetPct||0));
+  const progress=step/(INTRADAY_SLOTS.length-1);
+  const limitUp=Math.round(P.prevClose*1.1), limitDown=Math.max(1,Math.round(P.prevClose*0.9));
+  let shaped=targetPct*progress;
+  if(cfg.shape==='sellThenBuy')shaped=targetPct*progress-Math.sin(Math.PI*progress)*0.035;
+  if(cfg.shape==='buyThenSell')shaped=targetPct*progress+Math.sin(Math.PI*progress)*0.035;
+  const targetPrice=P.prevClose*(1+shaped);
+  const pull=(targetPrice-last.price)/P.prevClose*(cfg.pull||0.18);
+  const zig=cfg.zigzag?(step%2===0?0.010:-0.010):0;
+  const noiseBase=0.014*(a.vol||0.1)*10*(cfg.noise||0);
+  const hourNoise=(Math.random()-0.5)*noiseBase;
+  let hourMove=Math.max(-0.055,Math.min(0.055,pull+zig+hourNoise));
+  let hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,last.price*(1+hourMove))));
+  if(step===INTRADAY_SLOTS.length-1)hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,P.prevClose*(1+targetPct))));
+  let tickPrice=last.price;
+  const startSlot=S.slot||0;
+  for(let i=1;i<=INTRADAY_TICKS_PER_HOUR;i++){
+    const t=i/INTRADAY_TICKS_PER_HOUR, slot=startSlot+t;
+    const microAmp=P.prevClose*0.006*(a.vol||0.1)*10*(cfg.noise||0)*(1-Math.abs(t-.5)*.65);
+    const pullToClose=(hourClose-tickPrice)*(.18+.32*t);
+    const wiggle=(Math.random()-.5)*microAmp;
+    const pulse=Math.sin((t*Math.PI*2)+(step*1.7))*microAmp*.22;
+    tickPrice=i===INTRADAY_TICKS_PER_HOUR?hourClose:Math.round(Math.max(limitDown,Math.min(limitUp,tickPrice+pullToClose+wiggle+pulse)));
+    P.points.push({slot:i===INTRADAY_TICKS_PER_HOUR?step:slot,price:tickPrice,major:i===INTRADAY_TICKS_PER_HOUR});
+  }
+  P.high=Math.max(P.high||P.prevClose,...P.points.map(x=>x.price));
+  P.low=Math.min(P.low||P.prevClose,...P.points.map(x=>x.price));
+  a.price=hourClose;
+}
+function intradayClose(){
+  const S=intradaySession();
+  if(S.status!=='open'){alert('目前沒有開盤中的日內盤');return;}
+  while((S.slot||0)<INTRADAY_SLOTS.length-1){
+    const step=(S.slot||0)+1;
+    W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
+    S.slot=step;
+  }
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const P=intradayPlan(a);
+    a.price=intradayLastPoint(P).price;
+    a.history.push(a.price);
+  });
+  S.status='closed';
+  addLog('time',`⏱ 日內盤收盤：${ds()}，收盤價已寫入歷史`);
+  W.gameDay=(W.gameDay||1)+1;
+  if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
+  W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+  document.getElementById('setY').value=W.gameYear;
+  document.getElementById('setD').value=W.gameDay;
+  push();renderAll();
+}
+function intradayRandomTargets(){
+  const S=intradaySession();
+  W.assets.filter(a=>!a.delisted).forEach(a=>{const P=intradayPlan(a);P.targetPct=(Math.random()*4-2)/100;P.volatility='neutral';});
+  gmLog('ev','🎯 全市場日內目標已隨機設定為 -2% ~ +2%');
+  push();renderAll();
+}
+function intradayZeroTargets(){
+  W.assets.filter(a=>!a.delisted).forEach(a=>{const P=intradayPlan(a);P.targetPct=0;P.volatility='flat';});
+  gmLog('ev','🎯 全市場日內目標歸零，波動改為窄幅盤整');
+  push();renderAll();
+}
+function setIntradayTarget(id,val){const a=W.assets.find(x=>x.id===id);if(!a)return;const P=intradayPlan(a);P.targetPct=Math.max(-10,Math.min(10,parseFloat(val)||0))/100;if(P.targetPct>=0.099)P.targetPct=0.10;if(P.targetPct<=-0.099)P.targetPct=-0.10;push();renderIntradayPlans();}
+function setIntradayVol(id,val){const a=W.assets.find(x=>x.id===id);if(!a)return;intradayPlan(a).volatility=val||'neutral';push();renderIntradayPlans();}
+function intradayVolKey(s){
+  s=(s||'').trim();
+  if(!s||s.includes('一般'))return'neutral';
+  if(s.includes('震'))return'choppy';
+  if(s.includes('平穩'))return'calm';
+  if(s.includes('盤整')||s.includes('窄'))return'flat';
+  if(s.includes('沒'))return'quiet';
+  if(s.includes('劇'))return'violent';
+  if(s.includes('先殺'))return'sellThenBuy';
+  if(s.includes('先拉'))return'buyThenSell';
+  return INTRADAY_PATTERNS[s]?s:'neutral';
+}
+function applyIntradayBatch(){
+  const raw=document.getElementById('intradayBatchText')?.value||'';
+  const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!lines.length){alert('請先輸入批次事件目標');return;}
+  let ok=0,miss=[];
+  lines.forEach(line=>{
+    const m=line.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)\s*(.*)$/);
+    if(!m){miss.push(line);return;}
+    const key=m[1].trim(), pct=parseFloat(m[2]), vol=intradayVolKey(m[3]);
+    const a=W.assets.find(x=>x.id===key||x.name.includes(key)||key.includes(x.name));
+    if(!a){miss.push(line);return;}
+    const P=intradayPlan(a);
+    P.targetPct=Math.max(-10,Math.min(10,pct))/100;
+    P.volatility=vol;
+    ok++;
+  });
+  gmLog('ev',`🎯 批次事件目標已套用 ${ok} 筆${miss.length?`，未匹配 ${miss.length} 筆`:''}`);
+  if(miss.length)alert('以下未匹配：\n'+miss.join('\n'));
+  push();renderAll();
+}
+function saveIntradayAutoPref(){localStorage.setItem('gran_intraday_auto',document.getElementById('intradayAutoToggle')?.checked?'1':'0');}
+async function runIntradayAuto(force=false){
+  const el=document.getElementById('intradayAutoToggle');
+  if(el&&!el.checked&&!force)return;
+  if(!W||busy)return;
+  const now=new Date(), hour=now.getHours(), today=now.toDateString();
+  let S=intradaySession();
+  if(hour>=22&&S.lastClosedRealDate===today)return;
+  if(S.lastAutoRun===`${today}-${hour}`&&!force)return;
+  if(hour<8||hour>22)return;
+  if(S.dateKey!==intradayKey()||S.status==='closed'||S.status==='idle'){intradayOpen();S=intradaySession();}
+  while((intradaySession().slot||0)<Math.min(hour-8,INTRADAY_SLOTS.length-1))intradayStep();
+  S=intradaySession();
+  if(hour>=22&&S.status==='open'){S.lastClosedRealDate=today;intradayClose();}
+  S.lastAutoRun=`${today}-${hour}`;
+}
 
 // ═══════════════════════════════════════════════════════
 //  趨勢引擎
@@ -1305,22 +1521,18 @@ async function applyPcts(pcts,label,opts={}){
 
     let finalPct;
     if(pcts[a.id]!==undefined){
-      // Manual +/-10% locks exactly; no extra random jitter.
-      if(isManualLimitPct(pcts[a.id])){
-        finalPct=manualLimitPct(pcts[a.id]);
-      }else{
-        const sign=pcts[a.id]>=0?1:-1;
-        const base=Math.abs(pcts[a.id]);
-        const jitter=Math.random()*0.01; // 0 ~ 1%
-        finalPct=sign*(base+jitter);
-      }
+      // GM 有填值：以填入值為基礎，加上 ±0~1% 的隨機小數
+      const sign=pcts[a.id]>=0?1:-1;
+      const base=Math.abs(pcts[a.id]);
+      const jitter=Math.random()*0.01; // 0 ~ 1%
+      finalPct=sign*(base+jitter);
     } else {
       // 空白：用關聯計算出的 ±0~3%（已含雜訊）
       finalPct=basePct;
     }
 
     // 漲跌停限制 ±10%
-    finalPct=clampDailyPct(finalPct);
+    finalPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,finalPct));
     a.price=Math.max(1,Math.round(prevPrice*(1+finalPct)));
     a.history.push(a.price);
 
@@ -1539,12 +1751,6 @@ function buildSilentGrid(){
     el.appendChild(r);
   });
 }
-function fillSilentLimit(dir){
-  W.assets.filter(a=>!a.delisted).forEach(a=>{
-    const inp=document.getElementById('sp_'+a.id);
-    if(inp)inp.value=dir>0?'10':'-10';
-  });
-}
 
 async function applySilent(){
   let changed=0;
@@ -1557,22 +1763,22 @@ async function applySilent(){
     const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);
     if(isNaN(raw))return;
     const pct=raw/100;
-    // Manual +/-10% locks exactly; no hidden noise.
-    const clamped=clampDailyPct(pct);
-    const appliedPct=isManualLimitPct(pct)?manualLimitPct(pct):clampDailyPct(clamped+(Math.random()*0.006-0.003));
-    a.price=Math.max(1,Math.round(a.price*(1+appliedPct)));
+    // 受每日漲跌停限制
+    const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
+    const noise=(Math.random()*0.006-0.003);
+    a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
     a.history.push(a.price);
     // 同時更新趨勢偏向，讓後續幾日延續方向
     if(W.market&&W.market.trends[a.id]){
-      const dir=appliedPct>0?1:-1;
+      const dir=clamped>0?1:-1;
       const T=W.market.trends[a.id];
-      T.bias=dir*Math.min(0.07,Math.abs(appliedPct)*0.6);
+      T.bias=dir*Math.min(0.07,Math.abs(clamped)*0.6);
       T.duration=Math.floor(Math.random()*6)+3;
-      T.momentum=dir*Math.min(0.05,Math.abs(appliedPct)*0.4);
+      T.momentum=dir*Math.min(0.05,Math.abs(clamped)*0.4);
       T.volatility='volatile';
       T.volDays=Math.floor(Math.random()*4)+3;
-      if(appliedPct>0.03)T.slump=0;
-      if(appliedPct<-0.06)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*6)+4);
+      if(clamped>0.03)T.slump=0;
+      if(clamped<-0.06)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*6)+4);
     }
     changed++;
     // 清空輸入框
@@ -1669,6 +1875,52 @@ function renderMkt(){
   });
 }
 function drawSpk(a,cid){const c=document.getElementById(cid);if(!c)return;const ctx=c.getContext('2d');const d=a.history.slice(-20);const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;ctx.clearRect(0,0,72,22);ctx.strokeStyle=chCol(gc(a));ctx.lineWidth=1.5;ctx.beginPath();d.forEach((v,i)=>{const x=(i/(d.length-1))*72,y=20-((v-mn)/rng)*17;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();}
+function renderIntradayPlans(){
+  const label=document.getElementById('intradayStatusLabel'), body=document.getElementById('intradayPlanBody');
+  if(!label||!body||!W)return;
+  const S=intradaySession();
+  label.textContent=`${S.status==='open'?'開盤中':S.status==='closed'?'已收盤':'待開盤'} · ${INTRADAY_SLOTS[S.slot||0]||'08:00'} · ${ds()}`;
+  const auto=document.getElementById('intradayAutoToggle');
+  if(auto&&localStorage.getItem('gran_intraday_auto')!==null)auto.checked=localStorage.getItem('gran_intraday_auto')==='1';
+  body.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const P=intradayPlan(a), last=intradayLastPoint(P), ch=(last.price-P.prevClose)/P.prevClose*100;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong><div style="font-size:10px;color:var(--ink3)">${a.cat}</div></td>
+      <td><strong style="color:${chCol(ch/100)}">${last.price.toLocaleString()}</strong><div style="font-size:10px;color:${chCol(ch/100)}">${ch>=0?'+':''}${ch.toFixed(1)}%</div></td>
+      <td><input class="intraday-target-input" type="number" value="${((P.targetPct||0)*100).toFixed(1)}" min="-10" max="10" step="0.5" onchange="setIntradayTarget('${a.id}',this.value)"> %</td>
+      <td><select class="intraday-vol-select" onchange="setIntradayVol('${a.id}',this.value)">
+        ${Object.entries(INTRADAY_PATTERNS).map(([k,v])=>`<option value="${k}" ${k===P.volatility?'selected':''}>${v.name}</option>`).join('')}
+      </select></td>
+      <td><canvas class="intraday-mini-chart" id="idspk_${a.id}" width="180" height="54"></canvas></td>`;
+    body.appendChild(tr);
+    drawIntradaySpark(a,`idspk_${a.id}`);
+  });
+}
+function drawIntradaySpark(a,cid){
+  const c=document.getElementById(cid);if(!c)return;
+  const ctx=c.getContext('2d'), P=intradayPlan(a), pts=P.points||[];
+  const CW=Math.max(100,Math.round(c.clientWidth||c.width||180)),CH=Math.max(30,Math.round(c.clientHeight||c.height||54));
+  if(c.width!==CW)c.width=CW;if(c.height!==CH)c.height=CH;
+  ctx.clearRect(0,0,CW,CH);
+  if(!pts.length)return;
+  const mn=P.prevClose*0.9,mx=P.prevClose*1.1,rng=mx-mn||1;
+  const baseY=(CH-4)-((P.prevClose-mn)/rng)*(CH-8);
+  ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(0,0,CW,CH);
+  ctx.strokeStyle='rgba(106,72,32,.34)';ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(0,baseY);ctx.lineTo(CW,baseY);ctx.stroke();ctx.setLineDash([]);
+  drawGmIntradaySegments(ctx,pts,P,CW,CH);
+  const lp=pts[pts.length-1],lx=(lp.slot/(INTRADAY_SLOTS.length-1))*CW,ly=(CH-4)-((lp.price-mn)/rng)*(CH-8);
+  ctx.fillStyle=lp.price>=P.prevClose?'#c0392b':'#27ae60';ctx.beginPath();ctx.arc(lx,ly,3,0,Math.PI*2);ctx.fill();
+}
+function gmSparkXY(pt,P,CW,CH){const mn=P.prevClose*0.9,mx=P.prevClose*1.1,rng=mx-mn||1;return{x:(pt.slot/(INTRADAY_SLOTS.length-1))*CW,y:(CH-4)-((pt.price-mn)/rng)*(CH-8)};}
+function drawGmIntradaySegments(ctx,pts,P,CW,CH){
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1],b=pts[i],pa=gmSparkXY(a,P,CW,CH),pb=gmSparkXY(b,P,CW,CH),aUp=a.price>=P.prevClose,bUp=b.price>=P.prevClose;
+    ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';
+    if(aUp===bUp){ctx.strokeStyle=bUp?'#c0392b':'#27ae60';ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
+    else{const r=(P.prevClose-a.price)/(b.price-a.price),mid={slot:a.slot+(b.slot-a.slot)*r,price:P.prevClose},pm=gmSparkXY(mid,P,CW,CH);ctx.strokeStyle=aUp?'#c0392b':'#27ae60';ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pm.x,pm.y);ctx.stroke();ctx.strokeStyle=bUp?'#c0392b':'#27ae60';ctx.beginPath();ctx.moveTo(pm.x,pm.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
+  }
+}
 
 // ═══════════════════════════════════════════════════════
 //  趨勢狀態面板
@@ -1938,7 +2190,7 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
+function renderAll(){refreshTime();renderMkt();renderIntradayPlans();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
 
 // ── 暫停交易 ──
 function renderSuspendList(){
