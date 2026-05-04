@@ -1129,7 +1129,13 @@ setInterval(async()=>{
   const c=await pull();
   if(!c)return;
   if(c.lastSaved>(W?.lastSaved||0)){
-    // 雲端比本地新（玩家剛下單）→ 完全信任雲端
+    // 雲端比本地新（玩家剛下單）→ 信任雲端，但保留本地尚未上傳的 log 條目
+    const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
+    const localLog=(W?.log||[]).map(normalize);
+    const cloudLog=(c.log||[]).map(normalize);
+    // 把本地有、雲端沒有的 log 補入（避免 GM 剛發公告但還沒 push 就被雲端覆蓋）
+    const onlyLocal=localLog.filter(e=>!cloudLog.some(x=>(x.uid&&x.uid===e.uid)||(x.time===e.time&&x.text===e.text)));
+    if(onlyLocal.length>0)c.log=[...onlyLocal,...cloudLog].slice(0,100);
     W=c;
     renderAll();
   } else if(c.lastSaved===(W?.lastSaved||0)){
@@ -1219,19 +1225,37 @@ function intradayDesiredPct(targetPct,progress,cfg,step){
   return clampPct(desired);
 }
 function intradayStepAsset(a,step){
-  const S=intradaySession(), P=intradayPlan(a), cfg=INTRADAY_PATTERNS[P.volatility]||INTRADAY_PATTERNS.neutral;
+  const S=intradaySession(), P=intradayPlan(a);
+  // 消費 nextSlotShock：只影響本次 step，用完即清除
+  let activeCfg=P.volatility;
+  let hourClose;
   const last=intradayLastPoint(P);
-  const targetPct=Math.max(-0.10,Math.min(0.10,P.targetPct||0));
-  const progress=step/(INTRADAY_SLOTS.length-1);
   const limitUp=Math.round(P.prevClose*1.1), limitDown=Math.max(1,Math.round(P.prevClose*0.9));
-  const shaped=intradayDesiredPct(targetPct,progress,cfg,step);
-  const targetPrice=P.prevClose*(1+shaped);
-  const pull=(targetPrice-last.price)/P.prevClose*(cfg.pull||0.18);
-  const noiseBase=0.014*(a.vol||0.1)*10*(cfg.noise||0);
-  const hourNoise=(Math.random()-0.5)*noiseBase;
-  let hourMove=Math.max(-0.075,Math.min(0.075,pull+hourNoise));
-  let hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,last.price*(1+hourMove))));
-  if(step===INTRADAY_SLOTS.length-1)hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,P.prevClose*(1+targetPct))));
+  if(P.nextSlotShock!==undefined){
+    // 快速指令衝擊：這個小時直接以衝擊幅度作為本小時漲跌目標
+    const shockPct=P.nextSlotShock;
+    activeCfg=P.nextSlotVol||qbVolForPct(shockPct);
+    delete P.nextSlotShock; delete P.nextSlotVol;
+    const shockCfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
+    const noiseBase=0.014*(a.vol||0.1)*10*(shockCfg.noise||0);
+    const noise=(Math.random()-0.5)*noiseBase*0.5;
+    const raw=last.price*(1+shockPct+noise);
+    hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,raw)));
+  } else {
+    const cfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
+    const targetPct=Math.max(-0.10,Math.min(0.10,P.targetPct||0));
+    const progress=step/(INTRADAY_SLOTS.length-1);
+    const shaped=intradayDesiredPct(targetPct,progress,cfg,step);
+    const targetPrice=P.prevClose*(1+shaped);
+    const pull=(targetPrice-last.price)/P.prevClose*(cfg.pull||0.18);
+    const noiseBase=0.014*(a.vol||0.1)*10*(cfg.noise||0);
+    const hourNoise=(Math.random()-0.5)*noiseBase;
+    const hourMove=Math.max(-0.075,Math.min(0.075,pull+hourNoise));
+    hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,last.price*(1+hourMove))));
+    if(step===INTRADAY_SLOTS.length-1)hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,P.prevClose*(1+targetPct))));
+  }
+  // cfg 用於 tick 微波動計算（activeCfg 已在上方根據 shock 或原始 volatility 決定）
+  const cfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
   let tickPrice=last.price;
   const startSlot=S.slot||0;
   for(let i=1;i<=INTRADAY_TICKS_PER_HOUR;i++){
@@ -1343,13 +1367,17 @@ function qbVolForPct(pct){
 async function applyQbCommands(){
   const ids=Object.keys(QB_CMDS);
   if(!ids.length){alert('請先設定至少一個標的');return;}
+  const S=intradaySession();
+  const currentSlot=S.slot||0;
   W.assets.forEach(a=>{
     if(a.delisted)return;
     const cmd=QB_CMDS[a.id];
     if(!cmd)return;
     const P=intradayPlan(a);
-    P.targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,cmd.pct));
-    P.volatility=qbVolForPct(cmd.pct);
+    // 只影響「下一個小時」：用 nextSlotShock 暫存，intradayStepAsset 消費後清除
+    // 不修改 targetPct（整日目標），避免改動已走完的小時或預定的收盤方向
+    P.nextSlotShock=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,cmd.pct));
+    P.nextSlotVol=qbVolForPct(cmd.pct);
     if(W.market?.trends[a.id]){
       const T=W.market.trends[a.id];
       T.bias=(cmd.pct>0?1:-1)*Math.min(0.09,Math.abs(cmd.pct)*0.7);
@@ -1358,7 +1386,7 @@ async function applyQbCommands(){
       T.volatility='volatile';T.volDays=Math.floor(Math.random()*5)+4;
     }
   });
-  gmLog('ev',`⚡ 快速指令套用：${ids.length} 支標的（${ids.map(id=>{const a=W.assets.find(x=>x.id===id);const cmd=QB_CMDS[id];return a?`${a.name} ${cmd.label}`:''}).filter(Boolean).join('、')}）`);
+  gmLog('ev',`⚡ 快速指令套用：${ids.length} 支標的（${ids.map(id=>{const a=W.assets.find(x=>x.id===id);const cmd=QB_CMDS[id];return a?`${a.name} ${cmd.label}`:''}).filter(Boolean).join('、')}）— 下一個小時生效`);
   await push();renderAll();
 }
 
