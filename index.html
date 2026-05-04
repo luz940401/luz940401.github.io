@@ -1136,6 +1136,7 @@ setInterval(async()=>{
     // 把本地有、雲端沒有的 log 補入（避免 GM 剛發公告但還沒 push 就被雲端覆蓋）
     const onlyLocal=localLog.filter(e=>!cloudLog.some(x=>(x.uid&&x.uid===e.uid)||(x.time===e.time&&x.text===e.text)));
     if(onlyLocal.length>0)c.log=[...onlyLocal,...cloudLog].slice(0,100);
+    preserveLocalIntradayCompleted(W,c);
     W=c;
     renderAll();
   } else if(c.lastSaved===(W?.lastSaved||0)){
@@ -1207,6 +1208,52 @@ async function intradayCatchUpBeforeCommand(){
   await push();
 }
 function intradayAvg(P){return P.points.reduce((s,p)=>s+p.price,0)/Math.max(1,P.points.length);}
+function intradaySnapshotCompleted(){
+  const snap={};
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const P=intradayPlan(a);
+    const done=intradayCompletedSlot(P);
+    snap[a.id]={
+      done,
+      points:(P.points||[]).filter(pt=>(pt.slot||0)<=done).map(pt=>({...pt})),
+      prevClose:P.prevClose
+    };
+  });
+  return snap;
+}
+function intradayRestoreCompleted(snap){
+  if(!snap)return;
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const s=snap[a.id];
+    if(!s||!s.points||!s.points.length)return;
+    const P=intradayPlan(a);
+    const future=(P.points||[]).filter(pt=>(pt.slot||0)>s.done).map(pt=>({...pt}));
+    P.points=[...s.points,...future];
+    P.prevClose=s.prevClose||P.prevClose;
+    P.high=Math.max(P.prevClose||0,...P.points.map(x=>x.price||0));
+    P.low=Math.min(P.prevClose||Infinity,...P.points.map(x=>x.price||Infinity));
+    const last=intradayLastPoint(P);
+    if(last&&Number.isFinite(last.price))a.price=last.price;
+  });
+  syncIntradaySlotFromPoints();
+}
+function preserveLocalIntradayCompleted(localWorld,incomingWorld){
+  const L=localWorld?.market?.intraday, C=incomingWorld?.market?.intraday;
+  if(!L||!C||L.dateKey!==C.dateKey||!L.plans||!C.plans)return incomingWorld;
+  Object.keys(L.plans).forEach(id=>{
+    const lp=L.plans[id], cp=C.plans[id];
+    if(!lp||!cp||!lp.points||!lp.points.length)return;
+    const done=intradayCompletedSlot(lp);
+    if(done<=0)return;
+    const locked=lp.points.filter(pt=>(pt.slot||0)<=done).map(pt=>({...pt}));
+    const future=(cp.points||[]).filter(pt=>(pt.slot||0)>done).map(pt=>({...pt}));
+    cp.points=[...locked,...future];
+    cp.prevClose=lp.prevClose||cp.prevClose;
+    cp.high=Math.max(cp.prevClose||0,...cp.points.map(x=>x.price||0));
+    cp.low=Math.min(cp.prevClose||Infinity,...cp.points.map(x=>x.price||Infinity));
+  });
+  return incomingWorld;
+}
 function intradayOpen(){
   if(!W.market)W.market=initMarketState();
   const old=W.market.intraday;
@@ -1217,10 +1264,19 @@ function intradayOpen(){
     // prevClose 用 history 最後一筆（真正的昨日收盤價），不用 a.price（可能是 intraday 中途值）
     const h=a.history;
     const prev=(h&&h.length)?h[h.length-1]:a.price;
+    const keepToday=old?.dateKey===intradayKey()&&keep.points&&keep.points.length>1;
+    if(keepToday){
+      const pts=keep.points.map(pt=>({...pt}));
+      plans[a.id]={prevClose:keep.prevClose||prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',points:pts,high:Math.max(keep.prevClose||prev,...pts.map(x=>x.price||0)),low:Math.min(keep.prevClose||prev,...pts.map(x=>x.price||Infinity))};
+      const last=pts[pts.length-1];
+      if(last&&Number.isFinite(last.price))a.price=last.price;
+      return;
+    }
     a.price=prev; // 同步 a.price，避免後續計算用到舊值
     plans[a.id]={prevClose:prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
   });
   W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
+  syncIntradaySlotFromPoints();
   gmLog('time',`⏱ 日內盤開盤：${ds()} 08:00`);
   push();renderAll();
 }
@@ -1404,6 +1460,14 @@ function qbVolForPct(pct){
 async function applyQbCommands(){
   const ids=Object.keys(QB_CMDS);
   if(!ids.length){alert('請先設定至少一個標的');return;}
+  const preview=ids.map(id=>{
+    const a=W.assets.find(x=>x.id===id);
+    const cmd=QB_CMDS[id];
+    return a&&cmd?`${a.name} ${cmd.label}`:'';
+  }).filter(Boolean).slice(0,8).join('\n');
+  const more=ids.length>8?`\n... \u5171 ${ids.length} \u6a94`:'';
+  if(!confirm(`\u78ba\u5b9a\u7acb\u5373\u5957\u7528\u65e5\u5167\u76e4\u6307\u4ee4\uff1f\n\n\u9019\u6703\u5957\u7528 ${ids.length} \u6a94\u6a19\u7684\uff0c\u4e26\u53ef\u80fd\u5148\u88dc\u8dd1\u5230\u76ee\u524d\u6642\u6bb5\u3002\n\n${preview}${more}`))return;
+  const lockedIntraday=intradaySnapshotCompleted();
   await intradayCatchUpBeforeCommand();
   const S=intradaySession();
   const currentSlot=S.slot||0;
@@ -1425,6 +1489,7 @@ async function applyQbCommands(){
     }
   });
   gmLog('ev',`⚡ 快速指令套用：${ids.length} 支標的（${ids.map(id=>{const a=W.assets.find(x=>x.id===id);const cmd=QB_CMDS[id];return a?`${a.name} ${cmd.label}`:''}).filter(Boolean).join('、')}）— 下一個小時生效`);
+  intradayRestoreCompleted(lockedIntraday);
   await push();renderAll();
 }
 
