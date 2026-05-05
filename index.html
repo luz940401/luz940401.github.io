@@ -144,7 +144,27 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .asset-row-mini .aname{font-size:12px;font-weight:700;flex:1;min-width:80px;}
 .asset-row-mini .cur{font-size:13px;font-weight:700;min-width:72px;text-align:right;color:var(--ink2);}
 .asset-row-mini input{width:90px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.5);padding:4px 7px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;}
-.intraday-mini-chart{width:180px;height:54px;display:block;background:rgba(255,255,255,0.16);border:1px solid rgba(222,206,150,.65);}
+.mkt-tab{padding:7px 14px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink3);white-space:nowrap;transition:all .15s;}
+.mkt-tab:hover{color:var(--ink);background:rgba(184,134,11,0.06);}
+.mkt-tab.active{color:var(--ink);border-bottom-color:var(--gold);background:rgba(184,134,11,0.10);}
+/* 日內盤快速按鈕 */
+.hour-btns{display:flex;gap:3px;flex-wrap:nowrap;}
+.hour-btn{padding:4px 0;border:1px solid;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:800;cursor:pointer;min-width:38px;text-align:center;white-space:nowrap;transition:all .15s;}
+.hour-btn.up{color:var(--up);border-color:rgba(192,57,43,.35);background:rgba(192,57,43,.04);}
+.hour-btn.flat{color:var(--gold);border-color:rgba(184,134,11,.4);background:rgba(184,134,11,.04);}
+.hour-btn.dn{color:var(--dn);border-color:rgba(39,174,96,.35);background:rgba(39,174,96,.04);}
+.hour-btn.active{box-shadow:inset 0 0 0 2px currentColor;font-weight:900;}
+.hour-btn:hover{filter:brightness(1.1);}
+/* 波動 select */
+.vol-sel{width:100%;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,.5);padding:4px 6px;font-family:'Noto Sans TC',sans-serif;font-size:11px;outline:none;color:var(--ink);}
+/* 今日收盤目標 */
+.close-target-wrap{display:flex;gap:4px;align-items:center;}
+.close-target-inp{width:68px;border:1px solid var(--parch3);border-bottom:2px solid #6a3ca8;background:rgba(255,255,255,.5);padding:4px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;text-align:right;color:var(--ink);}
+.close-target-inp:focus{background:rgba(255,255,255,.85);}
+.close-target-unit{font-size:10px;color:var(--ink3);flex-shrink:0;}
+.close-target-btn{padding:3px 8px;border:1px solid #6a3ca8;background:rgba(106,60,168,.08);color:#6a3ca8;font-family:'Noto Sans TC',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
+.close-target-btn:hover{background:rgba(106,60,168,.2);}
+.close-target-set{font-size:10px;color:#6a3ca8;font-weight:700;min-width:36px;text-align:right;}
 .intraday-target-input{width:76px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;text-align:right;}
 .intraday-vol-select{width:112px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;}
 .intraday-batch-box{width:100%;min-height:88px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:8px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;resize:vertical;color:var(--ink);}
@@ -300,28 +320,38 @@ canvas{display:block;}
     </div>
   </div>
 
-  <!-- 市場行情 -->
-  <div class="panel">
-    <div class="ph"><div class="ph-title">📊 市場行情</div><span style="font-size:12px;color:var(--ink3)">點擊查看走勢</span></div>
-    <div class="pb" style="padding:0;overflow-x:auto">
-      <table class="mkt-table"><thead><tr><th>商品</th><th>現價</th><th>漲跌</th><th>趨勢</th><th>類別</th><th></th></tr></thead><tbody id="mktBody"></tbody></table>
-    </div>
-  </div>
-
-  <!-- 日內盤控制 -->
+  <!-- 市場行情 + 日內盤控制（整合版）-->
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">⏱ 日內盤控制（08:00 → 00:00）</div>
-      <span id="intradayStatusLabel" style="font-size:12px;color:var(--ink3)">尚未開盤</span>
-    </div>
-    <div class="pb">
-      <div class="notice">GM 調整的漲跌幅會排入「下一個小時」生效；已經走過的小時價格會保留，不會重新畫整天日內圖。</div>
-      <div style="overflow-x:auto;max-height:360px">
-        <table class="mkt-table">
-          <thead><tr><th>標的</th><th>目前</th><th>影響該小時</th><th>日內</th></tr></thead>
-          <tbody id="intradayPlanBody"></tbody>
-        </table>
+      <div class="ph-title">📊 市場行情 &amp; 日內盤控制</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span id="intradayStatusLabel" style="font-size:12px;color:var(--ink3)">尚未開盤</span>
+        <span style="font-size:12px;color:var(--ink3)">點擊查看走勢</span>
       </div>
+    </div>
+    <!-- 分類 Tab -->
+    <div style="display:flex;gap:0;border-bottom:2px solid var(--parch3);overflow-x:auto;flex-shrink:0">
+      <button id="mktTab_all" class="mkt-tab active" onclick="setMktTab('all')">全部</button>
+      <button id="mktTab_戰鬥" class="mkt-tab" onclick="setMktTab('戰鬥')">⚔ 戰鬥</button>
+      <button id="mktTab_魔法" class="mkt-tab" onclick="setMktTab('魔法')">🔮 魔法</button>
+      <button id="mktTab_研究" class="mkt-tab" onclick="setMktTab('研究')">🔭 研究</button>
+      <button id="mktTab_能源" class="mkt-tab" onclick="setMktTab('能源')">⚡ 能源</button>
+      <button id="mktTab_工業" class="mkt-tab" onclick="setMktTab('工業')">⚙ 工業</button>
+      <button id="mktTab_貿易" class="mkt-tab" onclick="setMktTab('貿易')">🚢 貿易</button>
+      <button id="mktTab_飲食" class="mkt-tab" onclick="setMktTab('飲食')">🌾 飲食</button>
+      <button id="mktTab_其他" class="mkt-tab" onclick="setMktTab('其他')">📌 其他</button>
+    </div>
+    <div class="pb" style="padding:0;overflow-x:auto">
+      <table class="mkt-table">
+        <thead><tr>
+          <th>商品</th><th>現價</th><th>漲跌</th>
+          <th style="min-width:220px">下一小時設定</th>
+          <th style="min-width:130px">波動模式</th>
+          <th style="min-width:110px">今日收盤目標</th>
+          <th style="min-width:72px">已排入</th>
+        </tr></thead>
+        <tbody id="mktBody"></tbody>
+      </table>
     </div>
   </div>
 
@@ -995,6 +1025,7 @@ function migrateAssets(world){
 
   if(!world.eventLog)world.eventLog=[];
   if(!world.gameDay)world.gameDay=world.gameMonth||1;
+  if(!world.assetVolPrefs)world.assetVolPrefs={};
   if(!world.market)world.market=initMarketState();
   // trends 不存在時只補初始值，不重置整個 market（避免 cycle/timer 歸零）
   if(!world.market.trends)world.market.trends={};
@@ -1375,6 +1406,34 @@ async function runIntradayAuto(force=false){
 // ═══════════════════════════════════════════════════════
 //  趨勢引擎
 // ═══════════════════════════════════════════════════════
+
+// 日內盤快速設定（套用持久波動模式）
+function setAssetHourMove(id, pct){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  const p=Math.max(-10,Math.min(10,Number(pct)||0))/100;
+  // 優先用 GM 持久設定的波動模式
+  const volPref=(W.assetVolPrefs&&W.assetVolPrefs[id])||qbVolForPct(p);
+  const P=queueNextHourMove(a,p,volPref);
+  touchTrendForQueuedMove(a,p);
+  const slotLabel=INTRADAY_SLOTS[P?.nextSlotShockSlot||nextQueuedIntradaySlot()]||'下一小時';
+  gmLog('time',`${a.name} 已排入 ${slotLabel} 生效：${p>=0?'+':''}${(p*100).toFixed(0)}%`);
+  push();renderMkt();
+}
+
+// 今日收盤目標設定（輸入漲跌幅，例如 5 或 -3）
+function setCloseTarget(id){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  const el=document.getElementById('ctgt_'+id);if(!el)return;
+  const raw=parseFloat(el.value);
+  if(isNaN(raw)){alert('請輸入漲跌幅，例如 5 或 -3');return;}
+  const targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,raw/100));
+  const P=intradayPlan(a);
+  P.targetPct=targetPct;
+  const finalPrice=Math.round((P.prevClose||a.price)*(1+targetPct));
+  gmLog('time',`${a.name} 今日收盤目標：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → ${finalPrice.toLocaleString()} G`);
+  el.value='';
+  push();renderMkt();
+}
 function initMarketState(){
   const trends={};
   ASSETS0.forEach(a=>{
@@ -2006,13 +2065,91 @@ function addPlayer(){
 // ═══════════════════════════════════════════════════════
 //  市場表格
 // ═══════════════════════════════════════════════════════
+// ── 分類 Tab 狀態 ──
+let _mktTab = 'all';
+function setMktTab(cat){
+  _mktTab = cat;
+  document.querySelectorAll('.mkt-tab').forEach(b=>{
+    const id = b.id.replace('mktTab_','');
+    b.className = 'mkt-tab' + (id===cat?' active':'');
+  });
+  renderMkt();
+}
+
+// 從 cat 字串判斷是否屬於某大類
+function catMatch(a, tab){
+  if(tab==='all') return true;
+  if(tab==='其他'){
+    const known=['戰鬥','魔法','研究','能源','工業','貿易','飲食'];
+    return !known.some(k=>(a.cat||'').includes(k));
+  }
+  return (a.cat||'').includes(tab);
+}
+
+// 波動模式選項
+const VOL_OPTS = [
+  {v:'neutral',    l:'一般自然盤'},
+  {v:'buyThenSell',l:'先拉後殺'},
+  {v:'sellThenBuy',l:'先殺後拉'},
+  {v:'violent',    l:'劇烈'},
+  {v:'choppy',     l:'震盪'},
+  {v:'calm',       l:'平穩'},
+  {v:'flat',       l:'窄幅盤整'},
+  {v:'quiet',      l:'沒波動'},
+];
+
+// 精簡按鈕組：[漲停][5~8%][1~4%][平盤][-1~-4%][-5~-8%][跌停]
+function hourBtnHtml(id, pending){
+  const pct = pending !== undefined ? Math.round(pending*100) : null;
+  // 判斷 pending 落在哪個區間
+  const zone = pct===null ? null : pct>=10?'lu':pct>=5?'u2':pct>=1?'u1':pct===0?'flat':pct>=-4?'d1':pct>=-8?'d2':'ld';
+  const ac = z => zone===z?' active':'';
+  return `<div class="hour-btns">
+    <button class="hour-btn up${ac('lu')}" onclick="setAssetHourMove('${id}',10)" title="漲停 +10%">漲停</button>
+    <button class="hour-btn up${ac('u2')}" onclick="setAssetHourMovePick('${id}','u2')" title="+5~8%">+5~8</button>
+    <button class="hour-btn up${ac('u1')}" onclick="setAssetHourMovePick('${id}','u1')" title="+1~4%">+1~4</button>
+    <button class="hour-btn flat${ac('flat')}" onclick="setAssetHourMove('${id}',0)" title="平盤">平盤</button>
+    <button class="hour-btn dn${ac('d1')}" onclick="setAssetHourMovePick('${id}','d1')" title="-1~-4%">-1~4</button>
+    <button class="hour-btn dn${ac('d2')}" onclick="setAssetHourMovePick('${id}','d2')" title="-5~-8%">-5~8</button>
+    <button class="hour-btn dn${ac('ld')}" onclick="setAssetHourMove('${id}',-10)" title="跌停 -10%">跌停</button>
+  </div>`;
+}
+
+// 區間隨機取值
+function pickRangeVal(range){
+  if(range==='u2') return (5 + Math.random()*3).toFixed(1)*1;
+  if(range==='u1') return (1 + Math.random()*3).toFixed(1)*1;
+  if(range==='d1') return -(1 + Math.random()*3).toFixed(1)*1;
+  if(range==='d2') return -(5 + Math.random()*3).toFixed(1)*1;
+  return 0;
+}
+function setAssetHourMovePick(id, range){
+  const v = pickRangeVal(range);
+  setAssetHourMove(id, v);
+}
+
+// 波動模式 select 變更
+function onVolSelChange(id, val){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(!W.assetVolPrefs) W.assetVolPrefs={};
+  W.assetVolPrefs[id] = val;
+  const P=intradayPlan(a);
+  if(P.nextSlotShock!==undefined) P.nextSlotVol=val;
+  else P.volatility=val;
+  push(); renderMkt();
+}
+
 function renderMkt(){
   const tb=document.getElementById('mktBody');tb.innerHTML='';
+  const S=intradaySession();
+  const statusLabel=document.getElementById('intradayStatusLabel');
+  if(statusLabel) statusLabel.textContent=`${S.status==='open'?'開盤中':S.status==='closed'?'已收盤':'待開盤'} · ${INTRADAY_SLOTS[S.slot||0]||'08:00'} · ${ds()}`;
+
   W.assets.forEach(a=>{
+    if(!catMatch(a, _mktTab)) return;
     if(a.delisted){
       const tr=document.createElement('tr');tr.className='is-delisted';
-      tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">下市</span></td>
-        <td colspan="5" style="font-size:12px;color:var(--ink3)">已於 ${a.delistedAt||'—'} 下市</td>`;
+      tr.innerHTML=`<td colspan="6"><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">下市</span></td>`;
       tb.appendChild(tr);return;
     }
     const ch=gc(a),pct=(ch*100).toFixed(1),sign=ch>=0?'+':'',col=chCol(ch);
@@ -2022,57 +2159,59 @@ function renderMkt(){
     const isWarn=a.price<initPrice*0.5&&!a.delistWarned;
     const tr=document.createElement('tr');
     tr.className=(lUp?'is-limit-up':lDn?'is-limit-dn':isWarn?'is-warning':'');
-    tr.onclick=()=>openChart(a.id);
-    const badge=lUp?'<span class="limit-badge up">漲停</span>':lDn?'<span class="limit-badge dn">跌停</span>':isWarn?'<span class="warn-badge">警示</span>':'';
-    tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong>${badge}</td>
-      <td><strong style="font-size:14px;color:${col}">${a.price.toLocaleString()}</strong><span style="font-size:10px;color:var(--ink3)"> G</span></td>
-      <td><strong style="font-size:12px;color:${col}">${sign}${pct}%</strong></td>
-      <td><canvas id="spk_${a.id}" width="72" height="22"></canvas></td>
-      <td><span class="tag" style="font-size:9px">${a.cat}</span></td>
-      <td></td>`;
-    tb.appendChild(tr);drawSpk(a,`spk_${a.id}`);
+
+    // 今日收盤目標欄
+    const P = intradayPlan(a);
+    const pending = P?.nextSlotShock;
+    const pendingSlot = P?.nextSlotShockSlot;
+    const pendingLabel = pending!==undefined
+      ? `<span style="color:#6a3ca8;font-weight:700">${INTRADAY_SLOTS[pendingSlot]||'下一時'} ${pending>=0?'+':''}${(pending*100).toFixed(0)}%</span>`
+      : '<span style="color:var(--ink3)">－</span>';
+
+    // 波動模式（優先用 assetVolPrefs 持久設定，其次 P.volatility）
+    const volPref = W.assetVolPrefs?.[a.id] || P?.volatility || 'neutral';
+    const volSelHtml = `<select class="vol-sel" onchange="onVolSelChange('${a.id}',this.value)">
+      ${VOL_OPTS.map(o=>`<option value="${o.v}"${volPref===o.v?' selected':''}>${o.l}</option>`).join('')}
+    </select>`;
+
+    // 今日收盤目標（顯示已設定的 targetPct）
+    const tgt = P?.targetPct;
+    const tgtLabel = (tgt!==undefined&&tgt!==0)
+      ? `<div class="close-target-set">${tgt>=0?'+':''}${(tgt*100).toFixed(1)}%</div>`
+      : `<div class="close-target-set" style="color:var(--ink3)">未設</div>`;
+    const closeTargetHtml = `
+      <div class="close-target-wrap">
+        <input class="close-target-inp" id="ctgt_${a.id}" type="number"
+          placeholder="%" step="0.5" min="-10" max="10"
+          title="輸入今日收盤漲跌幅，例如 5 或 -3">
+        <button class="close-target-btn" onclick="setCloseTarget('${a.id}')">設定</button>
+      </div>
+      ${tgtLabel}`;
+
+    tr.innerHTML=`
+      <td onclick="openChart('${a.id}')" style="cursor:pointer">
+        <span style="font-size:15px;margin-right:5px">${a.icon}</span>
+        <strong style="font-size:12px">${a.name}</strong>
+        <div style="font-size:10px;color:var(--ink3)">${a.cat}</div>
+      </td>
+      <td onclick="openChart('${a.id}')" style="cursor:pointer">
+        <strong style="font-size:13px;color:${col}">${a.price.toLocaleString()}</strong>
+        <span style="font-size:10px;color:var(--ink3)"> G</span>
+      </td>
+      <td onclick="openChart('${a.id}')" style="cursor:pointer">
+        <strong style="font-size:12px;color:${col}">${sign}${pct}%</strong>
+      </td>
+      <td>${hourBtnHtml(a.id, pending)}</td>
+      <td>${volSelHtml}</td>
+      <td>${closeTargetHtml}</td>
+      <td>${pendingLabel}</td>`;
+    tb.appendChild(tr);
   });
 }
-function drawSpk(a,cid){const c=document.getElementById(cid);if(!c)return;const ctx=c.getContext('2d');const d=a.history.slice(-20);const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;ctx.clearRect(0,0,72,22);ctx.strokeStyle=chCol(gc(a));ctx.lineWidth=1.5;ctx.beginPath();d.forEach((v,i)=>{const x=(i/(d.length-1))*72,y=20-((v-mn)/rng)*17;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();}
-function setAssetHourMove(id,pct){
-  const a=W.assets.find(x=>x.id===id);if(!a)return;
-  const p=Math.max(-10,Math.min(10,Number(pct)||0))/100;
-  const P=queueNextHourMove(a,p,qbVolForPct(p));
-  touchTrendForQueuedMove(a,p);
-  const slotLabel=INTRADAY_SLOTS[P?.nextSlotShockSlot||nextQueuedIntradaySlot()]||'下一小時';
-  gmLog('time',`${a.name} 已排入 ${slotLabel} 生效：${p>=0?'+':''}${(p*100).toFixed(0)}%`);
-  push();renderIntradayPlans();
-}
-function intradayActionButtons(id){
-  const a=W.assets.find(x=>x.id===id), P=a?intradayPlan(a):null;
-  const pending=P&&P.nextSlotShock!==undefined?Math.round(P.nextSlotShock*100):null;
-  const cls=v=>pending===v?' active':'';
-  const ups=[10,8,7,6,5,4,3,2,1];
-  const dns=[-1,-2,-3,-4,-5,-6,-7,-8,-10];
-  return `<div class="pct-action-grid">
-    ${ups.map(v=>`<button class="up${cls(v)}" onclick="setAssetHourMove('${id}',${v})">${v===10?'漲停':'+'+v}</button>`).join('')}
-    <button class="flat${cls(0)}" onclick="setAssetHourMove('${id}',0)">平盤</button>
-    ${dns.map(v=>`<button class="dn${cls(v)}" onclick="setAssetHourMove('${id}',${v})">${v===-10?'跌停':v}</button>`).join('')}
-  </div>`;
-}
-function renderIntradayPlans(){
-  const label=document.getElementById('intradayStatusLabel'), body=document.getElementById('intradayPlanBody');
-  if(!label||!body||!W)return;
-  const S=intradaySession();
-  label.textContent=`${S.status==='open'?'開盤中':S.status==='closed'?'已收盤':'待開盤'} · ${INTRADAY_SLOTS[S.slot||0]||'08:00'} · ${ds()}`;
-  body.innerHTML='';
-  W.assets.filter(a=>!a.delisted).forEach(a=>{
-    const P=intradayPlan(a), last=intradayLastPoint(P), ch=(last.price-P.prevClose)/P.prevClose*100;
-    const pending=P.nextSlotShock!==undefined?`${INTRADAY_SLOTS[P.nextSlotShockSlot]||'下一小時'} ${P.nextSlotShock>=0?'+':''}${(P.nextSlotShock*100).toFixed(0)}%`:'';
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong><div style="font-size:10px;color:var(--ink3)">${a.cat}${pending?` · 已排 ${pending}`:''}</div></td>
-      <td><strong style="color:${chCol(ch/100)}">${last.price.toLocaleString()}</strong><div style="font-size:10px;color:${chCol(ch/100)}">${ch>=0?'+':''}${ch.toFixed(1)}%</div></td>
-      <td>${intradayActionButtons(a.id)}</td>
-      <td><canvas class="intraday-mini-chart" id="idspk_${a.id}" width="180" height="54"></canvas></td>`;
-    body.appendChild(tr);
-    drawIntradaySpark(a,`idspk_${a.id}`);
-  });
-}
+
+// renderIntradayPlans 現已整合進 renderMkt，保留空函數避免舊呼叫報錯
+function renderIntradayPlans(){ renderMkt(); }
+
 function renderAssetGroups(){
   const list=document.getElementById('assetGroupList'), sel=document.getElementById('groupCommandSelect'), volSel=document.getElementById('groupCommandVol');
   if(!list||!sel||!W)return;
@@ -2434,7 +2573,7 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();renderIntradayPlans();renderAssetGroups();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
+function renderAll(){refreshTime();renderMkt();renderAssetGroups();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
 
 // ── 暫停交易 ──
 function renderSuspendList(){
