@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GM 控制台</title>
+<title>格蘭大陸 · GM 控制台</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 :root{--parch:#f5e9ce;--parch2:#ede0b5;--parch3:#dece96;--ink:#1a1008;--ink2:#3a2010;--ink3:#6a4820;--gold:#b8860b;--gold2:#d4a017;--up:#c0392b;--dn:#27ae60;--purple:#7b2d8b;--shadow:rgba(20,10,0,0.35);}
@@ -36,6 +36,19 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .ph{background:var(--parch2);border-bottom:2px solid var(--gold);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
 .ph-title{font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:1px;}
 .pb{padding:16px;}
+.panel.collapsed>.pb{display:none!important;}
+.panel>.ph{cursor:pointer;user-select:none;}
+.panel>.ph::after{content:"收合";font-size:11px;color:var(--ink3);border:1px solid var(--parch3);padding:2px 8px;background:rgba(255,255,255,.22);}
+.panel.collapsed>.ph::after{content:"展開";}
+.pct-action-grid{display:grid;grid-template-columns:repeat(13,minmax(54px,1fr));gap:4px;min-width:760px;}
+.pct-action-grid button{padding:5px 0;border:1px solid var(--parch3);background:rgba(255,255,255,.25);font-size:11px;font-weight:800;cursor:pointer;color:var(--ink2);font-family:'Noto Sans TC',sans-serif;}
+.pct-action-grid button.up{color:var(--up);border-color:rgba(192,57,43,.35);}
+.pct-action-grid button.dn{color:var(--dn);border-color:rgba(39,174,96,.35);}
+.pct-action-grid button.flat{color:var(--gold);border-color:rgba(184,134,11,.4);}
+.pct-action-grid button.active{background:rgba(184,134,11,.18);box-shadow:inset 0 0 0 2px var(--gold);border-color:var(--gold);color:var(--ink);}
+.pct-action-grid button.active.up{background:rgba(192,57,43,.16);box-shadow:inset 0 0 0 2px rgba(192,57,43,.72);}
+.pct-action-grid button.active.dn{background:rgba(39,174,96,.16);box-shadow:inset 0 0 0 2px rgba(39,174,96,.72);}
+@media(max-width:900px){.pct-action-grid{grid-template-columns:repeat(7,minmax(50px,1fr));min-width:0;}}
 .site-header{background:rgba(245,233,206,0.97);border:2px solid var(--gold);border-bottom:4px solid var(--gold);box-shadow:0 3px 16px var(--shadow);padding:14px 16px;margin-bottom:14px;text-align:center;}
 .site-header h1{font-size:clamp(18px,4vw,26px);font-weight:900;color:var(--ink);letter-spacing:2px;}
 .site-header .sub{font-size:12px;color:var(--ink3);margin-top:3px;}
@@ -72,30 +85,7 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .btn-danger:hover{background:rgba(192,57,43,0.18);}
 .time-big{font-size:clamp(20px,4vw,30px);font-weight:700;color:var(--ink);text-align:center;padding:10px 0 3px;}
 .time-sub{font-size:14px;color:var(--ink3);text-align:center;margin-bottom:12px;}
-/* 敹恍?隞斗????*/
-.qb-panel{background:rgba(255,255,255,0.10);border:1px solid var(--parch3);margin-bottom:12px;}
-.qb-head{background:var(--parch2);border-bottom:1px solid var(--parch3);padding:8px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.qb-head-title{font-size:11px;font-weight:700;letter-spacing:1px;color:var(--ink2);}
-.qb-filter{display:flex;gap:4px;}
-.qb-ftag{padding:3px 10px;border:1px solid var(--parch3);background:transparent;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;cursor:pointer;color:var(--ink3);}
-.qb-ftag.on{border-color:var(--gold);background:rgba(184,134,11,0.12);color:var(--ink);}
-.qb-body{max-height:420px;overflow-y:auto;}
-.qb-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(222,206,150,0.35);flex-wrap:wrap;}
-.qb-row:last-child{border-bottom:none;}
-.qb-name{font-size:12px;font-weight:700;color:var(--ink);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.qb-btns{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
-.qb-btn{padding:4px 10px;border:1px solid var(--parch3);background:transparent;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;cursor:pointer;color:var(--ink3);white-space:nowrap;transition:all .15s;}
-.qb-btn:hover{border-color:var(--gold);color:var(--ink);}
-.qb-btn.up{border-color:#c0392b;color:#c0392b;background:rgba(192,57,43,0.06);}
-.qb-btn.dn{border-color:#27ae60;color:#27ae60;background:rgba(39,174,96,0.06);}
-.qb-btn.flat{border-color:var(--ink3);color:var(--ink3);background:rgba(0,0,0,0.03);}
-.qb-btn.active-up{background:#c0392b;color:#fff;border-color:#c0392b;}
-.qb-btn.active-dn{background:#27ae60;color:#fff;border-color:#27ae60;}
-.qb-btn.active-flat{background:var(--ink3);color:#fff;border-color:var(--ink3);}
-.qb-status{font-size:11px;font-weight:700;min-width:48px;text-align:right;flex-shrink:0;}
-.qb-status.up{color:#c0392b;}.qb-status.dn{color:#27ae60;}.qb-status.flat{color:var(--ink3);}
-.qb-actions{padding:10px 12px;display:flex;gap:8px;border-top:1px solid var(--parch3);}
-/* 撣銵冽 */
+/* 市場表格 */
 .mkt-table{width:100%;border-collapse:collapse;}
 .mkt-table th{font-size:11px;font-weight:700;color:var(--ink3);padding:8px 8px;border-bottom:2px solid var(--parch3);text-align:left;letter-spacing:1px;white-space:nowrap;}
 .mkt-table td{padding:8px 8px;border-bottom:1px solid rgba(222,206,150,0.5);vertical-align:middle;}
@@ -114,13 +104,13 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .limit-badge.dn{background:var(--dn);color:#fff;}
 .mkt-table tr.is-limit-up .limit-badge,
 .mkt-table tr.is-limit-dn .limit-badge{display:none;}
-/* 銝?霅衣內 */
+/* 下市警示 */
 .mkt-table tr.is-warning td{background:rgba(184,134,11,0.08);}
 .mkt-table tr.is-delisted td{background:rgba(100,100,100,0.15)!important;opacity:0.5;}
 .delist-badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:900;letter-spacing:1px;margin-left:6px;vertical-align:middle;background:#888;color:#fff;}
 .warn-badge{display:inline-block;padding:2px 8px;font-size:10px;font-weight:900;letter-spacing:1px;margin-left:6px;vertical-align:middle;background:var(--gold);color:#fff;}
 .tag{display:inline-block;padding:2px 8px;font-size:10px;font-weight:500;border:1px solid var(--gold);color:var(--gold);}
-/* 鈭辣銵典 */
+/* 事件表單 */
 .evt-pct-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;}
 @media(max-width:500px){.evt-pct-grid{grid-template-columns:1fr;}}
 .evt-pct-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(222,206,150,0.3);}
@@ -136,7 +126,7 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .preset-btns{display:flex;gap:6px;flex-shrink:0;}
 .fire-btn{padding:5px 14px;border:1px solid var(--gold);color:var(--gold);background:transparent;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;}
 .del-btn{padding:5px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;}
-/* 鞎∪?銵?*/
+/* 財富表 */
 .w-table{width:100%;border-collapse:collapse;}
 .w-table th{font-size:11px;font-weight:700;color:var(--ink3);padding:8px 10px;border-bottom:2px solid var(--parch3);text-align:left;white-space:nowrap;}
 .w-table td{padding:9px 10px;border-bottom:1px solid var(--parch3);font-size:13px;vertical-align:top;}
@@ -146,9 +136,9 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .holding-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 0;}
 .pnl-pos{color:var(--up);font-weight:700;}
 .pnl-neg{color:var(--dn);font-weight:700;}
-/* IPO 銵典 */
+/* IPO 表單 */
 .ipo-form{background:rgba(123,45,139,0.05);border:1px solid rgba(123,45,139,0.2);padding:14px;margin-bottom:12px;}
-/* 頞典?Ｘ */
+/* 趨勢面板 */
 .asset-row-mini{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--parch3);margin-bottom:7px;background:rgba(255,255,255,0.2);flex-wrap:wrap;}
 .asset-row-mini .icon{font-size:18px;flex-shrink:0;}
 .asset-row-mini .aname{font-size:12px;font-weight:700;flex:1;min-width:80px;}
@@ -187,10 +177,10 @@ canvas{display:block;}
 
 </div>
 
-<!-- 韏啣??Modal -->
+<!-- 走勢圖 Modal -->
 <div class="modal-overlay hidden" id="chartModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
-    <div class="modal-head"><div class="modal-title" id="modalTitle">韏啣??/div><button class="modal-close" onclick="closeModal()">??/button></div>
+    <div class="modal-head"><div class="modal-title" id="modalTitle">走勢圖</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="modal-stats" id="modalStats"></div>
       <canvas id="modalChart" height="240" style="width:100%"></canvas>
@@ -201,61 +191,61 @@ canvas{display:block;}
 <!-- Setup Overlay -->
 <div class="setup-overlay" id="setupOverlay">
   <div class="setup-box">
-    <div class="setup-title">? ?活閮剖?嚗? Google Sheets</div>
-    <div class="setup-sub">閮剖?摰?敺????蝵桅?質???銝隞質???/div>
-    <div class="step-row"><div class="step-num">1</div><div class="step-body">?? <a href="https://sheets.google.com" target="_blank" style="color:var(--gold)">Google Sheets</a>嚗遣蝡閰衣?銵?/div></div>
-    <div class="step-row"><div class="step-num">2</div><div class="step-body"><code>?游??</code> ??<code>Apps Script</code>嚗票銝?apps-script.js ?批捆嚗摮?/div></div>
-    <div class="step-row"><div class="step-num">3</div><div class="step-body"><code>?函蔡</code> ??<code>?啣??函蔡</code>嚗??蝬脤??蝔?嚗????訾遙雿犖嚗蝵脖蒂??</div></div>
-    <div class="step-row"><div class="step-num">4</div><div class="step-body">銴ˊ蝬脤??蝔?蝬脣?嚗票?唬???/div></div>
-    <div class="setup-warn">??靽格 Apps Script 敺???函蔡嚗恣?蝵????啁??穿?</div>
+    <div class="setup-title">🗺 初次設定：連接 Google Sheets</div>
+    <div class="setup-sub">設定完成後，所有裝置都能讀取同一份資料。</div>
+    <div class="step-row"><div class="step-num">1</div><div class="step-body">前往 <a href="https://sheets.google.com" target="_blank" style="color:var(--gold)">Google Sheets</a>，建立新試算表</div></div>
+    <div class="step-row"><div class="step-num">2</div><div class="step-body"><code>擴充功能</code> → <code>Apps Script</code>，貼上 apps-script.js 內容，儲存</div></div>
+    <div class="step-row"><div class="step-num">3</div><div class="step-body"><code>部署</code> → <code>新增部署</code>，類型選網頁應用程式，存取權選任何人，部署並授權</div></div>
+    <div class="step-row"><div class="step-num">4</div><div class="step-body">複製網頁應用程式網址，貼到下方</div></div>
+    <div class="setup-warn">⚠ 修改 Apps Script 後須重新部署（管理部署 → 新版本）</div>
     <input class="url-input" type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/xxxxxxxx/exec">
-    <button class="btn btn-gold" onclick="saveUrl()">蝣箄?銝阡??</button>
-    <button class="btn btn-ghost" onclick="localMode()">?歲??雿輻?砍璅∪?</button>
+    <button class="btn btn-gold" onclick="saveUrl()">確認並連線</button>
+    <button class="btn btn-ghost" onclick="localMode()">先跳過，使用本地模式</button>
   </div>
 </div>
 
 <!-- Header -->
 <div class="site-header">
-  <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">??GM ?批??/div>
-  <h1>?潸憭折</h1>
-  <div class="sub">?振鈭斗??</div>
+  <div style="font-size:11px;color:var(--ink3);margin-bottom:4px">⚙ GM 控制台</div>
+  <h1>格蘭大陸</h1>
+  <div class="sub">皇家交易所</div>
   <div class="nav-row">
-    <a href="player.html" target="_blank" class="nav-link">?拙振? ??/a>
-    <a href="overview.html" target="_blank" class="nav-link">憭抒蝮質汗 ??/a>
-    <div class="sync-bar"><div class="sdot" id="sdot"></div><span id="slabel">?芷??</span></div>
-    <button class="btn-sm" onclick="document.getElementById('setupOverlay').classList.remove('hidden')" style="font-size:11px">?閮剖?</button>
+    <a href="player.html" target="_blank" class="nav-link">玩家頁面 ↗</a>
+    <a href="overview.html" target="_blank" class="nav-link">大盤總覽 ↗</a>
+    <div class="sync-bar"><div class="sdot" id="sdot"></div><span id="slabel">未連線</span></div>
+    <button class="btn-sm" onclick="document.getElementById('setupOverlay').classList.remove('hidden')" style="font-size:11px">重新設定</button>
     <span id="gmClock" style="font-size:12px;color:var(--ink3)"></span>
   </div>
 </div>
 
-<!-- GM ?砍??潔? -->
+<!-- GM 公告發佈 -->
 <div class="panel" style="margin-bottom:14px">
   <div class="ph" style="background:linear-gradient(135deg,#2a1a00,#3e2800);border-bottom-color:#b8860b">
-    <div class="ph-title" style="color:#f5e9ce;font-size:14px">? GM ?砍??潔?</div>
-    <span style="font-size:11px;color:rgba(245,233,206,0.6)">?雿??胯銝?∪?颱??券脫???/span>
+    <div class="ph-title" style="color:#f5e9ce;font-size:14px">📣 GM 公告發佈</div>
+    <span style="font-size:11px;color:rgba(245,233,206,0.6)">僅發佈消息・不改股價・不推進時間</span>
   </div>
   <div class="pb" style="padding:12px 16px">
     <div style="display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap">
       <div style="flex:1;min-width:200px">
         <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
           <select id="announceCat" style="background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none;flex-shrink:0">
-            <option value="ev">??銝?鈭辣</option>
-            <option value="good">?? ?拙?瘨</option>
-            <option value="bad">?? ?拍征瘨</option>
-            <option value="warn">??摰霅衣內</option>
-            <option value="time">?? ?砍??</option>
+            <option value="ev">⚡ 世界事件</option>
+            <option value="good">📈 利多消息</option>
+            <option value="bad">📉 利空消息</option>
+            <option value="warn">⚠ 官方警示</option>
+            <option value="time">📋 公告通知</option>
           </select>
-          <input type="text" id="announcePrefix" placeholder="璅?嚗憛恬?憒??振鈭斗???砍?嚗? style="flex:1;min-width:140px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none">
+          <input type="text" id="announcePrefix" placeholder="標題（選填，如：皇家交易所公告）" style="flex:1;min-width:140px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none">
         </div>
-        <textarea id="announceText" placeholder="頛詨?砍??批捆?佗??臬?銵??舀 emoji嚗? style="width:100%;min-height:60px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:9px 12px;font-family:'Noto Sans TC',sans-serif;font-size:14px;outline:none;resize:vertical"></textarea>
+        <textarea id="announceText" placeholder="輸入公告內容…（可多行，支援 emoji）" style="width:100%;min-height:60px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:9px 12px;font-family:'Noto Sans TC',sans-serif;font-size:14px;outline:none;resize:vertical"></textarea>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;min-width:110px">
-        <button class="btn btn-gold" style="margin:0;padding:11px 18px;font-size:14px" onclick="postAnnouncement()">? ?潔?</button>
-        <button class="btn btn-ghost" style="margin:0;font-size:11px" onclick="document.getElementById('announceText').value='';document.getElementById('announcePrefix').value=''">皜</button>
+        <button class="btn btn-gold" style="margin:0;padding:11px 18px;font-size:14px" onclick="postAnnouncement()">📣 發佈</button>
+        <button class="btn btn-ghost" style="margin:0;font-size:11px" onclick="document.getElementById('announceText').value='';document.getElementById('announcePrefix').value=''">清除</button>
       </div>
     </div>
     <div id="recentAnnouncements" style="margin-top:8px;display:none">
-      <div style="font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;margin-bottom:4px">?餈雿?/div>
+      <div style="font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:1px;margin-bottom:4px">最近發佈</div>
       <div id="recentAnnouncementList" style="max-height:80px;overflow-y:auto"></div>
     </div>
   </div>
@@ -263,95 +253,72 @@ canvas{display:block;}
 
 <div class="g2">
 <div>
-  <!-- ?? -->
+  <!-- 時間 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">?????批</div></div>
+    <div class="ph"><div class="ph-title">⏳ 時間控制</div></div>
     <div class="pb">
-      <div class="time-big" id="dateBig">?潸??蝚?撟?蝚???/div>
-      <div class="time-sub" id="seasonLbl">?乩???/div>
+      <div class="time-big" id="dateBig">格蘭曆 第1年 第1日</div>
+      <div class="time-sub" id="seasonLbl">春之日</div>
       <div class="g2">
-        <div class="field"><label>撟?/label><input type="number" id="setY" min="1" value="1"></div>
-        <div class="field"><label>蝚砍嗾??/label><input type="number" id="setD" min="1" value="1"></div>
+        <div class="field"><label>年</label><input type="number" id="setY" min="1" value="1"></div>
+        <div class="field"><label>第幾日</label><input type="number" id="setD" min="1" value="1"></div>
       </div>
-      <button class="btn btn-gold" onclick="applyTime()">閮剖???</button>
-      <button class="btn btn-ghost" id="undoBtn" onclick="undoLast()" style="margin-top:4px;border-color:var(--up);color:var(--up);opacity:0.5;cursor:not-allowed" disabled>???日銝?甇?/button>
+      <div class="g2">
+        <button class="btn btn-gold" onclick="applyTime()">設定時間</button>
+        </div>
+      <button class="btn btn-ghost" id="undoBtn" onclick="undoLast()" style="margin-top:4px;border-color:var(--up);color:var(--up);opacity:0.5;cursor:not-allowed" disabled>↩ 撤銷上一步</button>
       <div id="undoLabel" style="font-size:11px;color:var(--ink3);text-align:center;margin-top:2px;min-height:16px"></div>
 </div>
   </div>
 
-  <!-- 撠?敹恍?隞?-->
+  <!-- 排程系統 -->
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">??銝?撠?敹恍?隞?/div>
+      <div class="ph-title">🗓 排程系統</div>
       <span style="font-size:11px;color:var(--ink3)" id="schedNextLabel"></span>
     </div>
     <div class="pb" style="padding:14px 16px">
-      <div class="notice" style="border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05);color:var(--ink3);margin-bottom:12px;line-height:1.8">
-        閮剖?銝??暺???鈭辣敶梢嚗頂蝯望??刻府撠??芸?憟銝血辣隡貉隅?Ｗ?嗥??br>
-        <strong>?澆?嚗?/strong>璅??迂?D 瞍脰?撟?瘜Ｗ?<br>
-        <strong>蝭?嚗?/strong>摰???10 ?? 嚗?silverwing -8 ?捏敺? 嚗??典???3 ?
+      <div class="notice" style="border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05);color:var(--ink3);margin-bottom:12px">
+        排程只接受整點。設定的漲跌幅會在該整點生效；已經走過的小時價格會保留，不會重畫日內圖。
       </div>
-      <div class="field">
-        <label>?格?撠?嚗撖行???</label>
-        <select id="schHour" style="background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:9px 12px;font-family:'Noto Sans TC',sans-serif;font-size:14px;outline:none;width:100%">
-        </select>
+      <div style="background:rgba(255,255,255,0.15);border:1px solid var(--parch3);padding:12px;margin-bottom:12px">
+        <div class="sec">新增排程</div>
+        <div class="g2">
+          <div class="field"><label>現實日期</label><input type="date" id="schDate"></div>
+          <div class="field"><label>現實時間</label><input type="time" id="schTime" value="20:00" step="3600"></div>
+        </div>
+        <div class="field">
+          <label>事件名稱（選填）</label>
+          <input type="text" id="schEvtName" placeholder="留空 = 玩家只看到「時間推進」">
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">各標的漲跌幅（選填，留空全部 = 系統照趨勢自動跑）</div>
+        <div class="evt-pct-grid" id="schPctGrid"></div>
+        <button class="btn btn-gold" style="margin-top:8px" onclick="addSchedule()">＋ 加入排程</button>
       </div>
-      <div class="field">
-        <label>鈭辣?迂嚗憛恬??征?拙振???堆?</label>
-        <input type="text" id="schEvtName" placeholder="靘?樴??乩噩瘨憭援??>
-      </div>
-      <div class="field">
-        <label>敹恍?隞歹?瘥?銝蝑?</label>
-        <textarea id="schQuickText" rows="5"
-          style="width:100%;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:9px 12px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none;resize:vertical"
-          placeholder="摰???10 ??&#10;silverwing -8 ?捏敺?&#10;?典???3 ?&#10;&#10;瘜Ｗ??賊?嚗???? 撟喟帘 ?斗 瘝郭???? ?捏敺? ??敺捏"></textarea>
-      </div>
-      <button class="btn btn-gold" onclick="addSchedule()">嚗??閰脣???/button>
-      <div class="sec" style="margin-top:14px">???”</div>
-      <div id="schedList"><div style="font-size:13px;color:var(--ink3)">撠??</div></div>
+      <div class="sec">排程列表</div>
+      <div id="schedList"><div style="font-size:13px;color:var(--ink3)">尚無排程</div></div>
     </div>
   </div>
 
-  <!-- 撣銵? -->
+  <!-- 市場行情 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">?? 撣銵?</div><span style="font-size:12px;color:var(--ink3)">暺??亦?韏啣</span></div>
+    <div class="ph"><div class="ph-title">📊 市場行情</div><span style="font-size:12px;color:var(--ink3)">點擊查看走勢</span></div>
     <div class="pb" style="padding:0;overflow-x:auto">
-      <table class="mkt-table"><thead><tr><th>??</th><th>?曉</th><th>瞍脰?</th><th>頞典</th><th>憿</th><th></th></tr></thead><tbody id="mktBody"></tbody></table>
+      <table class="mkt-table"><thead><tr><th>商品</th><th>現價</th><th>漲跌</th><th>趨勢</th><th>類別</th><th></th></tr></thead><tbody id="mktBody"></tbody></table>
     </div>
   </div>
 
-  <!-- ?亙?斗??-->
+  <!-- 日內盤控制 -->
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">???亙?斗?塚?08:00 ??00:00嚗?/div>
-      <span id="intradayStatusLabel" style="font-size:12px;color:var(--ink3)">撠?</span>
+      <div class="ph-title">⏱ 日內盤控制（08:00 → 00:00）</div>
+      <span id="intradayStatusLabel" style="font-size:12px;color:var(--ink3)">尚未開盤</span>
     </div>
     <div class="pb">
-      <div class="notice" style="margin-bottom:10px">
-        ?亙?斤 Google Apps Script ?芸??批嚗M ?芷?閬?ㄐ閮剖?????<strong>?格??嗥瞍脰?撟?/strong>??strong>瘜Ｗ?璅∪?</strong>??br>
-        蝟餌絞?瘥暺????莎??嗥???格??潦?
-      </div>
-      <!-- 敹恍????-->
-      <div class="qb-panel">
-        <div class="qb-head">
-          <span class="qb-head-title">??敹恍?隞?/span>
-          <div class="qb-filter">
-            <button class="qb-ftag on" id="qbf_all" onclick="qbFilter('all')">?券</button>
-            <button class="qb-ftag" id="qbf_set" onclick="qbFilter('set')">撌脰身摰?/button>
-          </div>
-          <span style="font-size:11px;color:var(--ink3);margin-left:auto" id="qbSetCount">0 ?臬歇閮剖?</span>
-        </div>
-        <div class="qb-body" id="qbBody"></div>
-        <div class="qb-actions">
-          <button class="btn btn-purple" style="flex:2" onclick="applyQbCommands()">??蝡憟</button>
-          <button class="btn btn-ghost" style="flex:1" onclick="qbClearAll()">皜?券</button>
-          <button class="btn btn-ghost" style="flex:1" onclick="intradayRandomTargets()">?典??湧璈?/button>
-        </div>
-      </div>
-      <!-- ????蝝啗” -->
+      <div class="notice">GM 調整的漲跌幅會排入「下一個小時」生效；已經走過的小時價格會保留，不會重新畫整天日內圖。</div>
       <div style="overflow-x:auto;max-height:360px">
         <table class="mkt-table">
-          <thead><tr><th>璅?</th><th>?桀?</th><th>?格??嗥%</th><th>瘜Ｗ?</th><th>?亙韏啣</th></tr></thead>
+          <thead><tr><th>標的</th><th>目前</th><th>影響該小時</th><th>日內</th></tr></thead>
           <tbody id="intradayPlanBody"></tbody>
         </table>
       </div>
@@ -360,211 +327,188 @@ canvas{display:block;}
 
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">?黎蝞∠??甈⊥?隞?/div>
-      <button class="btn-sm" onclick="addAssetGroup()">?啣??黎</button>
+      <div class="ph-title">族群管理與批次指令</div>
+      <button class="btn-sm" onclick="addAssetGroup()">新增族群</button>
     </div>
     <div class="pb">
-      <div class="notice">????脣?銝??蝢文?嚗隞乩?甈∟身摰??蝢支?憭拍??格?瞍脰?撟??亙瘜Ｗ???/div>
+      <div class="notice">把標的勾進同一個族群後，可以一次設定整個族群在該小時生效的漲跌幅；已走過的日內價格會保留。</div>
       <div class="group-tools">
-        <div class="field"><label>?黎</label><select id="groupCommandSelect"></select></div>
-        <div class="field"><label>?格?瞍脰?撟?%</label><input type="number" id="groupCommandPct" min="-10" max="10" step="0.5" value="3"></div>
-        <div class="field"><label>瘜Ｗ?</label><select id="groupCommandVol"></select></div>
-        <button class="btn btn-purple" onclick="applyGroupCommand()">憟?黎?誘</button>
+        <div class="field"><label>族群</label><select id="groupCommandSelect"></select></div>
+        <div class="field"><label>該小時漲跌幅 %</label><input type="number" id="groupCommandPct" min="-10" max="10" step="0.5" value="3"></div>
+        <div class="field"><label>波動</label><select id="groupCommandVol"></select></div>
+        <button class="btn btn-purple" onclick="applyGroupCommand()">套用族群指令</button>
       </div>
       <div class="g3" style="margin-bottom:10px">
-        <button class="btn btn-red" onclick="applyGroupPreset(10,'violent')">?黎撘瑕瞍脣?</button>
-        <button class="btn btn-gold" onclick="applyGroupPreset(0,'choppy')">?黎?</button>
-        <button class="btn btn-ghost" onclick="applyGroupPreset(0,'quiet')">?黎瘝郭??/button>
+        <button class="btn btn-red" onclick="applyGroupPreset(10,'violent')">族群強勢漲停</button>
+        <button class="btn btn-gold" onclick="applyGroupPreset(0,'choppy')">族群震盪</button>
+        <button class="btn btn-ghost" onclick="applyGroupPreset(0,'quiet')">族群沒波動</button>
       </div>
       <div class="g3" style="margin-bottom:10px">
-        <button class="btn btn-purple" onclick="applyGroupPreset(5,'buyThenSell')">??敺捏</button>
-        <button class="btn btn-purple" onclick="applyGroupPreset(-5,'sellThenBuy')">?捏敺?</button>
-        <button class="btn btn-red" onclick="applyGroupPreset(-10,'violent')">?黎撘勗頝?</button>
+        <button class="btn btn-purple" onclick="applyGroupPreset(5,'buyThenSell')">先拉後殺</button>
+        <button class="btn btn-purple" onclick="applyGroupPreset(-5,'sellThenBuy')">先殺後拉</button>
+        <button class="btn btn-red" onclick="applyGroupPreset(-10,'violent')">族群弱勢跌停</button>
       </div>
       <div id="assetGroupList"></div>
     </div>
   </div>
-
-  <!-- ?勗耦瞍脰?隤踵 -->
-  <div class="panel">
-    <div class="ph"><div class="ph-title">? ?勗耦瞍脰?隤踵</div></div>
-    <div class="pb">
-      <div class="notice" style="border-color:rgba(123,45,139,0.3);background:rgba(123,45,139,0.05);color:var(--ink3)">
-        頛詨瞍脰?撟?亙??剁?<strong>銝?閮??脫??舀?</strong>??br>?拙振?芣??????脯?銝???隞暻潦?
-      </div>
-      <div class="evt-pct-grid" id="silentPctGrid"></div>
-      <button class="btn btn-purple" style="margin-top:12px" onclick="applySilent()">? ??憟</button>
-    </div>
-  </div>
-
-  <!-- 頞典???-->
+  <!-- 趨勢狀態 -->
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">?? 撣頞典???/div>
+      <div class="ph-title">📈 市場趨勢狀態</div>
       <div style="display:flex;gap:6px;align-items:center">
-        <button class="btn-sm" id="trendEditToggle" onclick="toggleTrendEdit()" style="border-color:var(--purple);color:var(--purple)">????隤踵頞典</button>
-        <span style="font-size:12px;color:var(--ink3)">?芸??湔</span>
+        <button class="btn-sm" id="trendEditToggle" onclick="toggleTrendEdit()" style="border-color:var(--purple);color:var(--purple)">✏ 手動調整趨勢</button>
+        <span style="font-size:12px;color:var(--ink3)">自動更新</span>
       </div>
     </div>
     <div class="pb" style="padding:10px 14px">
       <div id="trendStatus"></div>
-      <!-- ??頞典隤踵? -->
+      <!-- 手動趨勢調整區 -->
       <div id="trendEditArea" style="display:none;margin-top:12px;border-top:1px dashed var(--parch3);padding-top:12px">
-        <div style="font-size:11px;font-weight:700;color:var(--purple);letter-spacing:1px;margin-bottom:8px">????閮剖?頞典??</div>
+        <div style="font-size:11px;font-weight:700;color:var(--purple);letter-spacing:1px;margin-bottom:8px">✏ 手動設定趨勢偏向</div>
         <div style="background:rgba(123,45,139,0.06);border:1px solid rgba(123,45,139,0.2);padding:9px 12px;font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.7">
-          ??蝭? <strong>-10 ~ +10</strong>嚗迤?貊?瞍脯??貊?頝???蝥予?貉身摰迨頞典蝬剜?撟暹敺??圈璈身摰?銝蔣?輻??對?敺?甈⊥?脰絲????
+          偏向範圍 <strong>-10 ~ +10</strong>（正數看漲、負數看跌）。設定後會影響下一個小時的自然走勢，並依持續天數影響後續日子；已經走過的日內價格不會重畫。
         </div>
         <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-          <button class="btn-sm" onclick="filterTrendEdit('all')" id="tef_all" style="border-color:var(--ink3);color:var(--ink3)">?券</button>
-          <button class="btn-sm" onclick="filterTrendEdit('up')" id="tef_up" style="border-color:var(--up);color:var(--up)">?芰?瞍脰隅??/button>
-          <button class="btn-sm" onclick="filterTrendEdit('dn')" id="tef_dn" style="border-color:var(--dn);color:var(--dn)">?芰?頝隅??/button>
-          <button class="btn-sm" onclick="resetAllTrends()" style="border-color:var(--gold);color:var(--gold);margin-left:auto">???券?蔭</button>
+          <button class="btn-sm" onclick="filterTrendEdit('all')" id="tef_all" style="border-color:var(--ink3);color:var(--ink3)">全部</button>
+          <button class="btn-sm" onclick="filterTrendEdit('up')" id="tef_up" style="border-color:var(--up);color:var(--up)">只看漲趨勢</button>
+          <button class="btn-sm" onclick="filterTrendEdit('dn')" id="tef_dn" style="border-color:var(--dn);color:var(--dn)">只看跌趨勢</button>
+          <button class="btn-sm" onclick="resetAllTrends()" style="border-color:var(--gold);color:var(--gold);margin-left:auto">↺ 全部重置</button>
         </div>
         <div id="trendEditList" style="max-height:320px;overflow-y:auto"></div>
-        <button class="btn btn-purple" style="margin-top:10px" onclick="applyTrendEdits()">??憟頞典閮剖?</button>
+        <button class="btn btn-purple" style="margin-top:10px" onclick="applyTrendEdits()">✅ 套用趨勢設定</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ??隤踹 -->
-  <div class="panel">
-    <div class="ph"><div class="ph-title">? ??隤踹</div></div>
-    <div class="pb">
-      <div class="notice">?湔頛詨?啣?澆??剁?銝?瞍脰????嗚?/div>
-      <div id="manualList"></div>
-      <button class="btn btn-gold" onclick="applyManual()">憟??矽??/button>
     </div>
   </div>
 </div>
 
 <div>
-  <!-- 鈭辣蝺刻摩??-->
+  <!-- 事件編輯器 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">??銝?鈭辣蝺刻摩??/div></div>
+    <div class="ph"><div class="ph-title">⚡ 世界事件編輯器</div></div>
     <div class="pb">
-      <div class="sec">撱箇??唬?隞?/div>
-      <div class="field"><label>鈭辣?迂</label><input type="text" id="evtName" placeholder="靘??蝧潸?摰???"></div>
-      <div class="field"><label>鈭辣?膩嚗憛恬?</label><textarea id="evtDesc" placeholder="?膩?鈭辣???胼?></textarea></div>
-      <button class="btn btn-purple" onclick="inferEvent()">???芸??舀???撞頝?</button>
+      <div class="sec">建立新事件</div>
+      <div class="field"><label>事件名稱</label><input type="text" id="evtName" placeholder="例：銀翼軍宣布聖戰"></div>
+      <div class="field"><label>事件描述（選填）</label><textarea id="evtDesc" placeholder="描述這場事件的背景…"></textarea></div>
+      <button class="btn btn-purple" onclick="inferEvent()">✨ 自動聯想各標的漲跌幅</button>
       <div class="infer-box hidden" id="inferBox">
-        <span class="infer-tag">???舀??嚗歇?芸?憛怠嚗??隤踵嚗?/span>
+        <span class="infer-tag">✨ 聯想分析（已自動填入，可手動調整）</span>
         <div id="inferReason"></div>
       </div>
-      <div class="sec" style="margin-top:4px">???撞頝?嚗迤瞍脯鞎??餅??仿? 簣10%?餌?蝛箔?敶梢嚗?/div>
+      <div class="sec" style="margin-top:4px">各標的漲跌幅（正漲・負跌・每日限 ±10%・留空不影響）</div>
       <div class="evt-pct-grid" id="evtPctGrid"></div>
       <div class="g2" style="margin-top:12px">
-        <button class="btn btn-gold" onclick="savePreset()">?? ?脣??粹?閮?/button>
-        <button class="btn btn-red" onclick="fireNow()">??蝡閫貊</button>
+        <button class="btn btn-gold" onclick="savePreset()">📜 儲存為預設</button>
+        <button class="btn btn-red" onclick="fireNow()">⚡ 立即觸發</button>
       </div>
       <hr class="divider">
-      <div class="sec">撌脣摮??身鈭辣</div>
+      <div class="sec">已儲存的預設事件</div>
       <div id="presetList"></div>
     </div>
   </div>
 
-  <!-- IPO / 銝?蝞∠? -->
+  <!-- IPO / 下市管理 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">?? 璅?蝞∠?嚗PO 嚗?銝?嚗?/div></div>
+    <div class="ph"><div class="ph-title">📋 標的管理（IPO ／ 下市）</div></div>
     <div class="pb">
-      <div class="sec">?唳???撣?IPO嚗?/div>
+      <div class="sec">新標的上市（IPO）</div>
       <div class="ipo-form">
         <div class="g2">
-          <div class="field"><label>璅??迂</label><input type="text" id="ipoName" placeholder="靘?暺??剖??></div>
-          <div class="field"><label>?內嚗moji嚗?/label><input type="text" id="ipoIcon" placeholder="??" maxlength="4"></div>
+          <div class="field"><label>標的名稱</label><input type="text" id="ipoName" placeholder="例：黑龍傭兵團"></div>
+          <div class="field"><label>圖示（emoji）</label><input type="text" id="ipoIcon" placeholder="🐉" maxlength="4"></div>
         </div>
         <div class="g3">
-          <div class="field"><label>???寞嚗嚗?/label><input type="number" id="ipoPrice" value="300" min="10"></div>
-          <div class="field"><label>瘜Ｗ??改?0.04~0.22嚗?/label><input type="number" id="ipoVol" value="0.10" step="0.01" min="0.04" max="0.22"></div>
-          <div class="field"><label>憿</label><input type="text" id="ipoCat" placeholder="?圈洛"></div>
+          <div class="field"><label>初始價格（G）</label><input type="number" id="ipoPrice" value="300" min="10"></div>
+          <div class="field"><label>波動性（0.04~0.22）</label><input type="number" id="ipoVol" value="0.10" step="0.01" min="0.04" max="0.22"></div>
+          <div class="field"><label>類別</label><input type="text" id="ipoCat" placeholder="戰鬥"></div>
         </div>
-        <div class="field"><label>銝??砍?嚗??舀?憿舐內嚗?/label><textarea id="ipoDesc" placeholder="?膩?活銝????胼? style="min-height:50px"></textarea></div>
-        <div class="field"><label>璅?蝪∩?嚗摰園??????蝝對?</label><textarea id="ipoIntro" placeholder="靘??勗???憯怎????剖??嚗誑擃????迂?? style="min-height:60px"></textarea></div>
-        <button class="btn btn-purple" onclick="doIPO()">?? 摰??銝?</button>
+        <div class="field"><label>上市公告（消息欄顯示）</label><textarea id="ipoDesc" placeholder="描述這次上市的背景…" style="min-height:50px"></textarea></div>
+        <div class="field"><label>標的簡介（玩家點開後看到的介紹）</label><textarea id="ipoIntro" placeholder="例：由前聖騎士組成的傭兵集團，以高完成率著稱…" style="min-height:60px"></textarea></div>
+        <button class="btn btn-purple" onclick="doIPO()">🚀 宣告上市</button>
       </div>
       <hr class="divider">
-      <div class="sec">蝺刻摩璅?蝪∩?</div>
-      <div class="notice" style="margin-bottom:10px">靽格敺摰園??府璅?????啁?隞晶????/div>
+      <div class="sec">編輯標的簡介</div>
+      <div class="notice" style="margin-bottom:10px">修改後玩家點開該標的時會看到新的介紹文字。</div>
       <div id="descEditList"></div>
       <hr class="divider">
-      <div class="sec">???怠?鈭斗?蝞∠?</div>
+      <div class="sec">⏸ 暫停交易管理</div>
       <div class="notice" style="margin-bottom:10px;border-color:rgba(192,57,43,0.3);background:rgba(192,57,43,0.04)">
-        ?怠????∪銝??摰嗥瘜眺鞈?遣霅啣????砍???拙振??
+        暫停期間股價不動、玩家無法買賣。建議先透過公告告知玩家。
       </div>
       <div id="suspendList"></div>
       <hr class="divider">
-      <div class="sec">銝?蝞∠?</div>
+      <div class="sec">下市管理</div>
       <div id="delistList"></div>
       <hr class="divider">
-      <div class="sec">?? 鋆?銝?鈭辣</div>
+      <div class="sec">📝 補記世界事件</div>
       <div class="notice" style="margin-bottom:10px;border-color:rgba(184,134,11,0.3);background:rgba(184,134,11,0.05)">
-        ??鋆???潛???隞嗅銝?鈭辣蝝??銝蔣?輯?嫘?
+        手動補記過去發生的事件到世界事件紀錄，不影響股價。
       </div>
-      <div class="field"><label>?撟港遢</label><input type="number" id="backfillYear" min="1" value="1" style="width:100%"></div>
-      <div class="field"><label>??交?嚗洵撟暹嚗?/label><input type="number" id="backfillDay" min="1" value="1" style="width:100%"></div>
-      <div class="field"><label>鈭辣?迂嚗摰?/label><input type="text" id="backfillText" placeholder="靘????蝧潸?摰???" style="width:100%"></div>
-      <button class="btn btn-gold" onclick="addBackfillEvent()">?? 鋆?</button>
-      <div class="sec" style="margin-top:14px">撌脰?閮?銵?/div>
+      <div class="field"><label>遊戲年份</label><input type="number" id="backfillYear" min="1" value="1" style="width:100%"></div>
+      <div class="field"><label>遊戲日期（第幾日）</label><input type="number" id="backfillDay" min="1" value="1" style="width:100%"></div>
+      <div class="field"><label>事件名稱／內容</label><input type="text" id="backfillText" placeholder="例：⚡ 銀翼軍宣布聖戰" style="width:100%"></div>
+      <button class="btn btn-gold" onclick="addBackfillEvent()">📝 補記</button>
+      <div class="sec" style="margin-top:14px">已補記列表</div>
       <div id="backfillList" style="max-height:200px;overflow-y:auto;font-size:12px;color:var(--ink3)"></div>
     </div>
   </div>
 
-  <!-- ?拙振蝞∠? -->
+  <!-- 玩家管理 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">? ?拙振蝞∠?</div></div>
+    <div class="ph"><div class="ph-title">👥 玩家管理</div></div>
     <div class="pb">
-      <div class="sec">鞎∪? 繚 ??繚 ??蝮質汗</div>
+      <div class="sec">財富 · 持倉 · 損益總覽</div>
       <div style="overflow-x:auto">
         <table class="w-table">
-          <thead><tr><th>???/th><th>&#x5e33;&#x865f;</th><th>&#x89d2;&#x8272;&#x5bc6;&#x78bc;</th><th>?暸?</th><th>??/th><th>?芸祕??/th><th>撌脣祕??/th><th>蝮質???/th><th></th></tr></thead>
+          <thead><tr><th>冒險者</th><th>&#x5e33;&#x865f;</th><th>&#x89d2;&#x8272;&#x5bc6;&#x78bc;</th><th>現金</th><th>持倉值</th><th>未實現</th><th>已實現</th><th>總資產</th><th></th></tr></thead>
           <tbody id="wealthBody"></tbody>
         </table>
       </div>
       <hr class="divider">
-      <div class="sec">?潭?馳</div>
+      <div class="sec">發放金幣</div>
       <div class="form-row">
-        <div class="field"><label>撠情</label><select id="goldTarget"></select></div>
-        <div class="field"><label>??</label><input type="number" id="goldAmt" placeholder="??"></div>
-        <button class="btn-sm" onclick="giveGold()">?潭</button>
+        <div class="field"><label>對象</label><select id="goldTarget"></select></div>
+        <div class="field"><label>金額</label><input type="number" id="goldAmt" placeholder="金額"></div>
+        <button class="btn-sm" onclick="giveGold()">發放</button>
       </div>
       <hr class="divider">
-      <div class="sec">?啣??拙振</div>
+      <div class="sec">新增玩家</div>
       <div class="form-row">
-        <div class="field"><label>?迂</label><input type="text" id="newPlayerName" placeholder="???蝔?></div>
-        <button class="btn-sm" onclick="addPlayer()">?啣?</button>
+        <div class="field"><label>名稱</label><input type="text" id="newPlayerName" placeholder="冒險者名稱"></div>
+        <button class="btn-sm" onclick="addPlayer()">新增</button>
       </div>
       <hr class="divider">
-      <div class="sec">?梢??</div>
+      <div class="sec">危險操作</div>
       <div style="background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.25);padding:12px 14px;">
         <div style="font-size:12px;color:var(--ink3);margin-bottom:10px;line-height:1.7">
-          ?蔭???????????潦摰嗆????航???br>
-          ??皜征?汗?冽?啣翰??localStorage嚗?br>
-          <strong style="color:var(--up)">甇斗?雿瘜儔??/strong>
+          重置所有資料，包含所有標的價格、玩家持倉、消息記錄。<br>
+          同時清空瀏覽器本地快取（localStorage）。<br>
+          <strong style="color:var(--up)">此操作無法復原。</strong>
         </div>
         <button class="btn-danger" style="width:100%;padding:10px;font-size:13px" onclick="fullReset()">
-          ?? 皜征????蒂???
+          🗑 清空所有資料並重新開始
         </button>
       </div>
     </div>
   </div>
 
-  <!-- 鈭斗??勗漲 -->
+  <!-- 交易熱度 -->
   <div class="panel">
-    <div class="ph"><div class="ph-title">? 鈭斗??勗漲蝮質汗</div><button class="btn-sm" onclick="renderHeat()">??渡?</button></div>
+    <div class="ph"><div class="ph-title">🔥 交易熱度總覽</div><button class="btn-sm" onclick="renderHeat()">重新整理</button></div>
     <div class="pb" style="padding:0;overflow-x:auto">
       <table class="mkt-table" id="heatTable">
-        <thead><tr><th>璅?</th><th>??鈭?/th><th>蝮賣???/th><th>?征鈭?/th><th>鈭箸除</th></tr></thead>
+        <thead><tr><th>標的</th><th>持有人</th><th>總持倉</th><th>做空人</th><th>人氣</th></tr></thead>
         <tbody id="heatBody"></tbody>
       </table>
     </div>
   </div>
 
-  <!-- 瘨閮? -->
+  <!-- 消息記錄 -->
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">?? 銝?瘨閮?</div>
+      <div class="ph-title">📜 世界消息記錄</div>
       <div style="display:flex;gap:6px">
-        <button class="btn-sm" onclick="dedupeLog()" style="border-color:var(--purple);color:var(--purple)">?完 ?駁??</button>
-        <button class="btn-sm" onclick="clearLog()">皜?券</button>
+        <button class="btn-sm" onclick="dedupeLog()" style="border-color:var(--purple);color:var(--purple)">🧹 去除重複</button>
+        <button class="btn-sm" onclick="clearLog()">清除全部</button>
       </div>
     </div>
     <div class="pb" style="padding:10px 14px"><div class="log-box" id="logBox"></div></div>
@@ -573,105 +517,105 @@ canvas{display:block;}
 </div>
 
 <script>
-// ????????????????????????????????????????????????????????
-//  撣豢
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  常數
+// ═══════════════════════════════════════════════════════
 const URL_KEY='gran_script_url', LOCAL_KEY='gran_world_v4';
-const SEASONS=['瘛勗','?','??,'?格','??','??','?','??','??','?桃?','?','?'];
+const SEASONS=['深冬','初春','春','暮春','初夏','盛夏','暑末','初秋','金秋','暮秋','初冬','隆冬'];
 const DAILY_LIMIT=0.10;
-const INTRADAY_SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00 ?嗥'];
+const INTRADAY_SLOTS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00 收盤'];
 const INTRADAY_TICKS_PER_HOUR=8;
 const INTRADAY_PATTERNS={
-  neutral:{name:'銝?祈?嗥',pull:.55,noise:.75},
-  choppy:{name:'?',pull:.48,noise:1.15,zigzag:true,zig:.014,wave:.018},
-  calm:{name:'撟喟帘',pull:.70,noise:.28},
-  flat:{name:'蝒??斗',pull:.78,noise:.16,range:.012},
-  quiet:{name:'瘝郭??,pull:1,noise:0},
-  violent:{name:'??',pull:.38,noise:1.85,zigzag:true,zig:.022,wave:.026},
-  sellThenBuy:{name:'?捏敺?',pull:.82,noise:.72,shape:'sellThenBuy',shock:.065},
-  buyThenSell:{name:'??敺捏',pull:.82,noise:.72,shape:'buyThenSell',shock:.065}
+  neutral:{name:'一般自然盤',pull:.55,noise:.75},
+  choppy:{name:'震盪',pull:.48,noise:1.15,zigzag:true,zig:.014,wave:.018},
+  calm:{name:'平穩',pull:.70,noise:.28},
+  flat:{name:'窄幅盤整',pull:.78,noise:.16,range:.012},
+  quiet:{name:'沒波動',pull:1,noise:0},
+  violent:{name:'劇烈',pull:.38,noise:1.85,zigzag:true,zig:.022,wave:.026},
+  sellThenBuy:{name:'先殺後拉',pull:.82,noise:.72,shape:'sellThenBuy',shock:.065},
+  buyThenSell:{name:'先拉後殺',pull:.82,noise:.72,shape:'buyThenSell',shock:.065}
 };
-// 頞典蝺刻摩?Ｘ?????拇 renderTrendStatus 摰??嚗?
+// 趨勢編輯面板狀態（需早於 renderTrendStatus 宣告）
 var trendEditOpen=false;
 var trendEditFilter='all';
 
-// ????????????????????????????????????????????????????????
-//  38 ????
-//  baseBias嚗?閮剛隅?Ｗ????圈洛憿???撟單??Ｚ?嚗?
-//  special嚗畾??嗆?閮?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  38 個標的
+//  baseBias：預設趨勢偏向（戰鬥類負值=平時慢跌）
+//  special：特殊機制標記
+// ═══════════════════════════════════════════════════════
 const ASSETS0=[
-  // ?? ?圈洛蝢歹?撟單??Ｚ?嚗鈭瞍莎???
-  {id:'watchmen',  name:'?∪??摰???,          icon:'?儭?, price:400,  cat:'?圈洛繚?', vol:0.08, baseBias:-0.008, region:'north'},
-  {id:'law12',     name:'???嚗?鈭?瘜?,         icon:'??', price:590,  cat:'?圈洛繚璆萄?', vol:0.07, baseBias:-0.004, region:'north', special:'law_income'},
-  {id:'roundtable',name:'瘛望偌????擉ㄚ',         icon:'??', price:420,  cat:'?圈洛繚?', vol:0.09, baseBias:-0.008, region:'north'},
-  {id:'blood13',   name:'憭????銵皞?,         icon:'??', price:600,  cat:'?圈洛繚?', vol:0.13, baseBias:-0.010, region:'north', special:'vampire'},
-  {id:'silverwing',name:'?曄?噸嚗?蝧潸?',         icon:'?直', price:700,  cat:'?圈洛繚?', vol:0.09, baseBias:-0.008, region:'south'},
-  {id:'primemage', name:'?暸?莎???擳?擉ㄚ??,   icon:'?', price:2000, cat:'?圈洛繚?', vol:0.13, baseBias:-0.010, region:'south', special:'mage_knight'},
-  {id:'guardian',  name:'?劓撜堆?摰風??,           icon:'潃?, price:520,  cat:'?圈洛繚銝剔?', vol:0.10, baseBias:-0.006, region:'central'},
-  {id:'mercenary', name:'?噸銋?嚗?菜晷?????,   icon:'?', price:120,  cat:'?圈洛繚銝剔?', vol:0.11, baseBias:-0.002, region:'neutral'},
-  // ?? 擳??銵黎 ??
-  {id:'archmage',  name:'?暸?莎??擃?撠降??,     icon:'?', price:2200, cat:'擳?',      vol:0.08, baseBias:0.003,  special:'upper_tier'},
-  {id:'spellres',  name:'?交?憛?瘜??弦??',     icon:'?妒', price:1800, cat:'擳?',      vol:0.16, baseBias:-0.005, special:'research_cycle'},
-  // ?? ?弦蝢???
-  {id:'relic',     name:'?交?憛??日?拍?蝛園',     icon:'?', price:2500, cat:'?弦',      vol:0.14, baseBias:0.001},
-  {id:'seyfer',    name:'?◢?∴?鞈質?曄?鈭箏祕撽?', icon:'??', price:150,  cat:'?弦',      vol:0.22, baseBias:0,      special:'chaos'},
-  {id:'magitools', name:'?怠??擳??琿??潛?蝛嗆?', icon:'??', price:560,  cat:'?弦',      vol:0.09, baseBias:0.003},
-  {id:'archive',   name:'?剖嚗隞???曆誨??弦銝剖?',icon:'??',price:220, cat:'?弦',      vol:0.05, baseBias:-0.003},
-  {id:'starobs',   name:'?劓撜堆?閫????皜砍???, icon:'?', price:680,  cat:'?弦',      vol:0.11, baseBias:0.002,  special:'prophecy_cycle'},
-  // ?? ?賣?蝢???
-  {id:'arcanergs', name:'?暸?莎?憟扯??賣?',         icon:'??, price:620,  cat:'?賣?',      vol:0.05, baseBias:0.004},
-  {id:'metalex',   name:'?∪??鞎湧??惇鈭斗??',   icon:'??', price:400,  cat:'?賣?',      vol:0.08, baseBias:0.002},
-  {id:'mstone',    name:'瘛望偌??擳?蝷衣鈭斗??',   icon:'??', price:650,  cat:'?賣?',      vol:0.10, baseBias:0.001},
-  {id:'mining',    name:'鈭典噸?曆??喉?蝷衣??撅祆???,icon:'??',price:280,  cat:'?賣?',      vol:0.11, baseBias:0.003},
-  // ?? 撌交平蝢???
-  {id:'ironforge', name:'?怠??銝??',         icon:'??', price:500,  cat:'撌交平',      vol:0.09, baseBias:0.002},
-  {id:'beastyard', name:'?潛??∴??擐游?銝剖?',     icon:'?', price:130,  cat:'撌交平',      vol:0.11, baseBias:0.002},
-  {id:'shipyard',  name:'暺皜荔????孵﹜?撱?,   icon:'??, price:440,  cat:'撌交平',      vol:0.08, baseBias:0.003},
-  {id:'lumber',    name:'瞏?璉格?嚗??撌亙?',     icon:'?', price:80,   cat:'撌交平',      vol:0.07, baseBias:0.002},
-  // ?? 憌脤?蝢???
-  {id:'grain',     name:'??嚗??寧?蝟?,           icon:'?', price:60,   cat:'憌脤?',      vol:0.05, baseBias:0.001},
-  {id:'brew',      name:'?噸銋?嚗漸??璆剝?鋆?,   icon:'?', price:100,  cat:'憌脤?',      vol:0.06, baseBias:0.002},
-  // ?? 鞎踵?蝢???
-  {id:'harbor',    name:'?噸銋?嚗之?貉窒?絲皜臬???,icon:'?',price:360,  cat:'鞎踵?',      vol:0.08, baseBias:0.003},
-  {id:'northtrade',name:'?豢???絲?寞?鞎踵???', icon:'???儭?,price:240,  cat:'鞎踵?',      vol:0.14, baseBias:0.001},
-  {id:'textile',   name:'?噸銋?嚗???拍結蝬Ｗ???,icon:'?孝',price:110,  cat:'鞎踵?',      vol:0.06, baseBias:0.002},
-  {id:'spice',     name:'?噸銋?嚗????窄',     icon:'??', price:580,  cat:'鞎踵?',      vol:0.12, baseBias:0.002},
-  // ?? 鈭日黎 ??
-  {id:'airtravel', name:'?噸銋?嚗?銵??喲???',icon:'??',price:750,cat:'鈭日?,     vol:0.11, baseBias:0.003},
-  {id:'landroute', name:'?噸銋?嚗銝???',   icon:'?儭?, price:90,   cat:'鈭日?,      vol:0.06, baseBias:0.002},
-  // ?? ?怎?蝢???
-  {id:'herb',      name:'?喲?銋ㄝ嚗縑蝧????,   icon:'?', price:200,  cat:'?怎?',      vol:0.07, baseBias:0.002},
-  {id:'alchemy',   name:'憭?????亙?撌亙?',     icon:'?妨', price:340,  cat:'?怎?',      vol:0.11, baseBias:0.001, special:'vampire_alchemy'},
-  {id:'antimagic', name:'?曄?噸嚗戌擳??瑞??Ｘ?瑽?,icon:'?',price:540,  cat:'?怎?',      vol:0.10, baseBias:0.002},
-  {id:'temple',    name:'?曄?噸嚗???撱?,       icon:'??, price:300,  cat:'?怎?',      vol:0.04, baseBias:0.003},
-  {id:'lifetree',  name:'???嚗??賣邦蝺交祥?葉敹?,icon:'?',price:300,  cat:'?怎?',      vol:0.07, baseBias:0.002},
-  // ?? ?寞?蝢???
-  {id:'adventure', name:'?潸憭折嚗??芾???,     icon:'?儭?, price:380,  cat:'?寞?',      vol:0.09, baseBias:0.002},
-  {id:'prison',    name:'瘚瑚????嚗雿??,       icon:'??', price:260,  cat:'?寞?',      vol:0.13, baseBias:0.002},
+  // ── 戰鬥群（平時慢跌，戰事暴漲）──
+  {id:'watchmen',  name:'無冬城：守望者',          icon:'🛡️', price:400,  cat:'戰鬥·北方', vol:0.08, baseBias:-0.008, region:'north'},
+  {id:'law12',     name:'銀月城：十二律法',         icon:'⚖️', price:590,  cat:'戰鬥·極北', vol:0.07, baseBias:-0.004, region:'north', special:'law_income'},
+  {id:'roundtable',name:'深水城：圓桌騎士',         icon:'🏇', price:420,  cat:'戰鬥·北方', vol:0.09, baseBias:-0.008, region:'north'},
+  {id:'blood13',   name:'夜隱城：十三血源',         icon:'🧛', price:600,  cat:'戰鬥·北方', vol:0.13, baseBias:-0.010, region:'north', special:'vampire'},
+  {id:'silverwing',name:'艾特加德：銀翼軍',         icon:'🪽', price:700,  cat:'戰鬥·南方', vol:0.09, baseBias:-0.008, region:'south'},
+  {id:'primemage', name:'艾雷茲：原初魔導騎士團',   icon:'🔱', price:2000, cat:'戰鬥·南方', vol:0.13, baseBias:-0.010, region:'south', special:'mage_knight'},
+  {id:'guardian',  name:'星辰峰：守護者',           icon:'⭐', price:520,  cat:'戰鬥·中立', vol:0.10, baseBias:-0.006, region:'central'},
+  {id:'mercenary', name:'博德之門：傭兵派遣協會',   icon:'💰', price:120,  cat:'戰鬥·中立', vol:0.11, baseBias:-0.002, region:'neutral'},
+  // ── 魔法技術群 ──
+  {id:'archmage',  name:'艾雷茲：最高魔導議會',     icon:'🔮', price:2200, cat:'魔法',      vol:0.08, baseBias:0.003,  special:'upper_tier'},
+  {id:'spellres',  name:'日曜塔：法術研究協會',     icon:'🧪', price:1800, cat:'魔法',      vol:0.16, baseBias:-0.005, special:'research_cycle'},
+  // ── 研究群 ──
+  {id:'relic',     name:'日曜塔：古遺物研究院',     icon:'🏺', price:2500, cat:'研究',      vol:0.14, baseBias:0.001},
+  {id:'seyfer',    name:'凌風堡：賽菲爾私人實驗所', icon:'⚗️', price:150,  cat:'研究',      vol:0.22, baseBias:0,      special:'chaos'},
+  {id:'magitools', name:'火剪城：魔導具開發研究所', icon:'⚙️', price:560,  cat:'研究',      vol:0.09, baseBias:0.003},
+  {id:'archive',   name:'燭堡：古代與現代文獻研究中心',icon:'📚',price:220, cat:'研究',      vol:0.05, baseBias:-0.003},
+  {id:'starobs',   name:'星辰峰：觀星占卜觀測協會', icon:'🔭', price:680,  cat:'研究',      vol:0.11, baseBias:0.002,  special:'prophecy_cycle'},
+  // ── 能源群 ──
+  {id:'arcanergs', name:'艾雷茲：奧術能源',         icon:'⚡', price:620,  cat:'能源',      vol:0.05, baseBias:0.004},
+  {id:'metalex',   name:'無冬城：貴重金屬交易所',   icon:'🥇', price:400,  cat:'能源',      vol:0.08, baseBias:0.002},
+  {id:'mstone',    name:'深水城：魔法礦石交易所',   icon:'💎', price:650,  cat:'能源',      vol:0.10, baseBias:0.001},
+  {id:'mining',    name:'亨德爾之石：礦石與金屬挖掘',icon:'⛏️',price:280,  cat:'能源',      vol:0.11, baseBias:0.003},
+  // ── 工業群 ──
+  {id:'ironforge', name:'火剪城：七匠鍛鋼',         icon:'⚔️', price:500,  cat:'工業',      vol:0.09, baseBias:0.002},
+  {id:'beastyard', name:'狼牙堡：野獸馴導中心',     icon:'🐺', price:130,  cat:'工業',      vol:0.11, baseBias:0.002},
+  {id:'shipyard',  name:'黑石港：重型船塢造船廠',   icon:'⚓', price:440,  cat:'工業',      vol:0.08, baseBias:0.003},
+  {id:'lumber',    name:'潛行森林：木料加工廠',     icon:'🌲', price:80,   cat:'工業',      vol:0.07, baseBias:0.002},
+  // ── 飲食群 ──
+  {id:'grain',     name:'雅塔：安特穀糧',           icon:'🌾', price:60,   cat:'飲食',      vol:0.05, baseBias:0.001},
+  {id:'brew',      name:'博德之門：麥酒專業釀製',   icon:'🍺', price:100,  cat:'飲食',      vol:0.06, baseBias:0.002},
+  // ── 貿易群 ──
+  {id:'harbor',    name:'博德之門：大陸貿易海港協會',icon:'🚢',price:360,  cat:'貿易',      vol:0.08, baseBias:0.003},
+  {id:'northtrade',name:'陸斯坎：北海特殊貿易商會', icon:'🏴‍☠️',price:240,  cat:'貿易',      vol:0.14, baseBias:0.001},
+  {id:'textile',   name:'博德之門：布料皮革絲綢商會',icon:'🧵',price:110,  cat:'貿易',      vol:0.06, baseBias:0.002},
+  {id:'spice',     name:'博德之門：香料與珍寶',     icon:'💍', price:580,  cat:'貿易',      vol:0.12, baseBias:0.002},
+  // ── 交通群 ──
+  {id:'airtravel', name:'博德之門：飛行與傳送通行協會',icon:'✈️',price:750,cat:'交通',     vol:0.11, baseBias:0.003},
+  {id:'landroute', name:'博德之門：陸上通行協會',   icon:'🛤️', price:90,   cat:'交通',      vol:0.06, baseBias:0.002},
+  // ── 醫療群 ──
+  {id:'herb',      name:'至高之森：翡翠藥草商會',   icon:'🌿', price:200,  cat:'醫療',      vol:0.07, baseBias:0.002},
+  {id:'alchemy',   name:'夜隱城：煉金藥劑工坊',     icon:'🧫', price:340,  cat:'醫療',      vol:0.11, baseBias:0.001, special:'vampire_alchemy'},
+  {id:'antimagic', name:'艾特加德：禦魔道具生產機構',icon:'🔰',price:540,  cat:'醫療',      vol:0.10, baseBias:0.002},
+  {id:'temple',    name:'艾特加德：聖者神廟',       icon:'⛪', price:300,  cat:'醫療',      vol:0.04, baseBias:0.003},
+  {id:'lifetree',  name:'銀月城：生命樹緊急治療中心',icon:'🌳',price:300,  cat:'醫療',      vol:0.07, baseBias:0.002},
+  // ── 特殊群 ──
+  {id:'adventure', name:'格蘭大陸：冒險者協會',     icon:'🗡️', price:380,  cat:'特殊',      vol:0.09, baseBias:0.002},
+  {id:'prison',    name:'海上監獄：艾佛利斯',       icon:'⛓️', price:260,  cat:'特殊',      vol:0.13, baseBias:0.002},
 ];
 
-// ????????????????????????????????????????????????????????
-//  銵平蝢斤?嚗瘞?儐?啗??
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  行業群組（景氣循環聯動）
+// ═══════════════════════════════════════════════════════
 const SECTOR_GROUPS={
-  // 瘞?嚗瘞?末?亥?嚗??瘙?嚗璈瞍?
+  // 民生：景氣好略跌（供過於求），危機暴漲
   civilian:  ['grain','brew','textile','herb','lifetree'],
-  // 頠?嚗云撟唾?嚗?蝒撞
+  // 軍事：太平跌，衝突漲
   military:  ['watchmen','law12','roundtable','blood13','silverwing','primemage','guardian','mercenary'],
-  // 鞎踵?鈭日??舀除甇???
+  // 貿易交通：景氣正相關
   trade:     ['harbor','northtrade','spice','airtravel','landroute','shipyard'],
-  // 擳?蝘?嚗?蝬脫捱摰???
+  // 魔法科技：魔網決定一切
   magic:     ['archmage','spellres','magitools','arcanergs','mstone','airtravel'],
-  // 撌亦丹嚗??望?
+  // 工礦：原料週期
   industrial:['ironforge','beastyard','lumber','mining','metalex'],
-  // ?弦嚗蝡望?
+  // 研究：獨立週期
   research:  ['relic','seyfer','archive','starobs'],
-  // 蟡??脩戌嚗璈?????
+  // 神聖防禦：危機反向受益
   holy:      ['temple','silverwing','antimagic','lifetree'],
 };
 
-const SECTOR_NAMES={civilian:'瘞?',military:'?圈洛',trade:'鞎踵?',magic:'擳?',industrial:'撌交平',research:'?弦',holy:'靽∩趕?怎?'};
+const SECTOR_NAMES={civilian:'民生',military:'戰鬥',trade:'貿易',magic:'魔法',industrial:'工業',research:'研究',holy:'信仰醫療'};
 function groupIdFromName(name){return 'grp_'+String(name||'group').replace(/[^\w\u4e00-\u9fa5]+/g,'_').slice(0,28);}
 function defaultAssetGroups(assetList=ASSETS0){
   const used=new Set(), groups=[];
@@ -680,7 +624,7 @@ function defaultAssetGroups(assetList=ASSETS0){
     if(assetIds.length){groups.push({id:groupIdFromName(key),name:SECTOR_NAMES[key]||key,assetIds});assetIds.forEach(id=>used.add(id));}
   });
   const byCat={};
-  assetList.forEach(a=>{if(used.has(a.id))return;const k=a.cat||'?芸?憿?;(byCat[k]||(byCat[k]=[])).push(a.id);});
+  assetList.forEach(a=>{if(used.has(a.id))return;const k=a.cat||'未分類';(byCat[k]||(byCat[k]=[])).push(a.id);});
   Object.entries(byCat).forEach(([name,assetIds])=>groups.push({id:groupIdFromName(name),name,assetIds}));
   return groups;
 }
@@ -690,52 +634,52 @@ function ensureAssetGroups(world=W){
   if(!Array.isArray(world.assetGroups)||!world.assetGroups.length)world.assetGroups=defaultAssetGroups(world.assets||ASSETS0);
   world.assetGroups=world.assetGroups.map((g,i)=>({
     id:g.id||groupIdFromName(g.name||('group_'+i)),
-    name:g.name||('?黎 '+(i+1)),
+    name:g.name||('族群 '+(i+1)),
     assetIds:[...new Set((g.assetIds||[]).filter(id=>activeIds.has(id)))]
   }));
   return world.assetGroups;
 }
 
-// ????????????????????????????????????????????????????????
-//  38 ?????港?隞嗉????
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  38 個標的完整事件聯動規則
+// ═══════════════════════════════════════════════════════
 const INFER_RULES=[
-// ?? ?啁 ??
-{kw:['?啁','?啣蝴','?乩噩','?餅?','?箏','??','??','摰?','敺?'],
+// ── 戰爭 ──
+{kw:['戰爭','戰役','入侵','攻打','出兵','圍城','叛亂','宣戰','征伐'],
  fx:{watchmen:25,law12:15,roundtable:22,blood13:18,silverwing:28,primemage:30,guardian:10,mercenary:35,
      ironforge:28,beastyard:20,grain:18,brew:-20,harbor:-25,spice:-22,airtravel:-18,landroute:8,
      archmage:-10,arcanergs:-12,herb:15,temple:30,lifetree:22,adventure:15,prison:20,
      antimagic:15,shipyard:12,northtrade:8,textile:-8,mstone:10,mining:8,metalex:10,
      relic:-8,spellres:-5,magitools:8,archive:15,starobs:-5,alchemy:22,seyfer:0},
- reason:'?啁?嚗?憯怠????之瞍莎?鞎踵?銝剜嚗???撱儔瘣駁?瘙?憓????閮憓?},
-// ?? ??唬? ??
-{kw:['?∪??,'瘛望偌??,'憭??,'???','??','?','?圈◢靚?,'瘚桀瘚?,'?豢??],
+ reason:'戰爭爆發：騎士團與軍備大漲；貿易中斷；聖者神廟復活需求激增；冒險者委託暴增。'},
+// ── 北方戰事 ──
+{kw:['無冬城','深水城','夜隱城','銀月城','北境','北方','冰風谷','浮冰海','陸斯坎'],
  fx:{watchmen:35,law12:25,roundtable:30,blood13:20,mercenary:20,ironforge:15,grain:12,
      silverwing:5,primemage:5,guardian:5,harbor:-15,airtravel:-10,spice:-12,brew:-15,
      herb:10,temple:18,lifetree:20,adventure:12,prison:15,northtrade:10,metalex:5,
      shipyard:8,lumber:5,beastyard:8,grain:15,textile:-5,archive:8,
      archmage:-5,arcanergs:-5,mstone:5,mining:8,relic:5,spellres:0,magitools:5,starobs:0,alchemy:10,seyfer:0},
- reason:'??唬?嚗??寥?憯怠??湔撞嚗?砍?摰?????擉ㄚ???憭改???鞎踵?銝剜??},
-// ?? ??唬? ??
-{kw:['?曄?噸','?暸??,'?噸銋?','?','??','鈭∟像??,'?喲???'],
+ reason:'北方戰事：北方騎士團暴漲；無冬城守望者與圓桌騎士受益最大；北境貿易中斷。'},
+// ── 南方戰事 ──
+{kw:['艾特加德','艾雷茲','博德之門','南方','南境','亡者平原','至高荒原'],
  fx:{silverwing:35,primemage:30,guardian:10,mercenary:18,ironforge:20,antimagic:22,
      watchmen:5,law12:5,roundtable:5,harbor:-20,spice:-18,airtravel:-15,brew:-18,
      herb:12,temple:25,lifetree:12,adventure:10,prison:18,shipyard:10,
      archmage:5,arcanergs:-8,mstone:8,mining:5,relic:5,spellres:0,magitools:8,
      northtrade:8,textile:-5,grain:10,beastyard:8,lumber:5,metalex:5,
      archive:10,starobs:5,alchemy:12,blood13:-5,seyfer:0},
- reason:'??唬?嚗?蝧潸?????撠?憯怠?憭扳撞嚗?敺瑚??鞎踵?銝剜嚗???撱?瘙?憓?},
-// ?? ? ??
-{kw:['?','??','蟡?撖拙','?啁垢撖拙','?蝧?,'??,'蟡??','?'],
+ reason:'南方戰事：銀翼軍與原初魔導騎士團大漲；博德之門貿易中斷；聖者神廟需求激增。'},
+// ── 聖戰 ──
+{kw:['聖戰','聖光','神聖審判','異端審判','銀翼','聖者','神明降臨','聖物'],
  fx:{silverwing:40,antimagic:35,temple:45,lifetree:20,law12:15,guardian:12,
      blood13:-40,alchemy:-30,northtrade:-20,primemage:-15,archmage:-10,
      mercenary:15,adventure:18,prison:25,herb:20,ironforge:10,
      watchmen:8,roundtable:8,harbor:-10,spice:-8,brew:-12,airtravel:-8,
      grain:5,beastyard:5,lumber:5,metalex:5,mstone:5,mining:5,
      relic:15,spellres:5,magitools:5,starobs:8,seyfer:0,archive:12,arcanergs:-5},
- reason:'?摰??嚗?蝧潸?????撱瞍莎???銵皞????亙?撌亙??剜?憯??啁垢撖拙撣嗅?????嗅??},
-// ?? 暺??Ｗ?撏絲 ??
-{kw:['?貉?擛?,'鈭⊿?','?⊿?','暺?擳?','閰?','??','暺?蟡?,'憭??,'??銵皞?],
+ reason:'聖戰宣告：銀翼軍與聖者神廟暴漲；十三血源與煉金藥劑工坊遭打壓；異端審判帶動監獄收入。'},
+// ── 黑暗勢力崛起 ──
+{kw:['吸血鬼','亡靈','惡魔','黑暗魔法','詛咒','腐化','黑暗神','夜隱城','十三血源'],
  fx:{blood13:40,alchemy:35,northtrade:15,prison:20,adventure:22,
      silverwing:-20,temple:-15,antimagic:35,lifetree:-10,law12:-12,
      ironforge:15,mercenary:20,herb:18,guardian:8,
@@ -743,18 +687,18 @@ const INFER_RULES=[
      archmage:-8,arcanergs:-5,mstone:10,mining:5,metalex:5,
      relic:15,archive:18,starobs:5,spellres:8,magitools:5,seyfer:0,
      watchmen:5,roundtable:5,primemage:-5,shipyard:-5,beastyard:-5,lumber:-5,textile:-5},
- reason:'暺??Ｗ?撏絲嚗?銝?皞????亙?撌亙??湔撞嚗?蝧潸?????撱憯嚗戌擳??琿?瘙憓?},
-// ?? ? ??
-{kw:['?','曌','?曄?','??','??','瘥','暺香'],
+ reason:'黑暗勢力崛起：十三血源與煉金藥劑工坊暴漲；銀翼軍與聖者神廟遭壓制；禦魔道具需求暴增。'},
+// ── 瘟疫 ──
+{kw:['瘟疫','鼠疫','疾病','感染','病毒','毒霧','黑死'],
  fx:{herb:45,temple:50,lifetree:35,alchemy:30,antimagic:10,
      harbor:-22,spice:-18,airtravel:-20,brew:-28,textile:-10,northtrade:-15,landroute:-12,
      grain:-10,ironforge:-8,beastyard:-8,mercenary:15,adventure:10,prison:12,
      archmage:10,arcanergs:-5,mstone:5,mining:-5,metalex:5,
      watchmen:-5,law12:-5,roundtable:-5,blood13:8,silverwing:-5,primemage:-5,guardian:-5,
      relic:-5,spellres:8,magitools:5,archive:15,starobs:5,shipyard:-8,lumber:-5,seyfer:0},
- reason:'??嚗??撌券?湔撞嚗窒??Ｖ葉?瘀????亙?撌亙?蝺乩???},
-// ?? 憭拍 ??
-{kw:['憭拍','?梁','瘣芣偌','擖?','?湧','?圈?','?怠控','?','撖?','?圈◢靚瑕?瘚?],
+ reason:'瘟疫爆發：醫療三巨頭暴漲；貿易全面中斷；煉金藥劑工坊緊急供應。'},
+// ── 天災 ──
+{kw:['天災','旱災','洪水','饑荒','暴雪','地震','火山','蝗災','寒流','冰風谷寒流'],
  fx:{grain:40,herb:22,temple:18,lifetree:15,alchemy:12,
      ironforge:-15,shipyard:-10,airtravel:-15,harbor:-18,spice:-10,brew:12,
      lumber:-12,beastyard:-10,textile:-8,northtrade:-8,
@@ -762,9 +706,9 @@ const INFER_RULES=[
      mercenary:10,adventure:8,prison:5,archive:12,
      archmage:-5,arcanergs:-8,mstone:-5,mining:-8,metalex:-5,
      relic:-5,spellres:0,magitools:-5,starobs:8,guardian:5,seyfer:0},
- reason:'憭拍銵?嚗?蝟抒蝻箸瞍莎??怎??瘙?憓?撱箄身鞎踵??券?趙??},
-// ?? 憭芸像蝜旨 ??
-{kw:['憭芸像','蝜旨','??','鞊','蝭??,'蟡剖','?像','?嗅','?漁蟡剖','樴??∠奎?'],
+ reason:'天災衝擊：穀糧短缺暴漲；醫療需求激增；建設貿易全面停滯。'},
+// ── 太平繁榮 ──
+{kw:['太平','繁榮','盛世','豐收','節慶','祭典','和平','慶典','月亮祭典','龍牙堡競技'],
  fx:{brew:25,spice:22,airtravel:20,harbor:18,textile:15,landroute:12,shipyard:12,
      grain:-15,herb:-8,ironforge:-10,mercenary:-15,watchmen:-18,roundtable:-15,
      law12:5,blood13:-12,silverwing:-12,primemage:-12,guardian:-5,
@@ -772,18 +716,18 @@ const INFER_RULES=[
      relic:10,spellres:8,magitools:8,starobs:10,
      temple:5,antimagic:-5,lifetree:-5,herb:-8,alchemy:-5,
      northtrade:5,adventure:-10,prison:-12,archive:-8,beastyard:8,lumber:10,seyfer:0},
- reason:'憭芸像??嚗失靘?鞎餅瞍莎?擉ㄚ???⊥鈭?嚗窒??鈭日之瞍莎?颲脫平靘??潭???},
-// ?? 鞎踵?蝜旨 ??
-{kw:['鞎踵??降','??','?葛','憭漱','?舐?','?啗蝺?,'?楝'],
+ reason:'太平盛世：奢侈消費暴漲；騎士團因無戰事而跌；貿易與交通大漲；農業供過於求。'},
+// ── 貿易繁榮 ──
+{kw:['貿易協議','通商','開港','外交','聯盟','新航線','商路'],
  fx:{harbor:30,spice:25,textile:18,airtravel:22,landroute:15,shipyard:18,northtrade:10,
      brew:15,grain:8,lumber:10,beastyard:8,ironforge:8,metalex:8,mstone:10,mining:8,
      archmage:8,arcanergs:8,magitools:8,
      watchmen:-8,roundtable:-8,silverwing:-8,primemage:-8,blood13:-5,
      mercenary:-5,adventure:-5,herb:5,temple:5,lifetree:5,
      antimagic:-5,prison:-8,relic:8,spellres:5,archive:5,starobs:5,seyfer:0,guardian:5},
- reason:'鞎踵?蝜旨嚗絲皜臬???鈭日??之瞍莎?擐?蝯脩閒?ａ嚗?鈭?璅??云撟唾???},
-// ?? 撠?瘚瑞? ??
-{kw:['撠?','瘚瑞?','蝳?','?急?','?芰?銝剜','?豢?絲??],
+ reason:'貿易繁榮：海港協會與交通標的大漲；香料絲綢暢銷；軍事類標的因太平而跌。'},
+// ── 封鎖海盜 ──
+{kw:['封鎖','海盜','禁運','劫掠','航線中斷','陸斯坎海盜'],
  fx:{northtrade:35,mercenary:20,ironforge:12,adventure:18,
      harbor:-40,spice:-30,airtravel:-25,landroute:15,shipyard:-15,textile:-15,
      grain:12,brew:-15,herb:8,temple:10,
@@ -791,9 +735,9 @@ const INFER_RULES=[
      archmage:-8,arcanergs:-5,mstone:-15,mining:-5,metalex:-8,
      relic:-5,spellres:0,magitools:-5,archive:5,starobs:0,
      silverwing:5,primemage:-5,guardian:5,lifetree:5,antimagic:5,alchemy:8,prison:10,seyfer:0},
- reason:'瘚瑞?撠?嚗?瘚瑞畾窒????瞍莎?韏啁??Ｚ?嚗?甇??鞎踵??券撏抵?嚗頝舫?瘙???},
-// ?? ?箄楚?潛 ??
-{kw:['?箄楚','撱Ｗ?','?箏?','??','?支誨??','銝','撠潛??','鋆蔽?箄楚','?文?'],
+ reason:'海盜封鎖：北海特殊貿易商會反漲（走私暢行）；正規貿易全面崩跌；陸路需求上升。'},
+// ── 遺跡發現 ──
+{kw:['遺跡','廢墟','出土','挖掘','古代文明','上古','尼瑟瑞爾','裂罪遺跡','古城'],
  fx:{relic:40,adventure:30,magitools:20,archmage:18,mstone:22,mining:15,
      spellres:15,starobs:12,archive:18,seyfer:15,
      shipyard:12,harbor:8,landroute:8,ironforge:10,
@@ -802,9 +746,9 @@ const INFER_RULES=[
      northtrade:5,spice:5,airtravel:5,lumber:5,beastyard:5,
      metalex:8,arcanergs:8,textile:0,lifetree:5,
      blood13:8,alchemy:5,prison:5,law12:5,silverwing:-5,primemage:8,seyfer:8},
- reason:'?箄楚?潛嚗?箇?弦?Ｘ瞍莎????敺?閮?憓?擳?蝷衣隡湧?箏???},
-// ?? 擳雯? ??
-{kw:['擳雯?','擳?憭梢?','蝳?','擳?瘨','瘜?憭望?','擳雯撏拇蔑'],
+ reason:'遺跡發現：古遺物研究院暴漲；冒險者遠征委託激增；魔法礦石伴隨出土。'},
+// ── 魔網動盪 ──
+{kw:['魔網動盪','魔法失靈','禁魔','魔力消散','法術失效','魔網崩潰'],
  fx:{archmage:-40,arcanergs:-40,airtravel:-35,primemage:-35,mstone:-30,spellres:-25,magitools:-25,
      landroute:25,ironforge:15,metalex:15,grain:12,brew:5,textile:8,
      temple:22,antimagic:20,lifetree:12,archive:18,
@@ -812,9 +756,9 @@ const INFER_RULES=[
      watchmen:10,law12:8,roundtable:8,harbor:-15,shipyard:-10,spice:-10,
      silverwing:10,guardian:5,mining:5,beastyard:5,lumber:5,
      relic:12,starobs:-10,prison:5,herb:10,seyfer:0},
- reason:'擳雯撏拇蔑嚗?瘜?璅??券?渲?嚗頝航??喟絞撌交平?撞嚗戌擳??瑕仃?餌甇虫??唬?蟡??瘙之憓?},
-// ?? 擳?蝒 ??
-{kw:['擳?蝒','?唳?銵?,'憟扯??拙','擳??銵?,'瘜??弦','擳??潛'],
+ reason:'魔網崩潰：魔法類標的全面暴跌；陸路與傳統工業反漲；禦魔道具失去用武之地但神廟需求大增。'},
+// ── 魔法突破 ──
+{kw:['魔法突破','新法術','奧術革命','魔法技術','法術研究','魔法發現'],
  fx:{archmage:20,spellres:35,magitools:25,arcanergs:18,mstone:20,airtravel:15,
      relic:12,starobs:10,seyfer:15,
      ironforge:-10,landroute:-8,lumber:-5,
@@ -823,9 +767,9 @@ const INFER_RULES=[
      mercenary:5,adventure:8,temple:8,antimagic:10,
      blood13:5,alchemy:8,northtrade:5,prison:0,lifetree:5,
      herb:8,grain:0,beastyard:0,mining:8,metalex:5,law12:5,archive:-5,shipyard:5},
- reason:'擳?蝒嚗?銵?蝛嗅??瞍莎?擳??琿?瘙之憓?憟扯??賣??游撐嚗蝯勗極璆剖?憯?},
-// ?? ?輯?? ??
-{kw:['?輯?','蝭∩?','撏拇?','摰桀遠','?找?','?箸捏','霅圈?','???剖左'],
+ reason:'魔法突破：法術研究協會暴漲；魔導具需求大增；奧術能源擴張；傳統工業受壓。'},
+// ── 政變動盪 ──
+{kw:['政變','篡位','崩殂','宮廷','內亂','刺殺','議長遇刺','王位爭奪'],
  fx:{mercenary:25,ironforge:18,adventure:15,prison:22,blood13:10,northtrade:12,
      harbor:-18,spice:-15,airtravel:-15,brew:-18,textile:-10,
      archmage:8,antimagic:15,temple:12,lifetree:10,
@@ -833,9 +777,9 @@ const INFER_RULES=[
      watchmen:12,law12:15,roundtable:12,silverwing:8,primemage:5,guardian:8,
      arcanergs:-8,mstone:5,mining:5,relic:8,spellres:5,magitools:5,
      starobs:8,shipyard:-5,lumber:0,beastyard:5,seyfer:0,alchemy:8},
- reason:'?踹??嚗?菔???瘙憓?????憓?嚗窒??蝮殷?瘜??瑁?璈?撘瑕???},
-// ?? ?桐犖蝷行平 ??
-{kw:['?桐犖','蝷血控','蝷血?','蝷西?','鈭典噸??,'?啣?','??,'獢????],
+ reason:'政局動盪：傭兵與情報需求暴增；監獄關押增加；貿易萎縮；法律執行機構強化。'},
+// ── 矮人礦業 ──
+{kw:['矮人','礦山','礦坑','礦脈','亨德爾','地底','鍛造','桑克里斯特'],
  fx:{mining:35,ironforge:28,metalex:20,mstone:-18,magitools:15,beastyard:12,
      shipyard:12,lumber:-5,relic:15,adventure:18,mercenary:10,
      grain:5,brew:8,harbor:8,northtrade:8,
@@ -843,9 +787,9 @@ const INFER_RULES=[
      watchmen:5,roundtable:8,blood13:5,silverwing:5,primemage:8,
      herb:5,temple:5,antimagic:5,lifetree:5,
      archive:8,starobs:0,spice:5,airtravel:0,landroute:5,textile:0,seyfer:5,alchemy:5},
- reason:'?桐犖撌交平嚗漕敺瑞蝷衣???湔撞嚗????澆之?鞎剁?擳?蝷衣鈭斗????蝯血?????},
-// ?? 蝎暸? ??
-{kw:['蝎暸?','?喲?銋ㄝ','敺琿陌隡?,'璅嫣犖','?芰閬粹?','瞏?璉格??'],
+ reason:'矮人工業：亨德爾礦石挖掘暴漲；七匠鍛鋼大量出貨；魔法礦石交易所因供給增加而跌。'},
+// ── 精靈 ──
+{kw:['精靈','至高之森','德魯伊','樹人','自然覺醒','潛行森林開放'],
  fx:{herb:30,lumber:25,relic:12,magitools:10,spellres:8,
      harbor:12,textile:15,spice:10,brew:12,grain:8,
      ironforge:-5,mining:-5,beastyard:8,
@@ -855,9 +799,9 @@ const INFER_RULES=[
      shipyard:8,landroute:5,northtrade:5,
      starobs:8,archive:10,guardian:5,prison:-5,
      law12:0,primemage:0,metalex:0,seyfer:0,alchemy:5},
- reason:'蝎暸??嚗???冽?鞊?嚗?嗥頂擳??弦??嚗失靘?鞎踵?瘣餌窗??},
-// ?? ?芰?乩噩 ??
-{kw:['樴?,'撌券?','?芰','擳','?⊿?','?訾犖','?芸?','鈭⊿?','?亙???,'?唬???,'擳憭扯?'],
+ reason:'精靈開放：藥草與木料豐沛；自然系魔法研究受益；奢侈品貿易活絡。'},
+// ── 怪物入侵 ──
+{kw:['龍','巨龍','怪物','魔物','惡魔','獸人','喪屍','亡靈','哥布林','地下城','魔物大軍'],
  fx:{ironforge:25,adventure:38,mercenary:30,temple:35,antimagic:28,lifetree:20,
      watchmen:22,law12:12,roundtable:20,blood13:15,silverwing:25,primemage:22,guardian:20,
      relic:18,mstone:12,mining:8,herb:20,alchemy:15,
@@ -865,9 +809,9 @@ const INFER_RULES=[
      grain:-8,lumber:-8,beastyard:-8,shipyard:-10,
      archmage:10,arcanergs:-5,archive:10,starobs:8,
      metalex:8,magitools:8,spellres:8,landroute:-10,prison:8,seyfer:0},
- reason:'?芰?乩噩嚗????怎??湔撞嚗??芾?閮?憓?鞎踵?頝舐??梢嚗???撱儔瘣駁?瘙??詻?},
-// ?? 蟡?鈭辣 ??
-{kw:['蟡?','蟡?','蟡?','蟡剖','?','蟡?','靽∩趕','敺拇暑','??,'蟡?'],
+ reason:'怪物入侵：軍備與醫療暴漲；冒險者委託激增；貿易路線危險；聖者神廟復活需求爆炸。'},
+// ── 神聖事件 ──
+{kw:['神明','神祇','神廟','祭司','聖物','神蹟','信仰','復活','聖者','祝福'],
  fx:{temple:50,silverwing:22,antimagic:18,lifetree:20,law12:12,guardian:12,
      blood13:-25,alchemy:-18,northtrade:-10,
      herb:18,adventure:15,mercenary:12,relic:18,archive:12,starobs:15,
@@ -876,9 +820,9 @@ const INFER_RULES=[
      watchmen:8,roundtable:8,primemage:5,
      shipyard:5,lumber:5,beastyard:5,textile:5,metalex:5,mining:5,
      prison:15,spellres:5,seyfer:0},
- reason:'蟡?隞嚗???撱?憓??蝧潸????踝????亙???????憯??},
-// ?? ?瑟?銵? ??
-{kw:['??敺?','?瑟?','?','?亦?','?格?','皜','?嗉?'],
+ reason:'神明介入：聖者神廟聲望暴增；銀翼軍受神命；煉金藥劑與黑暗標的受壓制。'},
+// ── 執法行動 ──
+{kw:['十二律法','執法','掃蕩','查緝','逮捕','清查','制裁'],
  fx:{law12:30,prison:28,antimagic:10,temple:8,
      northtrade:-35,blood13:-20,alchemy:-15,
      mercenary:12,adventure:8,ironforge:5,
@@ -888,9 +832,9 @@ const INFER_RULES=[
      archmage:5,arcanergs:5,mstone:5,mining:5,metalex:5,
      relic:5,spellres:0,magitools:5,archive:8,starobs:5,
      primemage:0,shipyard:-5,lumber:-5,beastyard:-5,textile:-5,seyfer:0},
- reason:'??敺??瑟?嚗??交憓?韏啁?暺??剜?憯???撣妝摨雁霅琿?瘙???},
-// ?? ?噸銋?鈭辣 ??
-{kw:['?噸銋?','憭折???,'??憭折?','?噸銋?霅唳?','?噸銋?撠?','?噸銋??輯?'],
+ reason:'十二律法執法：監獄收入暴增；走私黑市遭打壓；各城市秩序維護需求上升。'},
+// ── 博德之門事件 ──
+{kw:['博德之門','大門城','商賈大道','博德之門議會','博德之門封鎖','博德之門政變'],
  fx:{harbor:25,brew:18,textile:15,spice:20,airtravel:15,landroute:12,
      mercenary:10,adventure:8,ironforge:8,grain:5,
      archmage:5,arcanergs:5,mstone:5,
@@ -899,9 +843,9 @@ const INFER_RULES=[
      shipyard:10,lumber:5,beastyard:5,metalex:5,mining:5,
      law12:5,roundtable:-5,silverwing:0,primemage:0,guardian:0,
      relic:5,spellres:0,magitools:5,archive:5,starobs:0,prison:8,seyfer:0},
- reason:'?噸銋?鈭辣嚗?撣誨銵冽???甇亙???瘚瑟葛?????嚗?窒???????},
-// ?? ?劓撜啁撣???
-{kw:['?劓撜?,'擳???,'?劓撜啁撣?,'擳??????,'摰??啗?'],
+ reason:'博德之門事件：城市代表標的同步反應；海港協會最敏感；周邊貿易標的連動。'},
+// ── 星辰峰異常 ──
+{kw:['星辰峰','魔法陣','星辰峰異常','魔法陣啟動','宇宙異變'],
  fx:{guardian:40,starobs:35,archmage:25,spellres:20,relic:22,mstone:20,
      adventure:18,mercenary:15,antimagic:15,temple:12,
      airtravel:-15,arcanergs:-10,
@@ -910,9 +854,9 @@ const INFER_RULES=[
      ironforge:5,mining:8,metalex:8,magitools:10,
      herb:8,lifetree:8,grain:0,lumber:-5,beastyard:-5,shipyard:-5,
      northtrade:5,landroute:5,archive:10,seyfer:20,alchemy:8,prison:5},
- reason:'?劓撜圈?瘜?啣虜嚗?霅瑁?閫???瞍莎?擳??弦???嚗?楝蝺?撟脫??},
-// ?? 鋆蔽?箄楚 ??
-{kw:['鋆蔽?箄楚','銝之蝵?,'撠擛?','暺?蟡?,'?芣?'],
+ reason:'星辰峰魔法陣異常：守護者與觀星協會暴漲；魔法研究者蜂擁而至；傳送路線受干擾。'},
+// ── 裂罪遺跡 ──
+{kw:['裂罪遺跡','七大罪','封印鬆動','黑暗神','邪教'],
  fx:{temple:50,antimagic:40,silverwing:35,guardian:22,lifetree:20,archive:18,
      adventure:32,mercenary:28,ironforge:18,
      blood13:20,alchemy:15,northtrade:10,prison:25,
@@ -921,9 +865,9 @@ const INFER_RULES=[
      watchmen:15,law12:12,roundtable:12,primemage:8,
      grain:-5,herb:15,relic:18,spellres:10,magitools:8,starobs:8,shipyard:-10,
      lumber:-8,beastyard:-5,seyfer:0},
- reason:'鋆蔽?箄楚撠擛?嚗??蝳阡??券?湔撞嚗?????啣???桅窒???銝剖援頝?},
-// ?? ?怎?遣 ??
-{kw:['?怎','憭抒','??','?遣','?賢??遣'],
+ reason:'裂罪遺跡封印鬆動：神聖防禦類全面暴漲；黑暗勢力得到助力；普通貿易在恐慌中崩跌。'},
+// ── 火災重建 ──
+{kw:['火災','大火','焚毀','重建','災後重建'],
  fx:{lumber:35,shipyard:12,ironforge:12,beastyard:8,mining:8,
      herb:10,temple:15,lifetree:12,alchemy:10,
      harbor:-8,spice:-5,airtravel:-8,brew:-10,textile:-8,
@@ -933,9 +877,9 @@ const INFER_RULES=[
      archmage:-5,arcanergs:-5,magitools:5,
      northtrade:-5,landroute:10,blood13:5,silverwing:5,guardian:5,
      relic:-10,spellres:0,archive:5,starobs:0,seyfer:0,primemage:0},
- reason:'??憭抒嚗??撌亙??瘙憓??遣撣嗅?撌交平嚗??瘙?憓?憟Ｖ????},
-// ?? 頞?鈭辣 ??
-{kw:['頞?','??','?曆??拇頞?','?????'],
+ reason:'城市大火：木料加工廠需求暴增；重建帶動工業；醫療需求激增；奢侈品暫停。'},
+// ── 越獄事件 ──
+{kw:['越獄','逃獄','艾佛利斯越獄','監獄動亂'],
  fx:{prison:-35,adventure:30,mercenary:25,law12:20,
      ironforge:8,antimagic:8,temple:5,
      northtrade:10,blood13:8,
@@ -945,95 +889,59 @@ const INFER_RULES=[
      archmage:0,arcanergs:0,mstone:0,mining:0,metalex:0,
      relic:5,spellres:0,magitools:0,archive:5,starobs:5,
      primemage:0,shipyard:0,lumber:0,beastyard:5,textile:0,seyfer:0,alchemy:5},
- reason:'?曆??拇頞?嚗?靽∪?撏拇蔑?渲?嚗??芾??剖餈賣?憪?瞈憓??瑟??瘙???},
+ reason:'艾佛利斯越獄：監獄公信力崩潰暴跌；冒險者與傭兵追捕委託激增；執法需求上升。'},
 ];
 
-// ????????????????????????????????????????????????????????
-//  ?批遣?芸?鈭辣瘙?
-// ????????????????????????????????????????????????????????
-// ????????????????????????????????????????????????????????
-//  ?郊???
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  內建自動事件池
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+//  同步狀態
+// ═══════════════════════════════════════════════════════
 let SURL=localStorage.getItem(URL_KEY)||'', W=null, busy=false;
 const upCol='#c0392b', dnCol='#27ae60';
 const chCol=ch=>ch>=0?upCol:dnCol;
-const sn=d=>{const m=Math.floor(((d-1)%360)/30);return SEASONS[m]+'銋';};
-const ds=()=>`?潸??蝚?{W.gameYear}撟?蝚?{W.gameDay||1}?匝;
-// GM 蝡?quotePrice嚗ntraday ?脰?銝剔 a.price嚗???step ?單??湔嚗?
-// ??intraday 撠??歇?嗥嚗???history ?敺?蝑??敺?fallback a.price
-function quotePrice(a){
-  const S=W?.market?.intraday;
-  if(S&&S.status==='open'&&S.plans&&S.plans[a.id]){
-    const pts=S.plans[a.id].points||[];
-    const last=pts[pts.length-1];
-    if(last&&Number.isFinite(last.price))return last.price;
-  }
-  const h=a.history;
-  if(h&&h.length)return h[h.length-1];
-  return a.price;
-}
-// quoteBase嚗??仿??文皞??冽?嗥嚗?
-function quoteBase(a){
-  const S=W?.market?.intraday;
-  if(S&&S.plans&&S.plans[a.id]&&S.plans[a.id].prevClose)return S.plans[a.id].prevClose;
-  const h=a.history;
-  if(h&&h.length>=2)return h[h.length-2];
-  return a.price;
-}
-const gc=a=>{const cur=quotePrice(a),base=quoteBase(a);return base>0?(cur-base)/base:0;};
+const sn=d=>{const m=Math.floor(((d-1)%360)/30);return SEASONS[m]+'之日';};
+const ds=()=>`格蘭曆 第${W.gameYear}年 第${W.gameDay||1}日`;
+const gc=a=>{const h=a.history;return h.length<2?0:(h[h.length-1]-h[h.length-2])/h[h.length-2];};
 const isLimitUp=a=>gc(a)>=DAILY_LIMIT*0.98;
 const isLimitDn=a=>gc(a)<=-DAILY_LIMIT*0.98;
 
 function getPos(p,id){const raw=p.portfolio[id];if(!raw)return{qty:0,avgCost:0};if(typeof raw==='number')return{qty:raw,avgCost:0};return raw;}
-function pvOf(p){return Object.keys(p.portfolio).reduce((s,id)=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);const pos=getPos(p,id);return s+(a?quotePrice(a)*pos.qty:0);},0);}
+function pvOf(p){return Object.keys(p.portfolio).reduce((s,id)=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);const pos=getPos(p,id);return s+(a?a.price*pos.qty:0);},0);}
 function totalCost(p){return Object.keys(p.portfolio).reduce((s,id)=>{const pos=getPos(p,id);return s+(pos.avgCost*pos.qty);},0);}
 
 function setSS(state,txt){document.getElementById('sdot').className='sdot '+state;document.getElementById('slabel').textContent=txt;}
 
 async function pull(){
-  if(!SURL){setSS('','?∪?甇?);return null;}setSS('spin','霈?葉??);
-  try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();if(j.ok){setSS('ok','撌脤??');return j.data;}setSS('err','霈?仃??);return null;}
-  catch(e){setSS('err','?⊥????');return null;}
+  if(!SURL){setSS('','無同步');return null;}setSS('spin','讀取中…');
+  try{const r=await fetch(SURL+'?t='+Date.now());const j=await r.json();if(j.ok){setSS('ok','已連線');return j.data;}setSS('err','讀取失敗');return null;}
+  catch(e){setSS('err','無法連線');return null;}
 }
 
 let pushPending=false;
 let _pushResolvers=[];
-function mergeWorldLogs(localLog=[],cloudLog=[]){
-  const merged=[],seen=new Set();
-  [...localLog,...cloudLog].forEach(e=>{
-    if(!e)return;
-    const key=e.uid||[e.time||'',e.text||'',e.type||'',e.gmOnly?'gm':''].join('|');
-    if(seen.has(key))return;
-    seen.add(key);merged.push(e);
-  });
-  return merged.slice(0,300);
-}
 async function push(){
   if(!SURL){localStorage.setItem(LOCAL_KEY,JSON.stringify(W));return;}
-  // 憒?甇??脣?嚗?閮?pending 銝血??喃???Promise嚗??祆活摰?敺??摮?甈?
+  // 如果正在儲存，標記 pending 並回傳一個 Promise，等本次完成後自動再存一次
   if(busy){
     pushPending=true;
     return new Promise(res=>_pushResolvers.push(res));
   }
-  busy=true;setSS('spin','?脣?銝凌?);
+  busy=true;setSS('spin','儲存中…');
   try{
-    const latest=await pull();
-    if(latest){
-      W.log=mergeWorldLogs(W.log||[],latest.log||[]);
-      W.eventLog=mergeWorldLogs(W.eventLog||[],latest.eventLog||[]);
-    }
     W.lastSaved=Date.now();
     const resp=await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
     if(resp.ok){
-      setSS('ok','撌脣摮?'+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
+      setSS('ok','已儲存 '+new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}));
       localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
-    }else{setSS('err','?脣?憭望?');}
-  }catch(e){setSS('err','?脣?憭望?');localStorage.setItem(LOCAL_KEY,JSON.stringify(W));}
+    }else{setSS('err','儲存失敗');}
+  }catch(e){setSS('err','儲存失敗');localStorage.setItem(LOCAL_KEY,JSON.stringify(W));}
   finally{
     busy=false;
-    // ?蝑???
+    // 通知等待者
     const resolvers=[..._pushResolvers];_pushResolvers=[];resolvers.forEach(r=>r());
-    // 憒???pending ??瑼?瘙?蝡??銝甈?
+    // 如果有 pending 的存檔請求，立刻再存一次
     if(pushPending){pushPending=false;push();}
   }
 }
@@ -1042,12 +950,12 @@ function makeDefault(){
   return{
     assets:ASSETS0.map(a=>({...a,history:[a.price]})),
     players:[
-      {id:'p1',name:'???',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p2',name:'???',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p3',name:'???',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p4',name:'???',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p5',name:'???',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p6',name:'??',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p1',name:'冒險者一',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p2',name:'冒險者二',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p3',name:'冒險者三',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p4',name:'冒險者四',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p5',name:'冒險者五',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p6',name:'冒險者六',cash:1500,portfolio:{},realizedPnL:0},
     ],
     gameYear:1,gameDay:1,gameMonth:1,
     presetEvents:[],log:[],eventLog:[],lastSaved:Date.now(),
@@ -1059,36 +967,36 @@ function makeDefault(){
 function migrateAssets(world){
   if(!world.assets)world.assets=[];
 
-  // ??璅? ID 皜嚗誑 ASSETS0 ?箸?嚗?
+  // 有效標的 ID 清單（以 ASSETS0 為準）
   const validIds=new Set(ASSETS0.map(a=>a.id));
 
-  // 蝘駁銝?啁?皜鋆∠?????靽? IPO 銝??閮???id ???ipo_嚗?
+  // 移除不在新版清單裡的舊標的（保留 IPO 上市的自訂標的，id 開頭為 ipo_）
   world.assets=world.assets.filter(a=>validIds.has(a.id)||a.id.startsWith('ipo_'));
 
-  // 鋆蝻箏??璅?
+  // 補入缺少的新標的
   ASSETS0.forEach(t=>{
     if(!world.assets.find(a=>a.id===t.id)){
       world.assets.push({...t,history:[t.price]});
     }
   });
 
-  // 皜??拙振?ㄐ撌脖?摮??璅?
+  // 清理玩家持倉裡已不存在的舊標的
   if(world.players)world.players.forEach(p=>{
     if(typeof p.realizedPnL!=='number')p.realizedPnL=0;
     if(!p.portfolio)p.portfolio={};
     if(!p.shorts)p.shorts=[];
-    // 蝘駁??????閮?
+    // 移除持有舊標的的記錄
     Object.keys(p.portfolio).forEach(id=>{
       if(!validIds.has(id)&&!id.startsWith('ipo_'))delete p.portfolio[id];
     });
-    // 蝘駁?????征閮?
+    // 移除舊標的的做空記錄
     p.shorts=p.shorts.filter(s=>validIds.has(s.assetId)||s.assetId.startsWith('ipo_'));
   });
 
   if(!world.eventLog)world.eventLog=[];
   if(!world.gameDay)world.gameDay=world.gameMonth||1;
   if(!world.market)world.market=initMarketState();
-  // trends 銝??冽??芾????潘?銝?蝵格??market嚗??cycle/timer 甇賊嚗?
+  // trends 不存在時只補初始值，不重置整個 market（避免 cycle/timer 歸零）
   if(!world.market.trends)world.market.trends={};
   if(world.market.cycle===undefined)world.market.cycle=0;
   if(world.market.cycleDir===undefined)world.market.cycleDir=1;
@@ -1100,7 +1008,7 @@ function migrateAssets(world){
   if(!world.schedules)world.schedules=[];
   ensureAssetGroups(world);
 
-  // 頞典???鋆蝻箏??璅?嚗 ASSETS0 ??IPO 璅?嚗?
+  // 趨勢狀態也補入缺少的新標的（含 ASSETS0 與 IPO 標的）
   world.assets.filter(a=>!a.delisted).forEach(a=>{
     if(!world.market.trends[a.id]){
       const bb=a.baseBias||0;
@@ -1124,53 +1032,43 @@ async function init(){
 }
 function afterLoad(){
   buildEvtGrid();
-  buildSilentGrid();
   buildSchPctGrid();
-  buildSchHourSelect();
-  renderQbPanel();
   if(!W.schedules) W.schedules=[];
   if(!W.market)W.market=initMarketState();
   intradaySession();
+  normalizeQueuedIntradayShocks();
   document.getElementById('setY').value=W.gameYear||1;
   document.getElementById('setD').value=W.gameDay||1;
-  const auto=document.getElementById('intradayAutoToggle');
-  if(auto&&localStorage.getItem('gran_intraday_auto')!==null)auto.checked=localStorage.getItem('gran_intraday_auto')==='1';
   renderAll();
+  initCollapsiblePanels();
   updateRecentAnnouncements();
-  if(!W.log.length)gmLog('ev','?????潸憭折?振鈭斗?? GM ?批?啣????啁? 38 璅?嚗???');
+  if(!W.log.length)gmLog('ev','═══ 格蘭大陸皇家交易所 GM 控制台啟動（新版 38 標的）═══');
 }
 setInterval(async()=>{
   if(!SURL||busy)return;
   const c=await pull();
   if(!c)return;
   if(c.lastSaved>(W?.lastSaved||0)){
-    // ?脩垢瘥?唳嚗摰嗅?銝嚗? 靽∩遙?脩垢嚗?靽??砍撠銝??log 璇
-    const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}撟渡洵${m[2]}?匝}:e;};
-    const localLog=(W?.log||[]).map(normalize);
-    const cloudLog=(c.log||[]).map(normalize);
-    // ??唳??蝡舀??? log 鋆嚗??GM ??砍?雿?瘝?push 撠梯◤?脩垢閬?嚗?
-    const onlyLocal=localLog.filter(e=>!cloudLog.some(x=>(x.uid&&x.uid===e.uid)||(x.time===e.time&&x.text===e.text)));
-    if(onlyLocal.length>0)c.log=[...onlyLocal,...cloudLog].slice(0,100);
-    preserveLocalIntradayCompleted(W,c);
+    // 雲端比本地新（玩家剛下單）→ 完全信任雲端
     W=c;
     renderAll();
   } else if(c.lastSaved===(W?.lastSaved||0)){
-    // ???穿??蝡舀?雿?唳??? log 璇嚗摰嗡漱???郊?脖?
-    const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}撟渡洵${m[2]}?匝}:e;};
+    // 同版本：把雲端有但本地沒有的 log 條目（玩家交易）同步進來
+    const normalize=e=>{const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);return m?{...e,time:`${m[1]}年第${m[2]}日`}:e;};
     const localLog=(W.log||[]).map(normalize);
     const cloudLog=(c.log||[]).map(normalize);
     const missing=cloudLog.filter(e=>!localLog.some(x=>x.time===e.time&&x.text===e.text));
     if(missing.length>0){W.log=[...missing,...localLog];renderLog();}
   }
 },10000);
-setInterval(()=>{runIntradayAuto(false);},60000);
+// Apps Script 後端負責自動日內盤；GM 前端只負責設定。
 
-function saveUrl(){const u=document.getElementById('scriptUrlInput').value.trim();if(!u.startsWith('https://script.google.com')){alert('隢撓?交迤蝣箇? Apps Script 蝬脣?');return;}SURL=u;localStorage.setItem(URL_KEY,u);document.getElementById('setupOverlay').classList.add('hidden');init();}
-function localMode(){SURL='';document.getElementById('setupOverlay').classList.add('hidden');setSS('','?砍璅∪?');const loc=localStorage.getItem(LOCAL_KEY);W=loc?migrateAssets(JSON.parse(loc)):makeDefault();afterLoad();}
+function saveUrl(){const u=document.getElementById('scriptUrlInput').value.trim();if(!u.startsWith('https://script.google.com')){alert('請輸入正確的 Apps Script 網址');return;}SURL=u;localStorage.setItem(URL_KEY,u);document.getElementById('setupOverlay').classList.add('hidden');init();}
+function localMode(){SURL='';document.getElementById('setupOverlay').classList.add('hidden');setSS('','本地模式');const loc=localStorage.getItem(LOCAL_KEY);W=loc?migrateAssets(JSON.parse(loc)):makeDefault();afterLoad();}
 
-// ????????????????????????????????????????????????????????
-//  ?亙?歹?08:00 ??00:00嚗?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  日內盤（08:00 → 00:00）
+// ═══════════════════════════════════════════════════════
 function intradayKey(){return `${W.gameYear||1}-${W.gameDay||1}`;}
 function intradaySession(){
   if(!W.market)W.market=initMarketState();
@@ -1203,72 +1101,28 @@ function syncIntradaySlotFromPoints(){
   S.slot=Math.min(maxSlot,INTRADAY_SLOTS.length-1);
   return S;
 }
-function intradayRealTargetSlot(){
+function currentRealIntradaySlot(){
   const h=new Date().getHours();
   if(h===0)return INTRADAY_SLOTS.length-1;
-  if(h<8||h>23)return null;
+  if(h<8)return 0;
+  if(h>23)return INTRADAY_SLOTS.length-1;
   return Math.min(h-8,INTRADAY_SLOTS.length-1);
 }
-async function intradayCatchUpBeforeCommand(){
-  let S=syncIntradaySlotFromPoints();
-  if(S.status!=='open')return;
-  const target=intradayRealTargetSlot();
-  if(target===null||target<=(S.slot||0))return;
-  const from=S.slot||0;
-  for(let step=from+1;step<=target;step++){
-    W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
-    S.slot=step;
-  }
-  gmLog('time','intraday caught up to '+INTRADAY_SLOTS[S.slot]+' before quick command');
-  await push();
+function nextQueuedIntradaySlot(){
+  const S=syncIntradaySlotFromPoints();
+  const dataSlot=S.status==='open'?(S.slot||0):0;
+  const realSlot=currentRealIntradaySlot();
+  return Math.min(Math.max(dataSlot,realSlot)+1,INTRADAY_SLOTS.length-1);
+}
+function normalizeQueuedIntradayShocks(){
+  if(!W?.market?.intraday?.plans)return;
+  const next=nextQueuedIntradaySlot();
+  Object.values(W.market.intraday.plans).forEach(P=>{
+    if(!P||P.nextSlotShock===undefined)return;
+    if(!Number.isFinite(P.nextSlotShockSlot)||P.nextSlotShockSlot<next)P.nextSlotShockSlot=next;
+  });
 }
 function intradayAvg(P){return P.points.reduce((s,p)=>s+p.price,0)/Math.max(1,P.points.length);}
-function intradaySnapshotCompleted(){
-  const snap={};
-  W.assets.filter(a=>!a.delisted).forEach(a=>{
-    const P=intradayPlan(a);
-    const done=intradayCompletedSlot(P);
-    snap[a.id]={
-      done,
-      points:(P.points||[]).filter(pt=>(pt.slot||0)<=done).map(pt=>({...pt})),
-      prevClose:P.prevClose
-    };
-  });
-  return snap;
-}
-function intradayRestoreCompleted(snap){
-  if(!snap)return;
-  W.assets.filter(a=>!a.delisted).forEach(a=>{
-    const s=snap[a.id];
-    if(!s||!s.points||!s.points.length)return;
-    const P=intradayPlan(a);
-    const future=(P.points||[]).filter(pt=>(pt.slot||0)>s.done).map(pt=>({...pt}));
-    P.points=[...s.points,...future];
-    P.prevClose=s.prevClose||P.prevClose;
-    P.high=Math.max(P.prevClose||0,...P.points.map(x=>x.price||0));
-    P.low=Math.min(P.prevClose||Infinity,...P.points.map(x=>x.price||Infinity));
-    const last=intradayLastPoint(P);
-    if(last&&Number.isFinite(last.price))a.price=last.price;
-  });
-  syncIntradaySlotFromPoints();
-}
-function preserveLocalIntradayCompleted(localWorld,incomingWorld){
-  const L=localWorld?.market?.intraday, C=incomingWorld?.market?.intraday;
-  if(!L||!C||L.dateKey!==C.dateKey||!L.plans||!C.plans)return incomingWorld;
-  Object.keys(L.plans).forEach(id=>{
-    const lp=L.plans[id], cp=C.plans[id];
-    if(!lp||!cp||!lp.points||!lp.points.length)return;
-    const done=intradayCompletedSlot(lp);
-    if(done<=0)return;
-    const locked=lp.points.filter(pt=>(pt.slot||0)<=done).map(pt=>({...pt}));
-    const future=(cp.points||[]).filter(pt=>(pt.slot||0)>done).map(pt=>({...pt}));
-    cp.points=[...locked,...future];
-    cp.prevClose=lp.prevClose||cp.prevClose;
-    cp.high=Math.max(cp.prevClose||0,...cp.points.map(x=>x.price||0));
-    cp.low=Math.min(cp.prevClose||Infinity,...cp.points.map(x=>x.price||Infinity));
-  });
-  return incomingWorld;
-}
 function intradayOpen(){
   if(!W.market)W.market=initMarketState();
   const old=W.market.intraday;
@@ -1276,10 +1130,9 @@ function intradayOpen(){
   const plans={};
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const keep=oldPlans[a.id]||{};
-    // prevClose ??history ?敺?蝑??迤??交?文嚗?銝 a.price嚗?賣 intraday 銝剝潘?
     const h=a.history;
     const prev=(h&&h.length)?h[h.length-1]:a.price;
-    const keepToday=old?.dateKey===intradayKey()&&keep.points&&keep.points.length>1;
+    const keepToday=old?.dateKey===intradayKey()&&old?.status==='open'&&keep.points&&keep.points.length>1;
     if(keepToday){
       const pts=keep.points.map(pt=>({...pt}));
       plans[a.id]={prevClose:keep.prevClose||prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',points:pts,high:Math.max(keep.prevClose||prev,...pts.map(x=>x.price||0)),low:Math.min(keep.prevClose||prev,...pts.map(x=>x.price||Infinity))};
@@ -1287,12 +1140,12 @@ function intradayOpen(){
       if(last&&Number.isFinite(last.price))a.price=last.price;
       return;
     }
-    a.price=prev; // ?郊 a.price嚗??蝥?蝞?啗???
+    a.price=prev;
     plans[a.id]={prevClose:prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
   });
   W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
   syncIntradaySlotFromPoints();
-  gmLog('time',`???亙?日??歹?${ds()} 08:00`);
+  gmLog('time',`⏱ 日內盤開盤：${ds()} 08:00`);
   push();renderAll();
 }
 function intradayStep(){
@@ -1302,7 +1155,7 @@ function intradayStep(){
   if(step>=INTRADAY_SLOTS.length){intradayClose();return;}
   W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
   S.slot=step;
-  gmLog('time',`???亙?斗?脰 ${INTRADAY_SLOTS[step]}`);
+  gmLog('time',`⏱ 日內盤推進至 ${INTRADAY_SLOTS[step]}`);
   push();renderAll();
 }
 function clampPct(v){return Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,v));}
@@ -1330,26 +1183,21 @@ function intradayStepAsset(a,step){
   const S=intradaySession(), P=intradayPlan(a);
   const doneSlot=intradayCompletedSlot(P);
   if(step<=doneSlot){
-    const last=intradayLastPoint(P);
-    if(last&&Number.isFinite(last.price))a.price=last.price;
+    const lastDone=intradayLastPoint(P);
+    if(lastDone&&Number.isFinite(lastDone.price))a.price=lastDone.price;
     return;
   }
-  // 瘨祥 nextSlotShock嚗敶梢?祆活 step嚗摰皜
   let activeCfg=P.volatility;
-  let hourClose;
   const last=intradayLastPoint(P);
   const limitUp=Math.round(P.prevClose*1.1), limitDown=Math.max(1,Math.round(P.prevClose*0.9));
-  if(P.nextSlotShock!==undefined){
-    // 敹恍?隞方???????乩誑銵?撟漲雿?砍??撞頝璅?
-    const shockPct=P.nextSlotShock;
+  let hourClose;
+  const shockSlot=Number.isFinite(P.nextSlotShockSlot)?P.nextSlotShockSlot:step;
+  if(P.nextSlotShock!==undefined&&shockSlot===step){
+    const shockPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,P.nextSlotShock||0));
     activeCfg=P.nextSlotVol||qbVolForPct(shockPct);
-    delete P.nextSlotShock; delete P.nextSlotVol;
-    const shockCfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
-    const noiseBase=0.014*(a.vol||0.1)*10*(shockCfg.noise||0);
-    const noise=(Math.random()-0.5)*noiseBase*0.5;
-    const raw=last.price*(1+shockPct+noise);
-    hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,raw)));
-  } else {
+    delete P.nextSlotShock;delete P.nextSlotVol;delete P.nextSlotShockSlot;
+    hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,P.prevClose*(1+shockPct))));
+  }else{
     const cfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
     const targetPct=Math.max(-0.10,Math.min(0.10,P.targetPct||0));
     const progress=step/(INTRADAY_SLOTS.length-1);
@@ -1358,11 +1206,10 @@ function intradayStepAsset(a,step){
     const pull=(targetPrice-last.price)/P.prevClose*(cfg.pull||0.18);
     const noiseBase=0.014*(a.vol||0.1)*10*(cfg.noise||0);
     const hourNoise=(Math.random()-0.5)*noiseBase;
-    const hourMove=Math.max(-0.075,Math.min(0.075,pull+hourNoise));
+    let hourMove=Math.max(-0.075,Math.min(0.075,pull+hourNoise));
     hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,last.price*(1+hourMove))));
     if(step===INTRADAY_SLOTS.length-1)hourClose=Math.round(Math.max(limitDown,Math.min(limitUp,P.prevClose*(1+targetPct))));
   }
-  // cfg ?冽 tick 敺格郭??蝞?activeCfg 撌脣銝?寞? shock ??憪?volatility 瘙箏?嚗?
   const cfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
   let tickPrice=last.price;
   const startSlot=S.slot||0;
@@ -1380,8 +1227,8 @@ function intradayStepAsset(a,step){
   a.price=hourClose;
 }
 function intradayClose(){
-  const S=syncIntradaySlotFromPoints();
-  if(S.status!=='open'){alert('?桀?瘝??銝剔??亙??);return;}
+  const S=intradaySession();
+  if(S.status!=='open'){alert('目前沒有開盤中的日內盤');return;}
   while((S.slot||0)<INTRADAY_SLOTS.length-1){
     const step=(S.slot||0)+1;
     W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
@@ -1393,7 +1240,7 @@ function intradayClose(){
     a.history.push(a.price);
   });
   S.status='closed';
-  addLog('time',`???亙?斗?歹?${ds()}嚗?文撌脣神?交風?深);
+  addLog('time',`日內盤收盤：${ds()}，收盤價已寫入歷史`);
   W.gameDay=(W.gameDay||1)+1;
   if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
   W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
@@ -1402,206 +1249,94 @@ function intradayClose(){
   push();renderAll();
 }
 function intradayRandomTargets(){
-  const S=intradaySession();
-  W.assets.filter(a=>!a.delisted).forEach(a=>{const P=intradayPlan(a);P.targetPct=(Math.random()*4-2)/100;P.volatility='neutral';});
-  gmLog('ev','? ?典??湔?抒璅歇?冽?閮剖???-2% ~ +2%');
+  if(!confirm('確定要把全市場隨機漲跌幅排入下一個小時嗎？已經走過的小時價格會保留。'))return;
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const p=(Math.random()*4-2)/100;
+    queueNextHourMove(a,p,qbVolForPct(p));
+    touchTrendForQueuedMove(a,p);
+  });
+  const S=syncIntradaySlotFromPoints();
+  gmLog('ev','🎯 全市場下一小時已隨機排入 -2% ~ +2%');
+  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
   push();renderAll();
 }
 function intradayZeroTargets(){
-  W.assets.filter(a=>!a.delisted).forEach(a=>{const P=intradayPlan(a);P.targetPct=0;P.volatility='flat';});
-  gmLog('ev','? ?典??湔?抒璅飛?塚?瘜Ｗ??寧蝒??斗');
+  if(!confirm('確定要把全市場下一小時排為平盤嗎？已經走過的小時價格會保留。'))return;
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    queueNextHourMove(a,0,'flat');
+    touchTrendForQueuedMove(a,0);
+  });
+  const S=syncIntradaySlotFromPoints();
+  gmLog('ev','🎯 全市場下一小時已排為平盤');
+  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
   push();renderAll();
 }
-function setIntradayTarget(id,val){const a=W.assets.find(x=>x.id===id);if(!a)return;const P=intradayPlan(a);P.targetPct=Math.max(-10,Math.min(10,parseFloat(val)||0))/100;if(P.targetPct>=0.099)P.targetPct=0.10;if(P.targetPct<=-0.099)P.targetPct=-0.10;push();renderIntradayPlans();}
-function setIntradayVol(id,val){const a=W.assets.find(x=>x.id===id);if(!a)return;intradayPlan(a).volatility=val||'neutral';push();renderIntradayPlans();}
+function setIntradayTarget(id,val){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  let p=Math.max(-10,Math.min(10,parseFloat(val)||0))/100;
+  if(p>=0.099)p=0.10;if(p<=-0.099)p=-0.10;
+  const P=queueNextHourMove(a,p,intradayPlan(a).nextSlotVol||qbVolForPct(p));
+  touchTrendForQueuedMove(a,p);
+  gmLog('time',`${a.name} 下一小時排入 ${p>=0?'+':''}${(p*100).toFixed(1)}%`);
+  push();renderIntradayPlans();
+}
+function setIntradayVol(id,val){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  const P=intradayPlan(a), v=INTRADAY_PATTERNS[val]?val:'neutral';
+  if(P.nextSlotShock!==undefined)P.nextSlotVol=v;
+  else P.volatility=v;
+  push();renderIntradayPlans();
+}
 function intradayVolKey(s){
-  s=(s||'').trim();
-  if(!s||s.includes('銝??))return'neutral';
-  if(s.includes('??))return'choppy';
-  if(s.includes('撟喟帘'))return'calm';
-  if(s.includes('?斗')||s.includes('蝒?))return'flat';
-  if(s.includes('瘝?))return'quiet';
-  if(s.includes('??))return'violent';
-  if(s.includes('?捏'))return'sellThenBuy';
-  if(s.includes('??'))return'buyThenSell';
-  return INTRADAY_PATTERNS[s]?s:'neutral';
+  s=String(s||'').trim();
+  if(!s)return 'neutral';
+  if(INTRADAY_PATTERNS[s])return s;
+  if(s.includes('震'))return 'choppy';
+  if(s.includes('平穩'))return 'calm';
+  if(s.includes('窄')||s.includes('盤整'))return 'flat';
+  if(s.includes('沒')||s.includes('無'))return 'quiet';
+  if(s.includes('劇'))return 'violent';
+  if(s.includes('先殺'))return 'sellThenBuy';
+  if(s.includes('先拉'))return 'buyThenSell';
+  return 'neutral';
 }
-// ????????????????????????????????????????????????????????
-//  敹恍????
-// ????????????????????????????????????????????????????????
-const QB_CMDS={};   // { assetId: { pct: 0.10, label: '瞍脣?' } }
-let _qbFilter='all';
-
-function qbFilter(f){
-  _qbFilter=f;
-  ['all','set'].forEach(k=>{
-    const b=document.getElementById('qbf_'+k);
-    if(b)b.className='qb-ftag'+(k===f?' on':'');
-  });
-  renderQbPanel();
-}
-
-function qbSet(id,pct,label){
-  // ?活暺?銝??????
-  if(QB_CMDS[id]&&QB_CMDS[id].label===label){
-    delete QB_CMDS[id];
-  } else {
-    QB_CMDS[id]={pct,label};
-  }
-  renderQbRow(id);
-  updateQbCount();
-}
-
-function qbClearAll(){
-  Object.keys(QB_CMDS).forEach(k=>delete QB_CMDS[k]);
-  renderQbPanel();
-}
-
-function updateQbCount(){
-  const n=Object.keys(QB_CMDS).length;
-  const el=document.getElementById('qbSetCount');
-  if(el)el.textContent=n>0?`${n} ?臬歇閮剖?`:'0 ?臬歇閮剖?';
-}
-
 function qbVolForPct(pct){
-  const abs=Math.abs(pct);
-  if(abs>=0.10)return'violent';
-  if(abs>=0.06)return'violent';
-  if(pct>0)return'buyThenSell';
-  if(pct<0)return'sellThenBuy';
-  return'flat';
+  const p=Number(pct)||0, abs=Math.abs(p);
+  if(abs>=0.065)return 'violent';
+  if(p>0)return 'buyThenSell';
+  if(p<0)return 'sellThenBuy';
+  return 'flat';
 }
-
-async function applyQbCommands(){
-  const ids=Object.keys(QB_CMDS);
-  if(!ids.length){alert('隢?閮剖??喳?銝????);return;}
-  const preview=ids.map(id=>{
-    const a=W.assets.find(x=>x.id===id);
-    const cmd=QB_CMDS[id];
-    return a&&cmd?`${a.name} ${cmd.label}`:'';
-  }).filter(Boolean).slice(0,8).join('\n');
-  const more=ids.length>8?`\n... \u5171 ${ids.length} \u6a94`:'';
-  if(!confirm(`\u78ba\u5b9a\u7acb\u5373\u5957\u7528\u65e5\u5167\u76e4\u6307\u4ee4\uff1f\n\n\u9019\u6703\u5957\u7528 ${ids.length} \u6a94\u6a19\u7684\uff0c\u4e26\u53ef\u80fd\u5148\u88dc\u8dd1\u5230\u76ee\u524d\u6642\u6bb5\u3002\n\n${preview}${more}`))return;
-  const lockedIntraday=intradaySnapshotCompleted();
-  await intradayCatchUpBeforeCommand();
-  const S=intradaySession();
-  const currentSlot=S.slot||0;
-  W.assets.forEach(a=>{
-    if(a.delisted)return;
-    const cmd=QB_CMDS[a.id];
-    if(!cmd)return;
-    const P=intradayPlan(a);
-    // ?芸蔣?踴?銝??????nextSlotShock ?怠?嚗ntradayStepAsset 瘨祥敺???
-    // 銝耨??targetPct嚗?亦璅?嚗??歇韏啣?????????斗??
-    P.nextSlotShock=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,cmd.pct));
-    P.nextSlotVol=qbVolForPct(cmd.pct);
-    if(W.market?.trends[a.id]){
-      const T=W.market.trends[a.id];
-      T.bias=(cmd.pct>0?1:-1)*Math.min(0.09,Math.abs(cmd.pct)*0.7);
-      T.duration=Math.floor(Math.random()*10)+5;
-      T.momentum=(cmd.pct>0?1:-1)*Math.min(0.07,Math.abs(cmd.pct)*0.5);
-      T.volatility='volatile';T.volDays=Math.floor(Math.random()*5)+4;
-    }
-  });
-  gmLog('ev',`??敹恍?隞文??剁?${ids.length} ?舀???${ids.map(id=>{const a=W.assets.find(x=>x.id===id);const cmd=QB_CMDS[id];return a?`${a.name} ${cmd.label}`:''}).filter(Boolean).join('??)}嚗?銝??????);
-  intradayRestoreCompleted(lockedIntraday);
-  await push();renderAll();
-}
-
-function renderQbRow(id){
-  const row=document.getElementById('qbrow_'+id);
-  if(!row)return;
-  const a=W.assets.find(x=>x.id===id);
-  if(!a)return;
-  const cmd=QB_CMDS[id];
-  // ?湔?????
-  ['limitUp','randUp','flat','randDn','limitDn'].forEach(k=>{
-    const btn=document.getElementById(`qbbtn_${id}_${k}`);
-    if(!btn)return;
-    btn.className=btn.dataset.base+(cmd&&cmd.label===btn.dataset.label?' active-'+btn.dataset.dir:'');
-  });
-  // ?湔???摮?
-  const st=row.querySelector('.qb-status');
-  if(st){
-    if(cmd){
-      const isUp=cmd.pct>0,isFlat=cmd.pct===0;
-      st.className='qb-status '+(isFlat?'flat':isUp?'up':'dn');
-      st.textContent=cmd.label;
-    } else {
-      st.className='qb-status flat';st.textContent='??';
-    }
+function queueNextHourMove(a,pct,vol){
+  if(!a||a.delisted)return null;
+  let S=intradaySession();
+  if(S.status!=='open'){
+    intradayOpen();
+    S=intradaySession();
   }
-  // ?蕪憿舐內
-  if(_qbFilter==='set')row.style.display=cmd?'':'none';
+  const P=intradayPlan(a);
+  const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+  P.nextSlotShock=clamped;
+  P.nextSlotVol=INTRADAY_PATTERNS[vol]?vol:qbVolForPct(clamped);
+  P.nextSlotShockSlot=nextQueuedIntradaySlot();
+  return P;
 }
-
-function renderQbPanel(){
-  if(!W)return;
-  const body=document.getElementById('qbBody');if(!body)return;
-  body.innerHTML='';
-  const assets=W.assets.filter(a=>!a.delisted);
-  assets.forEach(a=>{
-    const cmd=QB_CMDS[a.id];
-    if(_qbFilter==='set'&&!cmd)return;
-
-    const row=document.createElement('div');
-    row.className='qb-row';
-    row.id='qbrow_'+a.id;
-
-    // ?冽?撟漲嚗?1~+8% ??-1~-8%嚗?
-    const randUpPct=()=>(Math.random()*7+1)/100;   // +1~+8
-    const randDnPct=()=>-(Math.random()*7+1)/100;  // -1~-8
-
-    const mkBtn=(label,getPct,dir,key)=>{
-      const baseCls=`qb-btn ${dir}`;
-      const isActive=cmd&&cmd.label===label;
-      const btn=document.createElement('button');
-      btn.className=baseCls+(isActive?` active-${dir}`:'');
-      btn.dataset.base=baseCls+' ';
-      btn.dataset.label=label;
-      btn.dataset.dir=dir;
-      btn.id=`qbbtn_${a.id}_${key}`;
-      btn.textContent=label;
-      btn.onclick=()=>{
-        const pct=getPct();
-        qbSet(a.id,pct,label);
-      };
-      return btn;
-    };
-
-    const nameEl=document.createElement('div');
-    nameEl.className='qb-name';
-    nameEl.textContent=`${a.icon} ${a.name}`;
-    nameEl.title=a.name;
-
-    const btns=document.createElement('div');
-    btns.className='qb-btns';
-    btns.appendChild(mkBtn('瞍脣?',()=>0.10,'up','limitUp'));
-    btns.appendChild(mkBtn('+1~+8%',randUpPct,'up','randUp'));
-    btns.appendChild(mkBtn('?像',()=>0,'flat','flat'));
-    btns.appendChild(mkBtn('-1~-8%',randDnPct,'dn','randDn'));
-    btns.appendChild(mkBtn('頝?',()=>-0.10,'dn','limitDn'));
-
-    const status=document.createElement('div');
-    if(cmd){
-      const isUp=cmd.pct>0,isFlat=cmd.pct===0;
-      status.className='qb-status '+(isFlat?'flat':isUp?'up':'dn');
-      status.textContent=cmd.label;
-    } else {
-      status.className='qb-status flat';status.textContent='??';
-    }
-
-    row.appendChild(nameEl);row.appendChild(btns);row.appendChild(status);
-    body.appendChild(row);
-  });
-  updateQbCount();
+function touchTrendForQueuedMove(a,pct){
+  if(!W.market)W.market=initMarketState();
+  if(!W.market.trends)W.market.trends={};
+  if(!W.market.trends[a.id])W.market.trends[a.id]={bias:0,duration:6,momentum:0,slump:0,volatility:'normal',volDays:0};
+  const T=W.market.trends[a.id], p=Number(pct)||0, dir=p>=0?1:-1, strength=Math.abs(p);
+  T.bias=dir*Math.min(.09,strength*.7);
+  T.duration=Math.floor(Math.random()*10)+5;
+  T.momentum=dir*Math.min(.07,strength*.5);
+  T.volatility='volatile';
+  T.volDays=Math.floor(Math.random()*5)+4;
 }
-
 function applyIntradayBatch(){
   const raw=document.getElementById('intradayBatchText')?.value||'';
   const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  if(!lines.length){alert('隢?頛詨?寞活鈭辣?格?');return;}
-  const lockedIntraday=intradaySnapshotCompleted();
+  if(!lines.length){alert('請先輸入批次事件目標');return;}
+  if(!confirm('確定要把這些日內盤目標排入下一個小時嗎？已經走過的小時價格會保留，不會重畫。'))return;
   let ok=0,miss=[];
   lines.forEach(line=>{
     const m=line.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)\s*(.*)$/);
@@ -1609,20 +1344,19 @@ function applyIntradayBatch(){
     const key=m[1].trim(), pct=parseFloat(m[2]), vol=intradayVolKey(m[3]);
     const a=W.assets.find(x=>x.id===key||x.name.includes(key)||key.includes(x.name));
     if(!a){miss.push(line);return;}
-    const P=intradayPlan(a);
-    P.targetPct=Math.max(-10,Math.min(10,pct))/100;
-    P.volatility=vol;
+    const p=Math.max(-10,Math.min(10,pct))/100;
+    queueNextHourMove(a,p,vol);
+    touchTrendForQueuedMove(a,p);
     ok++;
   });
-  intradayRestoreCompleted(lockedIntraday);
-  gmLog('ev',`? ?寞活鈭辣?格?撌脣???${ok} 蝑?{miss.length?`嚗?寥? ${miss.length} 蝑:''}`);
-  if(miss.length)alert('隞乩??芸??\n'+miss.join('\n'));
+  const S=syncIntradaySlotFromPoints();
+  gmLog('ev',`🎯 批次事件目標已排入下一小時 ${ok} 筆${miss.length?`，未匹配 ${miss.length} 筆`:''}`);
+  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
+  if(miss.length)alert('以下未匹配：\n'+miss.join('\n'));
   push();renderAll();
 }
 function saveIntradayAutoPref(){localStorage.setItem('gran_intraday_auto',document.getElementById('intradayAutoToggle')?.checked?'1':'0');}
 async function runIntradayAuto(force=false){
-  const el=document.getElementById('intradayAutoToggle');
-  if(el&&!el.checked&&!force)return;
   if(!W||busy)return;
   const now=new Date(), hour=now.getHours(), today=now.toDateString();
   let S=intradaySession();
@@ -1638,9 +1372,9 @@ async function runIntradayAuto(force=false){
   S.lastAutoRun=`${today}-${hour}`;
 }
 
-// ????????????????????????????????????????????????????????
-//  頞典撘?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  趨勢引擎
+// ═══════════════════════════════════════════════════════
 function initMarketState(){
   const trends={};
   ASSETS0.forEach(a=>{
@@ -1649,29 +1383,29 @@ function initMarketState(){
     trends[a.id]={bias:initBias,duration:Math.floor(Math.random()*10)+4,momentum:initBias*0.3,slump:0,volatility:'normal',volDays:0};
   });
   return{trends,cycle:(Math.random()-0.5)*0.4,cycleDir:Math.random()>0.5?1:-1,cycleDur:Math.floor(Math.random()*12)+6,
-    researchTimer:Math.floor(Math.random()*20)+20,  // 瘜??弦?望?
-    prophecyTimer:Math.floor(Math.random()*15)+15,  // ???砌縑?望?
+    researchTimer:Math.floor(Math.random()*20)+20,  // 法術研究週期
+    prophecyTimer:Math.floor(Math.random()*15)+15,  // 占卜公信力週期
   };
 }
 
 function rollMkt(eventBiasFn){
   if(!W.market)W.market=initMarketState();
   const M=W.market;
-  // ?舀除敺芰
+  // 景氣循環
   M.cycle+=M.cycleDir*0.08+(Math.random()-0.5)*0.04;
   M.cycle=Math.max(-1,Math.min(1,M.cycle));
   M.cycleDur--;
   if(M.cycleDur<=0){
     M.cycleDir*=-1;M.cycleDur=Math.floor(Math.random()*14)+5;
-    const cn=M.cycle>0.3?'蝜旨':M.cycle<-0.3?'銵圈':'?斗';
-    gmLog('ev',`?? ?舀除頧? ???潸憭折?脣${cn}?);
+    const cn=M.cycle>0.3?'繁榮':M.cycle<-0.3?'衰退':'盤整';
+    gmLog('ev',`📈 景氣轉向 — 格蘭大陸進入${cn}期`);
   }
   const cycleEffect={
     civilian:M.cycle*-0.010,military:M.cycle*-0.006,trade:M.cycle*0.015,
     magic:M.cycle*0.007,industrial:M.cycle*0.008,research:M.cycle*0.003,holy:M.cycle*-0.008,
   };
 
-  // ?寞??望?鈭辣
+  // 特殊週期事件
   M.researchTimer--;
   if(M.researchTimer<=0){
     M.researchTimer=Math.floor(Math.random()*20)+20;
@@ -1680,7 +1414,7 @@ function rollMkt(eventBiasFn){
     if(a&&!a.delisted){
       const bias=success?0.09:-0.08;
       if(M.trends['spellres']){M.trends['spellres'].bias=bias;M.trends['spellres'].duration=Math.floor(Math.random()*8)+5;M.trends['spellres'].momentum=bias*0.5;}
-      gmLog('ev',success?'?妒 瘜??弦??摰???之蝒嚗?寥??撥?Ｖ??颯?:'?妒 瘜??弦??撖阡?憭望?瘣拚嚗?寥脣銝?頞典??);
+      gmLog('ev',success?'🧪 法術研究協會宣布重大突破！股價預期強勢上攻。':'🧪 法術研究協會實驗失敗洩露，股價進入下行趨勢。');
     }
   }
   M.prophecyTimer--;
@@ -1691,23 +1425,23 @@ function rollMkt(eventBiasFn){
     if(a&&!a.delisted){
       const bias=accurate?0.07:-0.08;
       if(M.trends['starobs']){M.trends['starobs'].bias=bias;M.trends['starobs'].duration=Math.floor(Math.random()*6)+3;M.trends['starobs'].momentum=bias*0.4;}
-      gmLog('ev',accurate?'? 閫????皜砍????皜祆?蝣綽??砌縑?之憓?':'? 閫????皜砍???皜砍仃皞?靽∩遙?望?嚗?寞憯?);
+      gmLog('ev',accurate?'🔭 觀星占卜觀測協會本期預測準確，公信力大增！':'🔭 觀星占卜觀測協會預測失準，信任危機，股價承壓。');
     }
   }
 
   W.assets.forEach(a=>{
     if(a.delisted)return;
-    // ?怠?鈭斗??????∪銝?
+    // 暫停交易的標的：股價不動
     if(W.suspended&&W.suspended.includes(a.id))return;
-    // trends 銝??冽??芸?鋆嚗?頝喲?
+    // trends 不存在時自動補入，不跳過
     if(!M.trends[a.id]){
       const bb=a.baseBias||0;
       M.trends[a.id]={bias:bb,duration:Math.floor(Math.random()*10)+4,momentum:0};
     }
     const T=M.trends[a.id];
-    if(T.slump===undefined)T.slump=0;          // 雿蕙???脫迫頝楛?∠巨鋡怎?行撟喳??
+    if(T.slump===undefined)T.slump=0;          // 低迷期：防止跌深股票被無腦攤平凹回
     if(!T.volatility)T.volatility='normal';    // calm / normal / volatile
-    if(T.volDays===undefined)T.volDays=0;      // 鈭辣敺郭??餃予??
+    if(T.volDays===undefined)T.volDays=0;      // 事件後波動冷卻天數
     if(T.volDays>0)T.volDays--;
     else if(T.volatility==='volatile')T.volatility='normal';
 
@@ -1718,15 +1452,15 @@ function rollMkt(eventBiasFn){
       const swing=(Math.random()-0.5)*0.14;
       let newBias=reversion+swing+bb;
       if(Math.random()<0.10)newBias=(Math.random()>0.5?1:-1)*(0.06+Math.random()*0.04)+bb;
-      // 鞈質?橘?摰瘛瑟?
+      // 賽菲爾：完全混沌
       if(a.special==='chaos')newBias=(Math.random()-0.5)*0.20;
       T.bias=Math.max(-0.10,Math.min(0.10,newBias));
       const baseDur=Math.abs(T.bias)>0.06?8:4;
       T.duration=Math.floor(Math.random()*12)+baseDur;
       T.momentum=T.bias*0.5;
       if(Math.abs(T.bias)>0.04){
-        const dir=T.bias>0?'?脣銝頞典':'?脣銝?頞典';
-        gmLog('ev',`?? ${a.name} ${dir}嚗?? ${T.bias>=0?'+':''}${(T.bias*100).toFixed(1)}%嚗);
+        const dir=T.bias>0?'進入上攻趨勢':'進入下行趨勢';
+        gmLog('ev',`📊 ${a.name} ${dir}（日偏向 ${T.bias>=0?'+':''}${(T.bias*100).toFixed(1)}%）`);
       }
     }
     let sectorBias=0;
@@ -1739,23 +1473,23 @@ function rollMkt(eventBiasFn){
     let total=T.bias+sectorBias+T.momentum*0.4+noise+evBias;
     let maDev=null, streakDir=0, streakLen=0;
 
-    // ?? ???飛???寞? MA20 頞?嚗?甇詨???撘???
+    // ── 均線回歸力：價格偏離 MA20 越遠，回歸壓力越強 ──
     if(a.history.length>=20){
       const ma20=a.history.slice(-20).reduce((s,v)=>s+v,0)/20;
-      const devPct=(a.price-ma20)/ma20; // ? MA20 ???
+      const devPct=(a.price-ma20)/ma20; // 偏離 MA20 的百分比
       maDev=devPct;
-      // ?頞? 15% ??憪??甇詨?嚗?憭批?甇詨? 簣3%
+      // 偏離超過 15% 才開始施加回歸力，最大回歸力 ±3%
       if(Math.abs(devPct)>0.15){
-        const revForce=-devPct*0.18; // ?孵????Ｙ??
+        const revForce=-devPct*0.18; // 方向與偏離相反
         total+=Math.max(-0.03,Math.min(0.03,revForce));
-        // ??憯葬頞典??嚗?摰?嗉???
+        // 同時壓縮趨勢偏向，讓它自然轉向
         if(devPct>0.20&&T.bias>0) T.bias*=0.85;
         if(devPct<-0.20&&T.bias<0) T.bias*=0.85;
       }
-      if(devPct>0.28&&total>0)total*=0.45; // ?????鈭
+      if(devPct>0.28&&total>0)total*=0.45; // 過熱時不再無限制井噴
     }
 
-    // ?? ??撞/???頞? 5 ?亥?孛?潭???銵唳? ??
+    // ── 連漲/連跌超過 5 日自動觸發整理：動能衰減 ──
     if(a.history.length>=6){
       const recent=a.history.slice(-6);
       const allUp=recent.every((v,i)=>i===0||v>recent[i-1]);
@@ -1763,17 +1497,17 @@ function rollMkt(eventBiasFn){
       streakDir=allUp?1:allDn?-1:0;
       streakLen=streakDir?recent.length-1:0;
       if(allUp||allDn){
-        // ????桀?頞?5?伐????嚗???蝮?
+        // 連續單向超過5日：動能折半，偏向壓縮
         T.momentum*=0.5;
         T.bias*=0.7;
         if(allUp&&total>0)total*=0.65;
         if(allDn&&maDev!==null&&maDev<-0.12&&Math.random()<0.16){
-          T.slump=Math.max(T.slump,Math.floor(Math.random()*14)+8); // 8~21 ?乩?餈?
+          T.slump=Math.max(T.slump,Math.floor(Math.random()*14)+8); // 8~21 日低迷
         }
       }
     }
 
-    // ?? ?寞靽風嚗?瘛梯??敶???
+    // ── 價格保護：跌深自動反彈 ──
     const base=ASSETS0.find(x=>x.id===a.id);
     if(base){
       const basePrice=base.price;
@@ -1793,10 +1527,10 @@ function rollMkt(eventBiasFn){
       }
     }
 
-    // ?? 雿蕙??頝?∠巨?航?∩?銝畾菜????踹??文像敹? ??
+    // ── 低迷期：跌勢股票可能卡住一段時間，避免攤平必勝 ──
     if(T.slump>0){
       T.slump--;
-      if(total>0)total*=0.35; // 隞?賢?敶?雿??摹
+      if(total>0)total*=0.35; // 仍可能反彈，但力道弱
       total-=0.004+Math.random()*0.010;
       T.bias=Math.min(T.bias,-0.01);
       T.momentum=Math.min(T.momentum,0);
@@ -1809,53 +1543,53 @@ function rollMkt(eventBiasFn){
     a.price=Math.max(1,Math.round(a.price*(1+total)));
     a.history.push(a.price);
 
-    // 銝?霅衣內
+    // 下市警示
     if(base&&a.price<base.price*0.5&&!a.delistWarned){
       a.delistWarned=true;
-      gmLog('warn',`??${a.name} ?寞頝????50%嚗? GM ??臬銝??);
+      gmLog('warn',`⚠ ${a.name} 價格跌破初始價 50%，請 GM 考慮是否下市。`);
     }
   });
 
-  // ?征??鞎餌?蝞?
+  // 做空手續費結算
   if(W.players){
     W.players.forEach(p=>{
       if(!p.shorts||!p.shorts.length)return;
       const toClose=[];
       p.shorts.forEach((s,i)=>{
         s.daysHeld=(s.daysHeld||0)+1;
-        // ??鞎鳴?1~3??%/?伐?4~7??.5%/?伐?8+撘瑕撟喳?
+        // 手續費：1~3日2%/日，4~7日3.5%/日，8+強制平倉
         let fee=0;
         if(s.daysHeld<=3)fee=s.principal*0.02;
         else if(s.daysHeld<=7)fee=s.principal*0.035;
         else{toClose.push(i);return;}
         p.cash=Math.max(0,p.cash-fee);
-        // ?憭扯?炎??
+        // 最大虧損檢查
         const a=W.assets.find(x=>x.id===s.assetId);
         if(a){const pnl=s.shortQty*(s.entryPrice-a.price);if(pnl<=-s.principal)toClose.push(i);}
       });
-      // 撘瑕撟喳?敺?敺?嚗?
+      // 強制平倉（從後往前刪）
       [...new Set(toClose)].sort((a,b)=>b-a).forEach(i=>{
         const s=p.shorts[i];
         const a=W.assets.find(x=>x.id===s.assetId);
-        if(a){const pnl=s.shortQty*(s.entryPrice-a.price);p.cash+=s.principal+pnl;p.realizedPnL+=pnl;addLog(pnl>=0?'good':'bad',`${p.name} 蝛箏撘瑕撟喳?${a.name} ?${s.shortQty}嚗?{pnl>=0?'?脣':'?扳?'} ${Math.abs(Math.round(pnl)).toLocaleString()} G`);}
+        if(a){const pnl=s.shortQty*(s.entryPrice-a.price);p.cash+=s.principal+pnl;p.realizedPnL+=pnl;addLog(pnl>=0?'good':'bad',`${p.name} 空單強制平倉：${a.name} ×${s.shortQty}，${pnl>=0?'獲利':'虧損'} ${Math.abs(Math.round(pnl)).toLocaleString()} G`);}
         p.shorts.splice(i,1);
       });
     });
   }
 }
 
-// ????????????????????????????????????????????????????????
-//  ??
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  時間
+// ═══════════════════════════════════════════════════════
 function refreshTime(){document.getElementById('dateBig').textContent=ds();document.getElementById('seasonLbl').textContent=sn(W.gameDay||1);}
 function applyTime(){
   W.gameYear=Math.max(1,parseInt(document.getElementById('setY').value)||1);
   W.gameDay=Math.max(1,parseInt(document.getElementById('setD').value)||1);
   W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
-  gmLog('time',`GM 閮剖??? ??${ds()}`);push();refreshTime();
+  gmLog('time',`GM 設定時間 → ${ds()}`);push();refreshTime();
 }
 async function adv(n){
-  saveUndoSnapshot(`?券?${n} ?伐?${ds()}嚗);
+  saveUndoSnapshot(`推進 ${n} 日（${ds()}）`);
   for(let i=0;i<n;i++){
     W.gameDay=(W.gameDay||1)+1;
     if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
@@ -1864,16 +1598,16 @@ async function adv(n){
   }
   document.getElementById('setY').value=W.gameYear;
   document.getElementById('setD').value=W.gameDay;
-  addLog('time',`?????券?${n} ????${ds()}`);await push();renderAll();
+  addLog('time',`⏱ 時間推進 ${n} 日 → ${ds()}`);await push();renderAll();
 }
 
-// ????????????????????????????????????????????????????????
-//  鈭辣?函?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  事件推理
+// ═══════════════════════════════════════════════════════
 function inferEvent(){
   const name=document.getElementById('evtName').value.trim();
   const desc=document.getElementById('evtDesc').value.trim();
-  if(!name&&!desc){alert('隢?頛詨鈭辣?迂??餈?);return;}
+  if(!name&&!desc){alert('請先輸入事件名稱或描述');return;}
   const txt=(name+' '+desc).toLowerCase();
   const sc={};W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=0;});
   let reasons=[],hits=0;
@@ -1883,25 +1617,25 @@ function inferEvent(){
       Object.entries(rule.fx).forEach(([id,v])=>{if(sc[id]!==undefined)sc[id]+=v;});
     }
   });
-  if(!hits){W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=Math.round(Math.random()*10-5);});reasons=['?芾??仿??萄?嚗??刻?敺桅璈郭??];}
+  if(!hits){W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=Math.round(Math.random()*10-5);});reasons=['未識別關鍵字，套用輕微隨機波動。'];}
   else if(hits>1){Object.keys(sc).forEach(id=>sc[id]=Math.round(sc[id]/hits*1.3));}
   W.assets.forEach(a=>{if(a.delisted)return;const el=document.getElementById('epct_'+a.id);if(el)el.value=sc[a.id]!==0?sc[a.id]:'';});
   document.getElementById('inferReason').textContent=reasons.join(' / ');
   document.getElementById('inferBox').classList.remove('hidden');
 }
 
-// ????????????????????????????????????????????????????????
-//  鈭辣閫貊
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  事件觸發
+// ═══════════════════════════════════════════════════════
 function getPcts(){const p={};W.assets.forEach(a=>{if(a.delisted)return;const v=parseFloat(document.getElementById('epct_'+a.id)?.value);if(!isNaN(v))p[a.id]=v/100;});return p;}
 
-// ?寞?撌脣‵璅?嚗?蝞征?賣????瞍脰?嚗?~3%嚗?
+// 根據已填標的，計算空白標的的關聯漲跌（±0~3%）
 function calcCorrelationPcts(filledPcts){
   const result={};
-  // 閮?憛怠璅??像???撘瑕漲
+  // 計算填入標的的平均方向與強度
   const entries=Object.entries(filledPcts);
   if(!entries.length)return result;
-  // ??sector ?像????
+  // 各 sector 的平均偏向
   const sectorAvg={};
   entries.forEach(([id,v])=>{
     for(const[sector,ids]of Object.entries(SECTOR_GROUPS)){
@@ -1911,27 +1645,27 @@ function calcCorrelationPcts(filledPcts){
       }
     }
   });
-  // 撠??征?賣???靘?撅?sector 瘙箏???孵?
+  // 對每個空白標的，依所屬 sector 決定關聯方向
   W.assets.filter(a=>!a.delisted&&filledPcts[a.id]===undefined).forEach(a=>{
     let corr=0,weight=0;
     for(const[sector,ids]of Object.entries(SECTOR_GROUPS)){
       if(ids.includes(a.id)&&sectorAvg[sector]){
         const avg=sectorAvg[sector].sum/sectorAvg[sector].cnt;
-        corr+=avg*0.4; // ??sector 撘梯??40%嚗?
+        corr+=avg*0.4; // 同 sector 弱聯動（40%）
         weight++;
       }
     }
-    // ???湧?撣撟喳??孵??凝撘勗蔣?選?10%嚗?
+    // 加上整體市場平均方向的微弱影響（10%）
     const mktAvg=entries.reduce((s,[,v])=>s+v,0)/entries.length;
     corr+=mktAvg*0.1;
-    // ???簣3% ?改???銝璈??賊?
+    // 限制在 ±3% 內，再加上隨機小數點
     const maxCorr=0.03;
     corr=Math.max(-maxCorr,Math.min(maxCorr,corr));
-    // ?? 簣1% 隞亙?璈?閮?霈??駁銝?璅?
+    // 加上 ±1% 以內的隨機雜訊，讓每隻都不一樣
     const noise=(Math.random()-0.5)*0.02;
     corr+=noise;
     corr=Math.max(-maxCorr,Math.min(maxCorr,corr));
-    // 銝??孵?憭芸??停?湔蝯?簣0~1.5% ?冽?
+    // 不動方向太小的就直接給 ±0~1.5% 隨機
     if(Math.abs(corr)<0.002)corr=(Math.random()-0.5)*0.015;
     result[a.id]=corr;
   });
@@ -1939,78 +1673,44 @@ function calcCorrelationPcts(filledPcts){
 }
 
 async function applyPcts(pcts,label,opts={}){
-  saveUndoSnapshot(`${opts.silent?'????隤踵':'鈭辣閫貊'}嚗?{label}嚗?{ds()}嚗);
-  // 閮?蝛箇璅????舀撞頝?簣0~3%嚗?
+  saveUndoSnapshot(`${opts.silent?'排程調整':'事件觸發'}：${label}（${ds()}）`);
   const corrPcts=calcCorrelationPcts(pcts);
-  // ?蔥嚗?憛怎??典‵??蝛箇??
   const allPcts={...corrPcts,...pcts};
+  let ok=0;
 
-  // ?斗?桀??臬?冽?抒?銝?
-  const intradayOpen = W.market?.intraday?.status === 'open';
-
-  W.assets.forEach(a=>{
-    if(a.delisted)return;
+  Object.entries(allPcts).forEach(([id,rawPct])=>{
+    const a=W.assets.find(x=>x.id===id&&!x.delisted);
+    if(!a)return;
     if(W.suspended&&W.suspended.includes(a.id))return;
-    const basePct=allPcts[a.id];
-    if(basePct===undefined)return;
 
-    let finalPct;
-    if(pcts[a.id]!==undefined){
-      const sign=pcts[a.id]>=0?1:-1;
-      const base=Math.abs(pcts[a.id]);
-      const jitter=Math.random()*0.01;
-      finalPct=sign*(base+jitter);
-    } else {
-      finalPct=basePct;
+    let finalPct=Number(rawPct)||0;
+    if(pcts[id]!==undefined){
+      const sign=finalPct>=0?1:-1;
+      finalPct=sign*(Math.abs(finalPct)+Math.random()*0.01);
     }
     finalPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,finalPct));
-
-    if(intradayOpen){
-      // ?? ?亙?斗芋撘???隞嗅蔣?輯身摰 targetPct嚗??亙?方粥?粹????
-      // 銝?交 a.price嚗?撖?history嚗?斗?撖恬?
-      const P=intradayPlan(a);
-      P.targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,finalPct));
-      // 鈭辣敺郭??撘?
-      P.volatility='violent';
-    } else {
-      // ?? ??抒璅∪?嚗?交?莎?嚗?交?嫣蒂撖怠 history ??
-      const prevPrice=a.history.length>1?a.history[a.history.length-1]:a.price;
-      a.price=Math.max(1,Math.round(prevPrice*(1+finalPct)));
-      a.history.push(a.price);
-    }
-
-    // ?湔頞典??嚗?敺?撟暹撱嗥??孵?嚗蝔格芋撘閬?堆?
-    if(W.market&&W.market.trends[a.id]){
-      const evDir=finalPct>0?1:-1;
-      const evStrength=Math.abs(finalPct);
-      const T=W.market.trends[a.id];
-      T.bias=evDir*Math.min(0.09,evStrength*0.7);
-      T.duration=Math.floor(Math.random()*10)+5;
-      T.momentum=evDir*Math.min(0.07,evStrength*0.5);
-      T.volatility='volatile';
-      T.volDays=Math.floor(Math.random()*5)+4;
-      if(finalPct>0.035)T.slump=0;
-      if(finalPct<-0.065)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*8)+4);
-    }
+    queueNextHourMove(a,finalPct,qbVolForPct(finalPct));
+    touchTrendForQueuedMove(a,finalPct);
+    ok++;
   });
 
-  // 鈭辣閫貊嚗敶Ｘ?敶梢?嗆?∪?隅?ｇ?銝?脫??
-  // ?交??券脩??抒?嗥?絞銝鞎痊嚗??gameDay ??history ?瑕漲?恍
-  if(opts.silent) addLog('time',`?? ?勗耦隤踵憟 ??${ds()}`);
-  else{
-    addLog('ev',`??銝?鈭辣嚗?{label}`);
-    addEventLog(`??${label}`);
+  if(opts.silent){
+    addLog('time',`排程事件已排入下一小時：${ds()}`);
+  }else{
+    addLog('ev',`⚡ 世界事件：${label}`);
+    addEventLog(`⚡ ${label}`);
   }
-  // log ?芷＊蝷?GM ?‵?潛?璅?
-  const aff=W.assets.filter(a=>!a.delisted&&pcts[a.id]!==undefined).map(a=>{
-    const h=a.history;
-    const prev=h.length>1?h[h.length-2]:a.price;
-    const actual=(a.price-prev)/prev;
-    return `${a.name} ${actual>=0?'??:'??}${Math.abs(actual*100).toFixed(1)}%`;
+
+  const affected=W.assets.filter(a=>!a.delisted&&pcts[a.id]!==undefined).map(a=>{
+    const pct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pcts[a.id])||0));
+    return `${a.name} ${pct>=0?'+':''}${(pct*100).toFixed(1)}%`;
   }).join('  ');
-  if(aff&&!opts.silent)addLog('ev',`?${aff}`);
-  renderAll(); // ???單??GM ?恍
-  await push(); // ???脩垢嚗ush ?曉?迤蝣箇?敺?busy 閫?嚗?
+  if(affected&&!opts.silent)addLog('ev',`🎯 下一小時影響：${affected}`);
+
+  const S=syncIntradaySlotFromPoints();
+  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}，共 ${ok} 支`);
+  renderAll();
+  await push();
 }
 function buildEvtGrid(){
   const el=document.getElementById('evtPctGrid');el.innerHTML='';
@@ -2021,56 +1721,56 @@ function buildEvtGrid(){
   });
 }
 function clearForm(){document.getElementById('evtName').value='';document.getElementById('evtDesc').value='';document.getElementById('inferBox').classList.add('hidden');W.assets.forEach(a=>{const e=document.getElementById('epct_'+a.id);if(e)e.value='';});}
-async function fireNow(){const name=document.getElementById('evtName').value.trim()||'?芸??隞?;const p=getPcts();if(!Object.keys(p).length){alert('隢撠身摰?????瞍脰?撟?);return;}await applyPcts(p,name);}
+async function fireNow(){const name=document.getElementById('evtName').value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}if(!confirm(`確定觸發「${name}」並排入下一個小時嗎？`))return;await applyPcts(p,name);}
 function savePreset(){
-  const name=document.getElementById('evtName').value.trim();if(!name){alert('隢撓?乩?隞嗅?蝔?);return;}
-  const p=getPcts();if(!Object.keys(p).length){alert('隢撠身摰?????瞍脰?撟?);return;}
+  const name=document.getElementById('evtName').value.trim();if(!name){alert('請輸入事件名稱');return;}
+  const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}
   W.presetEvents.push({id:Date.now(),name,desc:document.getElementById('evtDesc').value.trim(),pcts:p});
-  gmLog('ev',`?? ?脣?鈭辣嚗?{name}?);clearForm();push();renderPresets();
+  gmLog('ev',`📜 儲存事件：「${name}」`);clearForm();push();renderPresets();
 }
 function renderPresets(){
   const el=document.getElementById('presetList');el.innerHTML='';
-  if(!W.presetEvents.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:8px">撠?脣?鈭辣</div>';return;}
+  if(!W.presetEvents.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:8px">尚無儲存事件</div>';return;}
   W.presetEvents.forEach((ev,i)=>{
     const aff=Object.entries(ev.pcts).map(([id,v])=>{const a=W.assets.find(x=>x.id===id);return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:''}).filter(Boolean).join('  ');
     const d=document.createElement('div');d.className='preset-evt';
     d.innerHTML=`<div style="flex:1"><div class="pname">${ev.name}</div><div class="pdetail">${aff}</div>${ev.desc?`<div class="pdetail">${ev.desc}</div>`:''}</div>
-      <div class="preset-btns"><button class="fire-btn" onclick="firePreset(${i})">閫貊</button><button class="del-btn" onclick="delPreset(${i})">?芷</button></div>`;
+      <div class="preset-btns"><button class="fire-btn" onclick="firePreset(${i})">觸發</button><button class="del-btn" onclick="delPreset(${i})">刪除</button></div>`;
     el.appendChild(d);
   });
 }
-function firePreset(i){applyPcts(W.presetEvents[i].pcts,W.presetEvents[i].name);}
-function delPreset(i){if(!confirm('蝣箏??芷嚗?))return;W.presetEvents.splice(i,1);push();renderPresets();}
+function firePreset(i){const ev=W.presetEvents[i];if(!ev)return;if(!confirm(`確定觸發「${ev.name}」並排入下一個小時嗎？`))return;applyPcts(ev.pcts,ev.name);}
+function delPreset(i){if(!confirm('確定刪除？'))return;W.presetEvents.splice(i,1);push();renderPresets();}
 
-// ????????????????????????????????????????????????????????
-//  IPO ??撣?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  IPO 與下市
+// ═══════════════════════════════════════════════════════
 async function doIPO(){
   const name=document.getElementById('ipoName').value.trim();
-  const icon=document.getElementById('ipoIcon').value.trim()||'??';
+  const icon=document.getElementById('ipoIcon').value.trim()||'📌';
   const price=parseInt(document.getElementById('ipoPrice').value)||300;
   const vol=parseFloat(document.getElementById('ipoVol').value)||0.10;
-  const cat=document.getElementById('ipoCat').value.trim()||'?寞?';
+  const cat=document.getElementById('ipoCat').value.trim()||'特殊';
   const desc=document.getElementById('ipoDesc').value.trim();
   const intro=document.getElementById('ipoIntro').value.trim();
-  if(!name){alert('隢撓?交???蝔?);return;}
+  if(!name){alert('請輸入標的名稱');return;}
   const id='ipo_'+Date.now();
   const newAsset={id,name,icon,price,cat,vol,baseBias:0,history:[price]};
-  if(intro) newAsset.desc=intro; // ?陛隞?亙???asset ?拐辣銝?
+  if(intro) newAsset.desc=intro; // 把簡介直接存在 asset 物件上
   W.assets.push(newAsset);
-  // ??摮 W.assetDescs嚗絞銝閬??剁?
+  // 同時存到 W.assetDescs（統一覆蓋用）
   if(!W.assetDescs) W.assetDescs={};
   if(intro) W.assetDescs[id]=intro;
-  // ???隅??
+  // 初始化趨勢
   if(W.market){W.market.trends[id]={bias:0,duration:10,momentum:0,slump:0,volatility:'normal',volDays:0};}
-  addLog('ev',`?? IPO 銝?嚗?{icon} ${name}嚗?憪 ${price.toLocaleString()} G嚗?{desc?'??'+desc:''}`);
-  addEventLog(`?? IPO 銝?嚗?{icon} ${name}嚗?憪 ${price.toLocaleString()} G嚗);
+  addLog('ev',`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）${desc?'— '+desc:''}`);
+  addEventLog(`🚀 IPO 上市：${icon} ${name}（初始價 ${price.toLocaleString()} G）`);
   document.getElementById('ipoName').value='';document.getElementById('ipoIcon').value='';
   document.getElementById('ipoDesc').value='';document.getElementById('ipoIntro').value='';
   await push();renderAll();buildEvtGrid();buildSchPctGrid();
 }
 
-// ?? 璅?蝪∩?蝺刻摩?” ??
+// ── 標的簡介編輯列表 ──
 function renderDescEditList(){
   const el=document.getElementById('descEditList');if(!el||!W)return;
   if(!W.assetDescs)W.assetDescs={};
@@ -2081,17 +1781,17 @@ function renderDescEditList(){
     const row=document.createElement('div');
     row.style.cssText='margin-bottom:6px;border:1px solid var(--parch3);background:rgba(255,255,255,0.15)';
     row.innerHTML=`
-      <div onclick="toggleDescRow('${uid}')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;user-select:none;" title="暺?撅?嚗??>
+      <div onclick="toggleDescRow('${uid}')" style="display:flex;align-items:center;gap:6px;padding:8px 10px;cursor:pointer;user-select:none;" title="點擊展開／收合">
         <span style="font-size:16px">${a.icon}</span>
         <span style="font-size:12px;font-weight:700;flex:1">${a.name}</span>
         <span style="font-size:10px;color:var(--ink3)">${a.cat}</span>
-        <span id="${uid}_arrow" style="font-size:11px;color:var(--ink3);margin-left:4px">??/span>
+        <span id="${uid}_arrow" style="font-size:11px;color:var(--ink3);margin-left:4px">▶</span>
       </div>
       <div id="${uid}" style="display:none;padding:0 10px 10px">
         ${current?`<div style="font-size:11px;color:var(--ink3);margin-bottom:5px;padding:4px 6px;background:rgba(184,134,11,0.07);border-left:2px solid var(--gold)">${current.replace(/\n/g,'<br>')}</div>`:''}
         <textarea id="desc_${a.id}" style="width:100%;min-height:52px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);color:var(--ink);padding:7px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;resize:vertical"
-          placeholder="頛詨蝪∩???>${current}</textarea>
-        <button onclick="saveDesc('${a.id}')" style="margin-top:5px;padding:4px 14px;border:1px solid var(--gold);color:var(--gold2);background:rgba(184,134,11,0.07);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">?脣?</button>
+          placeholder="輸入簡介…">${current}</textarea>
+        <button onclick="saveDesc('${a.id}')" style="margin-top:5px;padding:4px 14px;border:1px solid var(--gold);color:var(--gold2);background:rgba(184,134,11,0.07);cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">儲存</button>
       </div>`;
     el.appendChild(row);
   });
@@ -2103,29 +1803,29 @@ function toggleDescRow(uid){
   if(!body)return;
   const open=body.style.display!=='none';
   body.style.display=open?'none':'block';
-  if(arrow)arrow.textContent=open?'??:'??;
+  if(arrow)arrow.textContent=open?'▶':'▼';
 }
 
 async function saveDesc(id){
   if(!W.assetDescs)W.assetDescs={};
   const val=document.getElementById('desc_'+id)?.value.trim()||'';
   W.assetDescs[id]=val;
-  // ?郊??asset ?拐辣
+  // 同步到 asset 物件
   const a=W.assets.find(x=>x.id===id);
   if(a) a.desc=val;
-  gmLog('ev',`??GM ?湔??{a?.name||id}???陛隞);
+  gmLog('ev',`✏ GM 更新《${a?.name||id}》標的簡介`);
   await push();
-  // 閬死??
+  // 視覺回饋
   const btn=document.querySelector(`button[onclick="saveDesc('${id}')"]`);
-  if(btn){btn.textContent='??撌脣摮?;btn.style.borderColor='var(--dn)';btn.style.color='var(--dn)';setTimeout(()=>{btn.textContent='?脣?';btn.style.borderColor='var(--gold)';btn.style.color='var(--gold2)';},1500);}
+  if(btn){btn.textContent='✓ 已儲存';btn.style.borderColor='var(--dn)';btn.style.color='var(--dn)';setTimeout(()=>{btn.textContent='儲存';btn.style.borderColor='var(--gold)';btn.style.color='var(--gold2)';},1500);}
 }
 
 async function doDelistAsset(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
-  if(!confirm(`蝣箏?摰????{a.name}??撣????拙振撠?憭勗?冽??))return;
-  const residual=parseFloat(prompt(`閮剖?畾潭?靘?0~1嚗? 銵函內?冽?嚗?.1 銵函內???10% ?祇?嚗,'0'))||0;
+  if(!confirm(`確定宣告「${a.name}」下市？持有玩家將損失全部持倉。`))return;
+  const residual=parseFloat(prompt(`設定殘值比例（0~1，0 表示全損，0.1 表示退回 10% 本金）`,'0'))||0;
   a.delisted=true;a.delistedAt=ds();
-  // 皜???摰嗆???
+  // 清算所有玩家持倉
   W.players.forEach(p=>{
     const pos=getPos(p,id);
     if(pos.qty>0){
@@ -2135,38 +1835,38 @@ async function doDelistAsset(id){
       p.cash+=refund;
       p.realizedPnL-=loss;
       delete p.portfolio[id];
-      addLog('bad',`?? ${p.name} ????{a.name}??銝?皜?嚗??${refund.toLocaleString()} G嚗?憭?${loss.toLocaleString()} G`);
+      addLog('bad',`💔 ${p.name} 持有的「${a.name}」因下市清算，退回 ${refund.toLocaleString()} G，損失 ${loss.toLocaleString()} G`);
     }
   });
-  addLog('warn',`?? ${a.name} 甇??銝?嚗??潭?靘?${(residual*100).toFixed(0)}%嚗);
-  addEventLog(`?? ${a.name} 甇??銝?`);
+  addLog('warn',`📛 ${a.name} 正式下市（殘值比例 ${(residual*100).toFixed(0)}%）`);
+  addEventLog(`📛 ${a.name} 正式下市`);
   await push();renderAll();buildEvtGrid();
 }
 
 function renderDelistList(){
   const el=document.getElementById('delistList');el.innerHTML='';
   const active=W.assets.filter(a=>!a.delisted);
-  if(!active.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3)">?∩?撣???/div>';return;}
+  if(!active.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3)">無上市標的</div>';return;}
   active.forEach(a=>{
     const base=ASSETS0.find(x=>x.id===a.id);
     const initPrice=base?base.price:a.history[0]||a.price;
-    const curPrice=quotePrice(a);
-    const isWarn=curPrice/initPrice<0.5;
+    const ratio=a.price/initPrice;
+    const isWarn=ratio<0.5;
     const row=document.createElement('div');
     row.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--parch3);flex-wrap:wrap;';
     row.innerHTML=`<span style="font-size:16px">${a.icon}</span>
       <span style="flex:1;font-size:12px;font-weight:700">${a.name}</span>
-      <span style="font-size:12px;color:${isWarn?'var(--up)':'var(--ink3)'}">${curPrice.toLocaleString()} G ${isWarn?'??:''}</span>
-      <button class="btn-danger" style="padding:4px 10px;font-size:11px" onclick="doDelistAsset('${a.id}')">銝?</button>`;
+      <span style="font-size:12px;color:${isWarn?'var(--up)':'var(--ink3)'}">${a.price.toLocaleString()} G ${isWarn?'⚠':''}</span>
+      <button class="btn-danger" style="padding:4px 10px;font-size:11px" onclick="doDelistAsset('${a.id}')">下市</button>`;
     el.appendChild(row);
   });
 }
 
-// ????????????????????????????????????????????????????????
-//  ??隤踹
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  手動調價
+// ═══════════════════════════════════════════════════════
 function buildManual(){
-  const el=document.getElementById('manualList');el.innerHTML='';
+  const el=document.getElementById('manualList');if(!el)return;el.innerHTML='';
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const r=document.createElement('div');r.className='asset-row-mini';
     r.innerHTML=`<span class="icon">${a.icon}</span><span class="aname">${a.name}</span><span class="cur">${a.price.toLocaleString()} G</span><input type="number" id="mp_${a.id}" value="${a.price}" min="1">`;
@@ -2174,11 +1874,11 @@ function buildManual(){
   });
 }
 async function applyManual(){
-  W.assets.forEach(a=>{if(a.delisted)return;const v=parseInt(document.getElementById('mp_'+a.id)?.value);if(!isNaN(v)&&v>0&&v!==a.price){const o=a.price;a.price=v;a.history.push(v);gmLog('time',`GM 隤踵??{a.name}??${o.toLocaleString()} ??${v.toLocaleString()} G`);}});
+  W.assets.forEach(a=>{if(a.delisted)return;const v=parseInt(document.getElementById('mp_'+a.id)?.value);if(!isNaN(v)&&v>0&&v!==a.price){const o=a.price;a.price=v;a.history.push(v);gmLog('time',`GM 調整《${a.name}》：${o.toLocaleString()} → ${v.toLocaleString()} G`);}});
   await push();renderAll();
 }
 
-// ?? ?勗耦瞍脰?隤踵嚗?閮?瘨嚗??
+// ── 隱形漲跌調整（不記錄消息）──
 function buildSilentGrid(){
   const el=document.getElementById('silentPctGrid');if(!el)return;
   el.innerHTML='';
@@ -2191,32 +1891,21 @@ function buildSilentGrid(){
 
 async function applySilent(){
   let changed=0;
-  // ?炎?交?瘝?憛怠潘??? snapshot
+  // 先檢查有沒有填值，再存 snapshot
   const preview=W.assets.filter(a=>{if(a.delisted)return false;const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);return !isNaN(raw);});
-  if(!preview.length){alert('隢撠撓?乩?????瞍脰?撟?);return;}
-  saveUndoSnapshot(`?勗耦?典?嚗?{ds()}嚗);
-  const silentIntradayOpen = W.market?.intraday?.status === 'open';
+  if(!preview.length){alert('請至少輸入一個標的的漲跌幅');return;}
+  saveUndoSnapshot(`隱形推動（${ds()}）`);
   W.assets.forEach(a=>{
     if(a.delisted)return;
     const raw=parseFloat(document.getElementById('sp_'+a.id)?.value);
     if(isNaN(raw))return;
     const pct=raw/100;
+    // 受每日漲跌停限制
     const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
     const noise=(Math.random()*0.006-0.003);
-    const finalPct=clamped+noise;
-
-    if(silentIntradayOpen){
-      // ?亙?斗芋撘?閮剖? targetPct嚗?斗?撖怠 history
-      const P=intradayPlan(a);
-      P.targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,finalPct));
-    } else {
-      // ??抒璅∪?嚗?交?嫣蒂撖怠 history
-      const prevPrice=a.history.length>1?a.history[a.history.length-1]:a.price;
-      a.price=Math.max(1,Math.round(prevPrice*(1+finalPct)));
-      a.history.push(a.price);
-    }
-
-    // ?湔頞典??
+    a.price=Math.max(1,Math.round(a.price*(1+clamped+noise)));
+    a.history.push(a.price);
+    // 同時更新趨勢偏向，讓後續幾日延續方向
     if(W.market&&W.market.trends[a.id]){
       const dir=clamped>0?1:-1;
       const T=W.market.trends[a.id];
@@ -2229,18 +1918,24 @@ async function applySilent(){
       if(clamped<-0.06)T.slump=Math.max(T.slump||0,Math.floor(Math.random()*6)+4);
     }
     changed++;
+    // 清空輸入框
     const inp=document.getElementById('sp_'+a.id);if(inp)inp.value='';
   });
-  if(!changed){alert('隢撠撓?乩?????瞍脰?撟?);return;}
-  // ?勗耦?典??芸蔣?輻?亥?寡?頞典嚗??券脫??
-  // ?交??券脩??抒?嗥?絞銝鞎痊嚗??gameDay ??history ?瑕漲?恍
-  addLog('time',`?? ?勗耦隤踵憟 ??${ds()}`);
+  if(!changed){alert('請至少輸入一個標的的漲跌幅');return;}
+  // 推進一日（不觸發市場引擎與自動事件）
+  W.gameDay=(W.gameDay||1)+1;
+  if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
+  W.gameMonth=Math.floor(((W.gameDay-1)%360)/30)+1;
+  document.getElementById('setY').value=W.gameYear;
+  document.getElementById('setD').value=W.gameDay;
+  // 玩家看到正常的「時間推進」訊息，不知道 GM 有偷偷調整股價
+  addLog('time',`⏱ 時間推進 1 日 → ${ds()}`);
   await push();renderAll();
 }
 
-// ????????????????????????????????????????????????????????
-//  ?拙振蝞∠?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  玩家管理
+// ═══════════════════════════════════════════════════════
 function escHtml(s){
   return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -2269,16 +1964,15 @@ function renderWealth(){
     let holdHtml='';
     held.forEach(id=>{
       const a=W.assets.find(x=>x.id===id);const pos=getPos(p,id);if(!a||!pos.qty)return;
-      const mv=quotePrice(a)*pos.qty;const pnl=mv-(pos.avgCost*pos.qty);
+      const mv=a.price*pos.qty;const pnl=mv-(pos.avgCost*pos.qty);
       const s=pnl>=0?'+':'';const cls=pnl>=0?'pnl-pos':'pnl-neg';
       const rate=pos.avgCost>0?((pnl/(pos.avgCost*pos.qty))*100).toFixed(1):'-';
-      holdHtml+=`<div class="holding-row"><span>${a.icon} ${a.name} ?${pos.qty}</span><span>? ${Math.round(pos.avgCost).toLocaleString()} G</span><span>${mv.toLocaleString()} G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()} G (${s}${rate}%)</span></div>`;
+      holdHtml+=`<div class="holding-row"><span>${a.icon} ${a.name} ?${pos.qty}</span><span>??{Math.round(pos.avgCost).toLocaleString()}G</span><span>${mv.toLocaleString()}G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()}G(${s}${rate}%)</span></div>`;
     });
-    const passDisplay=p.passPlain||p.password||(p.passHash?'撌脰身摰?:'?芾身摰?);
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input class="name-input" value="${p.name}" onchange="renameP(${i},this.value)">${holdHtml?`<div class="holding-detail">${holdHtml}</div>`:''}</td>
       <td><code style="font-size:12px;color:var(--gold2)">${playerAccountLabel(p)}</code></td>
-      <td><code style="font-size:12px;color:var(--gold2)">${escHtml(passDisplay)}</code><br><button class="btn-sm" style="font-size:10px;padding:2px 8px;margin-top:3px" onclick="resetPlayerPass(${i})">?身撣喳?</button></td>
+      <td><code style="font-size:12px;color:var(--gold2)">${playerPasswordLabel(p)}</code><br><button class="btn-sm" style="font-size:10px;padding:2px 8px;margin-top:3px" onclick="resetPlayerPass(${i})">&#x91cd;&#x8a2d;&#x5e33;&#x5bc6;</button></td>
       <td>${p.cash.toLocaleString()} G</td>
       <td>${pv.toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">? ${Math.round(cost).toLocaleString()} G</span></td>
       <td><span class="${unr>=0?'pnl-pos':'pnl-neg'}">${unr>=0?'+':''}${Math.round(unr).toLocaleString()} G</span></td>
@@ -2291,16 +1985,16 @@ function renderWealth(){
     tb.appendChild(tr);
   });
   const sel=document.getElementById('goldTarget');const cur=sel.value;
-  sel.innerHTML=`<option value="all">??摰?/option>`+W.players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  sel.innerHTML=`<option value="all">?券?拙振</option>`+W.players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
   if(cur)sel.value=cur;
 }
-function renameP(i,n){W.players[i].name=n.trim()||`???{i+1}`;push();renderWealth();}
-function resetP(i){if(!confirm(`?蔭 ${W.players[i].name}嚗))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];push();renderWealth();}
-function deleteP(i){if(!confirm(`蝣箏??芷?拙振??{W.players[i].name}??\n甇斗?雿瘜儔????????馳撠?雿萄?扎))return;W.players.splice(i,1);push();renderWealth();}
+function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
+function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];push();renderWealth();}
+function deleteP(i){if(!confirm(`確定刪除玩家「${W.players[i].name}」？\n此操作無法復原，所有持倉與金幣將一併刪除。`))return;W.players.splice(i,1);push();renderWealth();}
 function giveGold(){
   const t=document.getElementById('goldTarget').value,g=parseInt(document.getElementById('goldAmt').value);if(!g)return;
-  if(t==='all'){W.players.forEach(p=>p.cash+=g);gmLog('good',`GM 鞈???摰嗅? ${g.toLocaleString()} G`);}
-  else{const idx=parseInt(t);W.players[idx].cash+=g;gmLog('good',`GM 鞈? ${W.players[idx].name} ${g.toLocaleString()} G`);}
+  if(t==='all'){W.players.forEach(p=>p.cash+=g);gmLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
+  else{const idx=parseInt(t);W.players[idx].cash+=g;gmLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
   document.getElementById('goldAmt').value='';push();renderWealth();
 }
 function addPlayer(){
@@ -2309,30 +2003,29 @@ function addPlayer(){
   document.getElementById('newPlayerName').value='';push();renderWealth();buildEvtGrid();
 }
 
-// ????????????????????????????????????????????????????????
-//  撣銵冽
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  市場表格
+// ═══════════════════════════════════════════════════════
 function renderMkt(){
   const tb=document.getElementById('mktBody');tb.innerHTML='';
   W.assets.forEach(a=>{
     if(a.delisted){
       const tr=document.createElement('tr');tr.className='is-delisted';
-      tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">銝?</span></td>
-        <td colspan="5" style="font-size:12px;color:var(--ink3)">撌脫 ${a.delistedAt||'??} 銝?</td>`;
+      tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">下市</span></td>
+        <td colspan="5" style="font-size:12px;color:var(--ink3)">已於 ${a.delistedAt||'—'} 下市</td>`;
       tb.appendChild(tr);return;
     }
     const ch=gc(a),pct=(ch*100).toFixed(1),sign=ch>=0?'+':'',col=chCol(ch);
     const lUp=isLimitUp(a),lDn=isLimitDn(a);
     const base=ASSETS0.find(x=>x.id===a.id);
     const initPrice=base?base.price:a.history[0]||a.price;
-    const curPrice=quotePrice(a);
-    const isWarn=curPrice<initPrice*0.5&&!a.delistWarned;
+    const isWarn=a.price<initPrice*0.5&&!a.delistWarned;
     const tr=document.createElement('tr');
     tr.className=(lUp?'is-limit-up':lDn?'is-limit-dn':isWarn?'is-warning':'');
     tr.onclick=()=>openChart(a.id);
-    const badge=lUp?'<span class="limit-badge up">瞍脣?</span>':lDn?'<span class="limit-badge dn">頝?</span>':isWarn?'<span class="warn-badge">霅衣內</span>':'';
+    const badge=lUp?'<span class="limit-badge up">漲停</span>':lDn?'<span class="limit-badge dn">跌停</span>':isWarn?'<span class="warn-badge">警示</span>':'';
     tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong>${badge}</td>
-      <td><strong style="font-size:14px;color:${col}">${curPrice.toLocaleString()}</strong><span style="font-size:10px;color:var(--ink3)"> G</span></td>
+      <td><strong style="font-size:14px;color:${col}">${a.price.toLocaleString()}</strong><span style="font-size:10px;color:var(--ink3)"> G</span></td>
       <td><strong style="font-size:12px;color:${col}">${sign}${pct}%</strong></td>
       <td><canvas id="spk_${a.id}" width="72" height="22"></canvas></td>
       <td><span class="tag" style="font-size:9px">${a.cat}</span></td>
@@ -2340,24 +2033,41 @@ function renderMkt(){
     tb.appendChild(tr);drawSpk(a,`spk_${a.id}`);
   });
 }
-function drawSpk(a,cid){const c=document.getElementById(cid);if(!c)return;const ctx=c.getContext('2d');const raw=a.history.slice(-20);const cur=quotePrice(a);const d=(cur!==raw[raw.length-1])?[...raw,cur]:raw;const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;ctx.clearRect(0,0,72,22);ctx.strokeStyle=chCol(gc(a));ctx.lineWidth=1.5;ctx.beginPath();d.forEach((v,i)=>{const x=(i/(d.length-1))*72,y=20-((v-mn)/rng)*17;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();}
+function drawSpk(a,cid){const c=document.getElementById(cid);if(!c)return;const ctx=c.getContext('2d');const d=a.history.slice(-20);const mn=Math.min(...d),mx=Math.max(...d),rng=mx-mn||1;ctx.clearRect(0,0,72,22);ctx.strokeStyle=chCol(gc(a));ctx.lineWidth=1.5;ctx.beginPath();d.forEach((v,i)=>{const x=(i/(d.length-1))*72,y=20-((v-mn)/rng)*17;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);});ctx.stroke();}
+function setAssetHourMove(id,pct){
+  const a=W.assets.find(x=>x.id===id);if(!a)return;
+  const p=Math.max(-10,Math.min(10,Number(pct)||0))/100;
+  const P=queueNextHourMove(a,p,qbVolForPct(p));
+  touchTrendForQueuedMove(a,p);
+  const slotLabel=INTRADAY_SLOTS[P?.nextSlotShockSlot||nextQueuedIntradaySlot()]||'下一小時';
+  gmLog('time',`${a.name} 已排入 ${slotLabel} 生效：${p>=0?'+':''}${(p*100).toFixed(0)}%`);
+  push();renderIntradayPlans();
+}
+function intradayActionButtons(id){
+  const a=W.assets.find(x=>x.id===id), P=a?intradayPlan(a):null;
+  const pending=P&&P.nextSlotShock!==undefined?Math.round(P.nextSlotShock*100):null;
+  const cls=v=>pending===v?' active':'';
+  const ups=[10,8,7,6,5,4,3,2,1];
+  const dns=[-1,-2,-3,-4,-5,-6,-7,-8,-10];
+  return `<div class="pct-action-grid">
+    ${ups.map(v=>`<button class="up${cls(v)}" onclick="setAssetHourMove('${id}',${v})">${v===10?'漲停':'+'+v}</button>`).join('')}
+    <button class="flat${cls(0)}" onclick="setAssetHourMove('${id}',0)">平盤</button>
+    ${dns.map(v=>`<button class="dn${cls(v)}" onclick="setAssetHourMove('${id}',${v})">${v===-10?'跌停':v}</button>`).join('')}
+  </div>`;
+}
 function renderIntradayPlans(){
   const label=document.getElementById('intradayStatusLabel'), body=document.getElementById('intradayPlanBody');
   if(!label||!body||!W)return;
   const S=intradaySession();
-  label.textContent=`${S.status==='open'?'?銝?:S.status==='closed'?'撌脫??:'敺???} 繚 ${INTRADAY_SLOTS[S.slot||0]||'08:00'} 繚 ${ds()}`;
-  const auto=document.getElementById('intradayAutoToggle');
-  if(auto&&localStorage.getItem('gran_intraday_auto')!==null)auto.checked=localStorage.getItem('gran_intraday_auto')==='1';
+  label.textContent=`${S.status==='open'?'開盤中':S.status==='closed'?'已收盤':'待開盤'} · ${INTRADAY_SLOTS[S.slot||0]||'08:00'} · ${ds()}`;
   body.innerHTML='';
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const P=intradayPlan(a), last=intradayLastPoint(P), ch=(last.price-P.prevClose)/P.prevClose*100;
+    const pending=P.nextSlotShock!==undefined?`${INTRADAY_SLOTS[P.nextSlotShockSlot]||'下一小時'} ${P.nextSlotShock>=0?'+':''}${(P.nextSlotShock*100).toFixed(0)}%`:'';
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong><div style="font-size:10px;color:var(--ink3)">${a.cat}</div></td>
+    tr.innerHTML=`<td><span style="font-size:15px;margin-right:5px">${a.icon}</span><strong style="font-size:12px">${a.name}</strong><div style="font-size:10px;color:var(--ink3)">${a.cat}${pending?` · 已排 ${pending}`:''}</div></td>
       <td><strong style="color:${chCol(ch/100)}">${last.price.toLocaleString()}</strong><div style="font-size:10px;color:${chCol(ch/100)}">${ch>=0?'+':''}${ch.toFixed(1)}%</div></td>
-      <td><input class="intraday-target-input" type="number" value="${((P.targetPct||0)*100).toFixed(1)}" min="-10" max="10" step="0.5" onchange="setIntradayTarget('${a.id}',this.value)"> %</td>
-      <td><select class="intraday-vol-select" onchange="setIntradayVol('${a.id}',this.value)">
-        ${Object.entries(INTRADAY_PATTERNS).map(([k,v])=>`<option value="${k}" ${k===P.volatility?'selected':''}>${v.name}</option>`).join('')}
-      </select></td>
+      <td>${intradayActionButtons(a.id)}</td>
       <td><canvas class="intraday-mini-chart" id="idspk_${a.id}" width="180" height="54"></canvas></td>`;
     body.appendChild(tr);
     drawIntradaySpark(a,`idspk_${a.id}`);
@@ -2367,7 +2077,7 @@ function renderAssetGroups(){
   const list=document.getElementById('assetGroupList'), sel=document.getElementById('groupCommandSelect'), volSel=document.getElementById('groupCommandVol');
   if(!list||!sel||!W)return;
   const groups=ensureAssetGroups(W), assets=W.assets.filter(a=>!a.delisted);
-  sel.innerHTML=groups.map(g=>`<option value="${g.id}">${g.name}嚗?{g.assetIds.length}嚗?/option>`).join('');
+  sel.innerHTML=groups.map(g=>`<option value="${g.id}">${g.name}（${g.assetIds.length}）</option>`).join('');
   if(volSel&&!volSel.dataset.ready){
     volSel.innerHTML=Object.entries(INTRADAY_PATTERNS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
     volSel.value='neutral';volSel.dataset.ready='1';
@@ -2376,8 +2086,8 @@ function renderAssetGroups(){
     <div class="group-card">
       <div class="group-head">
         <input class="group-name-input" value="${g.name}" onchange="renameAssetGroup('${g.id}',this.value)">
-        <span style="font-size:12px;color:var(--ink3)">${g.assetIds.length} ?舀???/span>
-        <button class="btn-sm" onclick="deleteAssetGroup('${g.id}')">?芷</button>
+        <span style="font-size:12px;color:var(--ink3)">${g.assetIds.length} 支標的</span>
+        <button class="btn-sm" onclick="deleteAssetGroup('${g.id}')">刪除</button>
       </div>
       <div class="group-assets">
         ${assets.map(a=>`<label class="group-asset-check"><input type="checkbox" ${g.assetIds.includes(a.id)?'checked':''} onchange="toggleAssetGroup('${g.id}','${a.id}',this.checked)"><span>${a.name}</span></label>`).join('')}
@@ -2386,7 +2096,7 @@ function renderAssetGroups(){
 }
 function addAssetGroup(){
   ensureAssetGroups(W);
-  const name=(prompt('?唳?蝢文?蝔?,'?唳?蝢?)||'').trim();
+  const name=(prompt('新族群名稱','新族群')||'').trim();
   if(!name)return;
   let id=groupIdFromName(name), n=1;
   while(W.assetGroups.some(g=>g.id===id)){id=groupIdFromName(name+'_'+(++n));}
@@ -2395,12 +2105,12 @@ function addAssetGroup(){
 }
 function renameAssetGroup(gid,name){
   const g=ensureAssetGroups(W).find(x=>x.id===gid);if(!g)return;
-  g.name=(name||'?芸??蝢?).trim();
+  g.name=(name||'未命名族群').trim();
   push();renderAssetGroups();
 }
 function deleteAssetGroup(gid){
   const g=ensureAssetGroups(W).find(x=>x.id===gid);if(!g)return;
-  if(!confirm(`?芷?黎??{g.name}??璅?銝?鋡怠?扎))return;
+  if(!confirm(`刪除族群「${g.name}」？標的不會被刪除。`))return;
   W.assetGroups=W.assetGroups.filter(x=>x.id!==gid);
   push();renderAssetGroups();
 }
@@ -2414,20 +2124,21 @@ function toggleAssetGroup(gid,aid,checked){
 function selectedGroup(){return ensureAssetGroups(W).find(g=>g.id===document.getElementById('groupCommandSelect')?.value);}
 function applyGroupPreset(pct,vol){const p=document.getElementById('groupCommandPct'),v=document.getElementById('groupCommandVol');if(p)p.value=pct;if(v)v.value=vol;applyGroupCommand();}
 function applyGroupCommand(){
-  const g=selectedGroup();if(!g){alert('隢??豢??黎');return;}
+  const g=selectedGroup();if(!g){alert('請先選擇族群');return;}
   const pct=Math.max(-10,Math.min(10,parseFloat(document.getElementById('groupCommandPct')?.value)||0));
   const vol=document.getElementById('groupCommandVol')?.value||'neutral';
-  const lockedIntraday=intradaySnapshotCompleted();
+  if(!confirm(`確定要把「${g.name}」排入下一個小時 ${pct>=0?'+':''}${pct}% 嗎？已經走過的日內價格會保留。`))return;
   let ok=0;
   g.assetIds.forEach(id=>{
     const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return;
-    const P=intradayPlan(a);
-    P.targetPct=pct/100;
-    P.volatility=INTRADAY_PATTERNS[vol]?vol:'neutral';
+    const p=pct/100;
+    queueNextHourMove(a,p,vol);
+    touchTrendForQueuedMove(a,p);
     ok++;
   });
-  intradayRestoreCompleted(lockedIntraday);
-  gmLog('ev',`?黎?誘嚗?{g.name} ${pct>=0?'+':''}${pct}% / ${(INTRADAY_PATTERNS[vol]||INTRADAY_PATTERNS.neutral).name}嚗 ${ok} ?畔);
+  const S=syncIntradaySlotFromPoints();
+  gmLog('ev',`族群指令已排入下一小時：${g.name} ${pct>=0?'+':''}${pct}% / ${(INTRADAY_PATTERNS[vol]||INTRADAY_PATTERNS.neutral).name}，共 ${ok} 支`);
+  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
   push();renderAll();
 }
 function drawIntradaySpark(a,cid){
@@ -2449,85 +2160,76 @@ function gmSparkXY(pt,P,CW,CH){const mn=P.prevClose*0.9,mx=P.prevClose*1.1,rng=m
 function drawGmIntradaySegments(ctx,pts,P,CW,CH){
   for(let i=1;i<pts.length;i++){
     const a=pts[i-1],b=pts[i],pa=gmSparkXY(a,P,CW,CH),pb=gmSparkXY(b,P,CW,CH),aUp=a.price>=P.prevClose,bUp=b.price>=P.prevClose;
-    ctx.lineWidth=1.8;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.lineWidth=1.15;ctx.lineCap='round';ctx.lineJoin='round';
     if(aUp===bUp){ctx.strokeStyle=bUp?'#c0392b':'#27ae60';ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
     else{const r=(P.prevClose-a.price)/(b.price-a.price),mid={slot:a.slot+(b.slot-a.slot)*r,price:P.prevClose},pm=gmSparkXY(mid,P,CW,CH);ctx.strokeStyle=aUp?'#c0392b':'#27ae60';ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pm.x,pm.y);ctx.stroke();ctx.strokeStyle=bUp?'#c0392b':'#27ae60';ctx.beginPath();ctx.moveTo(pm.x,pm.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
   }
 }
 
-// ????????????????????????????????????????????????????????
-//  頞典????
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  趨勢狀態面板
+// ═══════════════════════════════════════════════════════
 function renderTrendStatus(){
   const el=document.getElementById('trendStatus');if(!el)return;
-  if(!W.market){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">撠????/div>';return;}
+  if(!W.market){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">尚未初始化</div>';return;}
   if(!W.market.trends)W.market.trends={};
   const M=W.market;
   const cycleVal=(M.cycle*100).toFixed(0);
   const cycleCls=M.cycle>0.2?'pnl-pos':M.cycle<-0.2?'pnl-neg':'';
-  const cycleLabel=M.cycle>0.4?'蝜旨??:M.cycle>0.1?'蝺拇?':M.cycle<-0.4?'銵圈??:M.cycle<-0.1?'蝺拇銝?':'?斗??;
+  const cycleLabel=M.cycle>0.4?'繁榮期':M.cycle>0.1?'緩慢成長':M.cycle<-0.4?'衰退期':M.cycle<-0.1?'緩慢下行':'盤整期';
   let html=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--parch3);flex-wrap:wrap">
-    <span style="font-size:12px;color:var(--ink3)">銝??舀除嚗?/span>
-    <span style="font-size:14px;font-weight:700" class="${cycleCls}">${cycleLabel}嚗?{cycleVal>0?'+':''}${cycleVal}嚗?/span>
-    <span style="font-size:11px;color:var(--ink3)">?弦?望? ${M.researchTimer} ?亙??餃??望? ${M.prophecyTimer} ?亙?</span>
+    <span style="font-size:12px;color:var(--ink3)">世界景氣：</span>
+    <span style="font-size:14px;font-weight:700" class="${cycleCls}">${cycleLabel}（${cycleVal>0?'+':''}${cycleVal}）</span>
+    <span style="font-size:11px;color:var(--ink3)">研究週期 ${M.researchTimer} 日後・占卜週期 ${M.prophecyTimer} 日後</span>
   </div><div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px">`;
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const T=M.trends[a.id];if(!T)return;
     const biasPct=(T.bias*100).toFixed(1);
     const cls=T.bias>0.01?'pnl-pos':T.bias<-0.01?'pnl-neg':'';
-    const arrow=T.bias>0.04?'??':T.bias>0.01?'??:T.bias<-0.04?'??':T.bias<-0.01?'??:'??;
-    const micro=T.slump>0?` 繚 雿蕙${T.slump}?匝:T.volatility==='volatile'?` 繚 擃郭??{T.volDays||0}?匝:T.volatility==='calm'?' 繚 ?瑕':'';
+    const arrow=T.bias>0.04?'↑↑':T.bias>0.01?'↑':T.bias<-0.04?'↓↓':T.bias<-0.01?'↓':'→';
+    const micro=T.slump>0?` · 低迷${T.slump}日`:T.volatility==='volatile'?` · 高波動${T.volDays||0}日`:T.volatility==='calm'?' · 冷卻':'';
     html+=`<div style="display:flex;align-items:center;gap:4px;padding:3px 0;border-bottom:1px solid rgba(222,206,150,0.3);font-size:11px">
       <span>${a.icon}</span><span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${a.name}</span>
       <span style="font-weight:700" class="${cls}">${arrow}</span>
-      <span style="color:var(--ink3);min-width:96px;text-align:right">${biasPct}%/${T.duration}??{micro}</span>
+      <span style="color:var(--ink3);min-width:96px;text-align:right">${biasPct}%/${T.duration}日${micro}</span>
     </div>`;
   });
   html+='</div>';el.innerHTML=html;
-  // 憒?頞典蝺刻摩?Ｘ??嚗?甇仿?撱綽?銝??蝙?刻迤?刻撓?亦??潘?
+  // 如果趨勢編輯面板開著，同步重建（不覆蓋使用者正在輸入的值）
   if(trendEditOpen) buildTrendEditList();
 }
 
-// ????????????????????????????????????????????????????????
-//  韏啣??
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  走勢圖
+// ═══════════════════════════════════════════════════════
 function openChart(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
-  const cur=quotePrice(a);
-  const h=a.history;
-  const hWithToday=(cur!==h[h.length-1])?[...h,cur]:h;
-  let hi=hWithToday[0],lo=hWithToday[0];
-  for(let i=1;i<hWithToday.length;i++){if(hWithToday[i]>hi)hi=hWithToday[i];if(hWithToday[i]<lo)lo=hWithToday[i];}
-  const first=h[0],tot=(cur-first)/first*100;
-  document.getElementById('modalTitle').textContent=`${a.icon} ${a.name} 韏啣?;
+  const ch=gc(a),h=a.history;let hi=h[0],lo=h[0];for(let i=1;i<h.length;i++){if(h[i]>hi)hi=h[i];if(h[i]<lo)lo=h[i];}const cur=h[h.length-1],first=h[0],tot=(cur-first)/first*100;
+  document.getElementById('modalTitle').textContent=`${a.icon} ${a.name} 走勢圖`;
   document.getElementById('modalStats').innerHTML=`
-    <div class="mstat"><div class="mstat-val" style="color:${chCol(gc(a))}">${cur.toLocaleString()} G</div><div class="mstat-lbl">?曉</div></div>
-    <div class="mstat"><div class="mstat-val" style="color:${upCol}">${hi.toLocaleString()} G</div><div class="mstat-lbl">甇瑕?擃?/div></div>
-    <div class="mstat"><div class="mstat-val" style="color:${dnCol}">${lo.toLocaleString()} G</div><div class="mstat-lbl">甇瑕?雿?/div></div>
-    <div class="mstat"><div class="mstat-val" style="color:${chCol(tot)}">${tot>=0?'+':''}${tot.toFixed(1)}%</div><div class="mstat-lbl">蝮賣撞頝?</div></div>
-    <div class="mstat"><div class="mstat-val">${W.gameDay||h.length}</div><div class="mstat-lbl">閮?憭拇</div></div>`;
+    <div class="mstat"><div class="mstat-val" style="color:${chCol(ch)}">${cur.toLocaleString()} G</div><div class="mstat-lbl">現價</div></div>
+    <div class="mstat"><div class="mstat-val" style="color:${upCol}">${hi.toLocaleString()} G</div><div class="mstat-lbl">歷史最高</div></div>
+    <div class="mstat"><div class="mstat-val" style="color:${dnCol}">${lo.toLocaleString()} G</div><div class="mstat-lbl">歷史最低</div></div>
+    <div class="mstat"><div class="mstat-val" style="color:${chCol(tot)}">${tot>=0?'+':''}${tot.toFixed(1)}%</div><div class="mstat-lbl">總漲跌幅</div></div>
+    <div class="mstat"><div class="mstat-val">${h.length}</div><div class="mstat-lbl">記錄天數</div></div>`;
   document.getElementById('chartModal').classList.remove('hidden');
   requestAnimationFrame(()=>drawFull(a));
 }
 function closeModal(e){if(e&&e.target!==document.getElementById('chartModal'))return;document.getElementById('chartModal').classList.add('hidden');}
 function drawFull(a){
   const c=document.getElementById('modalChart');const w=c.parentElement.clientWidth-40;c.width=w;c.height=240;
-  const ctx=c.getContext('2d');
-  // 鋆隞?單???
-  const cur=quotePrice(a);
-  const raw=(cur!==a.history[a.history.length-1])?[...a.history,cur]:a.history;
-  if(raw.length<2)return;
+  const ctx=c.getContext('2d');const raw=a.history;if(raw.length<2)return;
 
-  // ?璅??頞? 600 暺?嚗 LTTB ?璅? 600 暺?靽?撜啗健敶Ｘ?
+  // 降採樣：超過 600 點時，用 LTTB 降採樣至 600 點，保留峰谷形態
   const MAX_PTS=600;
   let d=raw;
   if(raw.length>MAX_PTS){
     const step=raw.length/MAX_PTS;
     d=[];for(let i=0;i<MAX_PTS;i++){const idx=Math.min(raw.length-1,Math.round(i*step));d.push(raw[idx]);}
-    d[d.length-1]=raw[raw.length-1]; // 蝣箔??敺?暺??啣
+    d[d.length-1]=raw[raw.length-1]; // 確保最後一點是最新價
   }
 
-  // ??reduce ?誨 Math.min/max(...d) ?踹?頞之???璉扳滯??
+  // 用 reduce 取代 Math.min/max(...d) 避免超大陣列棧溢出
   let mn=d[0],mx=d[0];
   for(let i=1;i<d.length;i++){if(d[i]<mn)mn=d[i];if(d[i]>mx)mx=d[i];}
   const rng=mx-mn||1;
@@ -2541,7 +2243,7 @@ function drawFull(a){
   ctx.beginPath();d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.lineTo(px(d.length-1),pt+ch2);ctx.lineTo(px(0),pt+ch2);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
   ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2.5;d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
   [[0,d[0]],[d.length-1,d[d.length-1]]].forEach(([i,v])=>{ctx.beginPath();ctx.arc(px(i),py(v),4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();});
-  // X 頠豢?蝐歹?憿舐內撖阡???憪予?賂?T1, T120, T240...嚗?
+  // X 軸標籤：顯示實際的原始天數（T1, T120, T240...）
   const totalDays=raw.length;
   const xs=Math.max(1,Math.floor(d.length/8));
   const rawStep=totalDays/d.length;
@@ -2549,38 +2251,38 @@ function drawFull(a){
   for(let i=0;i<d.length;i+=xs){const dayLabel=Math.round(i*rawStep)+1;ctx.fillText(`T${dayLabel}`,px(i),238);}
 }
 
-// ????????????????????????????????????????????????????????
-//  ?芸?鈭辣
-// ????????????????????????????????????????????????????????
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  自動事件
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 //  Log
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
 function addEventLog(text){
   if(!W.eventLog)W.eventLog=[];
-  const t=`${W.gameYear}撟渡洵${W.gameDay||1}?匝;
+  const t=`${W.gameYear}年第${W.gameDay||1}日`;
   W.eventLog.unshift({text,time:t});
-  // 瘞訾?靽?嚗?閮凋???
+  // 永久保留，不設上限
 }
 
 function addBackfillEvent(){
   const year=parseInt(document.getElementById('backfillYear').value)||1;
   const day=parseInt(document.getElementById('backfillDay').value)||1;
   const text=document.getElementById('backfillText').value.trim();
-  if(!text){alert('隢撓?乩?隞嗅摰?);return;}
+  if(!text){alert('請輸入事件內容');return;}
   if(!W.eventLog)W.eventLog=[];
-  const time=`${year}撟渡洵${day}?匝;
+  const time=`${year}年第${day}日`;
   W.eventLog.unshift({text,time});
-  // 靘???摨??啁??典?嚗?
+  // 依時間排序（新的在前）
   W.eventLog.sort((a,b)=>{
-    const pa=a.time.match(/(\d+)撟渡洵(\d+)??);
-    const pb=b.time.match(/(\d+)撟渡洵(\d+)??);
+    const pa=a.time.match(/(\d+)年第(\d+)日/);
+    const pb=b.time.match(/(\d+)年第(\d+)日/);
     if(!pa||!pb)return 0;
     const ya=parseInt(pa[1]),da=parseInt(pa[2]);
     const yb=parseInt(pb[1]),db=parseInt(pb[2]);
     return (yb*360+db)-(ya*360+da);
   });
   document.getElementById('backfillText').value='';
-  gmLog('ev',`?? GM 鋆?鈭辣嚗?{text}嚗?{time}嚗);
+  gmLog('ev',`📝 GM 補記事件：${text}（${time}）`);
   renderBackfillList();
   push();
 }
@@ -2588,23 +2290,23 @@ function addBackfillEvent(){
 function renderBackfillList(){
   const el=document.getElementById('backfillList');if(!el||!W)return;
   const items=(W.eventLog||[]).filter(e=>e._backfill!==false);
-  if(!items.length){el.innerHTML='<div style="padding:6px 0;color:var(--ink3)">撠鋆?鈭辣</div>';return;}
+  if(!items.length){el.innerHTML='<div style="padding:6px 0;color:var(--ink3)">尚無補記事件</div>';return;}
   el.innerHTML=(W.eventLog||[]).slice(0,20).map((e,i)=>`
     <div style="display:flex;align-items:center;gap:6px;padding:5px 6px;border-bottom:1px solid var(--parch3)">
       <span style="flex:1">[${e.time}] ${e.text}</span>
-      <button onclick="deleteBackfill(${i})" style="padding:1px 8px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer">??/button>
+      <button onclick="deleteBackfill(${i})" style="padding:1px 8px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer">✕</button>
     </div>`).join('');
 }
 
 function deleteBackfill(i){
   if(!W.eventLog||!W.eventLog[i])return;
-  if(!confirm(`?芷??{W.eventLog[i].text}??`))return;
+  if(!confirm(`刪除「${W.eventLog[i].text}」？`))return;
   W.eventLog.splice(i,1);
   renderBackfillList();
   push();
 }
 
-function addLog(type,text,gmOnly=false){const t=`${W.gameYear}撟渡洵${W.gameDay||1}?匝;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>100)W.log.pop();renderLog();}
+function addLog(type,text,gmOnly=false){const t=`${W.gameYear}年第${W.gameDay||1}日`;W.log.unshift({type,text,time:t,gmOnly:gmOnly||undefined});if(W.log.length>100)W.log.pop();renderLog();}
 function gmLog(type,text){addLog(type,text,true);}
 function renderLog(){
   const b=document.getElementById('logBox');b.innerHTML='';
@@ -2613,7 +2315,7 @@ function renderLog(){
     d.className=`log-e ${e.type}`;
     d.style.cssText='display:flex;align-items:flex-start;justify-content:space-between;gap:6px;';
     d.innerHTML=`<span><span class="lt">[${e.time}]</span>${e.text}${e.gmOnly?'<span style="font-size:9px;color:var(--ink3);margin-left:4px">[GM]</span>':''}</span>`+
-      `<button onclick="deleteLog(${i})" style="flex-shrink:0;padding:1px 6px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer;line-height:1.4" title="?芷甇斗?">??/button>`;
+      `<button onclick="deleteLog(${i})" style="flex-shrink:0;padding:1px 6px;border:1px solid var(--parch3);background:transparent;color:var(--ink3);font-size:10px;cursor:pointer;line-height:1.4" title="刪除此條">✕</button>`;
     b.appendChild(d);
   });
 }
@@ -2624,13 +2326,13 @@ async function deleteLog(i){
 async function clearLog(){W.log=[];await push();renderLog();}
 async function dedupeLog(){
   const before=W.log.length;
-  // ???撘?Y141D27 蝯曹?頧? 141撟渡洵27??
+  // 先把舊格式 Y141D27 統一轉成 141年第27日
   W.log=W.log.map(e=>{
     const m=e.time&&e.time.match(/^Y(\d+)D(\d+)$/);
-    if(m)return{...e,time:`${m[1]}撟渡洵${m[2]}?匝};
+    if(m)return{...e,time:`${m[1]}年第${m[2]}日`};
     return e;
   });
-  // ???
+  // 再去重
   const seen=new Set();
   W.log=W.log.filter(e=>{
     const key=e.time+'|'+e.text;
@@ -2639,38 +2341,38 @@ async function dedupeLog(){
   });
   const removed=before-W.log.length;
   await push();renderLog();
-  alert(`??摰?嚗撘絞銝嚗?日?銴?蝘駁鈭?${removed} 蝑??拚? ${W.log.length} 蝑);
+  alert(`✅ 完成！格式統一＋去除重複，移除了 ${removed} 筆，剩餘 ${W.log.length} 筆。`);
 }
 
 async function fullReset(){
-  const step1=confirm('??蝣箏?閬?蝛箸?????\n\n?嚗?8????潭飛?嗚摰嗆???蝛箝??航???扎n\n甇斗?雿瘜儔??');
+  const step1=confirm('⚠ 確定要清空所有資料？\n\n包含：38個標的價格歸零、玩家持倉清空、消息記錄刪除。\n\n此操作無法復原！');
   if(!step1)return;
-  const step2=confirm('?活蝣箄?嚗?閬璉?????脰????????');
+  const step2=confirm('再次確認：你要放棄所有現有遊戲資料，重新開始嗎？');
   if(!step2)return;
 
-  // 皜征 localStorage嚗????祉?摮??蛛?
+  // 清空 localStorage（所有版本的存檔鍵）
   ['gran_world_v1','gran_world_v2','gran_world_v3','gran_world_v4'].forEach(k=>localStorage.removeItem(k));
 
-  // ?遣?身鞈?
+  // 重建預設資料
   W=makeDefault();
 
-  // 皜征?脩垢
+  // 清空雲端
   if(SURL){
-    setSS('spin','?蔭銝凌?);
+    setSS('spin','重置中…');
     try{
       await fetch(SURL,{method:'POST',body:JSON.stringify({action:'save',world:W})});
-      setSS('ok','撌脤?蝵桐蒂?郊');
+      setSS('ok','已重置並同步');
     }catch(e){
-      setSS('err','?脩垢皜憭望?嚗歇?冽?圈?蝵?);
+      setSS('err','雲端清除失敗，已在本地重置');
       localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
     }
   }else{
     localStorage.setItem(LOCAL_KEY,JSON.stringify(W));
-    setSS('','?砍撌脤?蝵?);
+    setSS('','本地已重置');
   }
 
-  addLog('warn','????GM ?瑁??刻???蝵殷????? ????);
-  alert('???蔭摰?嚗????歇皜征嚗蝙??38 ?璅??????);
+  addLog('warn','═══ GM 執行全資料重置，遊戲重新開始 ═══');
+  alert('✅ 重置完成！所有資料已清空，使用 38 個新標的重新開始。');
   await push();renderAll();buildEvtGrid();
 }
 
@@ -2679,13 +2381,13 @@ function renderHeat(){
   const tbody=document.getElementById('heatBody');if(!tbody)return;
   tbody.innerHTML='';
 
-  // 蝯梯?瘥???????
+  // 統計每個標的的持有情況
   const stats={};
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     stats[a.id]={asset:a,holders:[],totalQty:0,shorters:[]};
   });
   W.players.forEach(p=>{
-    // 憭??
+    // 多單持倉
     Object.keys(p.portfolio).forEach(id=>{
       const pos=p.portfolio[id];
       const qty=typeof pos==='number'?pos:(pos?.qty||0);
@@ -2694,13 +2396,13 @@ function renderHeat(){
         stats[id].totalQty+=qty;
       }
     });
-    // 蝛箏
+    // 空單
     (p.shorts||[]).forEach(s=>{
       if(stats[s.assetId])stats[s.assetId].shorters.push(p.name);
     });
   });
 
-  // 靘??犖?豢?摨?憭?撠?嚗???敺?
+  // 依持有人數排序（多→少），零持倉排最後
   const sorted=Object.values(stats).sort((a,b)=>{
     const diff=b.holders.length-a.holders.length;
     return diff!==0?diff:b.totalQty-a.totalQty;
@@ -2714,13 +2416,13 @@ function renderHeat(){
     const sCount=shorters.length;
     const barW=Math.round(hCount/maxH*100);
     const barCol=hCount===0?'var(--parch3)':hCount>=4?'var(--up)':hCount>=2?'var(--gold2)':'var(--dn)';
-    const holderStr=holders.length?holders.join('??):'<span style="color:var(--ink3);font-size:11px">?∩犖??</span>';
-    const shortStr=shorters.length?`<span style="color:var(--gold2)">${shorters.join('??)}</span>`:'??;
+    const holderStr=holders.length?holders.join('、'):'<span style="color:var(--ink3);font-size:11px">無人持有</span>';
+    const shortStr=shorters.length?`<span style="color:var(--gold2)">${shorters.join('、')}</span>`:'—';
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td><span style="font-size:14px;margin-right:4px">${asset.icon}</span><strong style="font-size:12px">${asset.name}</strong></td>
-      <td><span style="font-size:13px;font-weight:700;color:${barCol}">${hCount}鈭?/span><div style="font-size:11px;color:var(--ink3);margin-top:2px">${holderStr}</div></td>
-      <td><strong style="font-size:13px">${totalQty>0?totalQty.toLocaleString():'??}</strong></td>
+      <td><span style="font-size:13px;font-weight:700;color:${barCol}">${hCount}人</span><div style="font-size:11px;color:var(--ink3);margin-top:2px">${holderStr}</div></td>
+      <td><strong style="font-size:13px">${totalQty>0?totalQty.toLocaleString():'—'}</strong></td>
       <td style="font-size:12px">${shortStr}</td>
       <td style="min-width:80px">
         <div style="height:8px;background:var(--parch3);border-radius:2px;overflow:hidden">
@@ -2732,9 +2434,9 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();renderIntradayPlans();renderQbPanel();renderAssetGroups();buildManual();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
+function renderAll(){refreshTime();renderMkt();renderIntradayPlans();renderAssetGroups();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
 
-// ?? ?怠?鈭斗? ??
+// ── 暫停交易 ──
 function renderSuspendList(){
   const el=document.getElementById('suspendList');if(!el||!W)return;
   if(!W.suspended)W.suspended=[];
@@ -2746,10 +2448,10 @@ function renderSuspendList(){
     row.innerHTML=`
       <span style="font-size:16px">${a.icon}</span>
       <span style="flex:1;font-size:12px;font-weight:700">${a.name}</span>
-      ${isSuspended?'<span style="font-size:10px;background:var(--up);color:#fff;padding:2px 8px;font-weight:700">?怠?銝?/span>':''}
+      ${isSuspended?'<span style="font-size:10px;background:var(--up);color:#fff;padding:2px 8px;font-weight:700">暫停中</span>':''}
       <button onclick="toggleSuspend('${a.id}')"
         style="padding:4px 12px;border:1px solid ${isSuspended?'var(--dn)':'var(--up)'};color:${isSuspended?'var(--dn)':'var(--up)'};background:transparent;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700">
-        ${isSuspended?'???Ｗ儔鈭斗?':'???怠?鈭斗?'}
+        ${isSuspended?'▶ 恢復交易':'⏸ 暫停交易'}
       </button>`;
     el.appendChild(row);
   });
@@ -2761,30 +2463,30 @@ async function toggleSuspend(id){
   const isSuspended=W.suspended.includes(id);
   if(isSuspended){
     W.suspended=W.suspended.filter(x=>x!==id);
-    addLog('warn',`??${a.icon} ${a.name} ?Ｗ儔甇?虜鈭斗?`);
+    addLog('warn',`▶ ${a.icon} ${a.name} 恢復正常交易`);
   } else {
     W.suspended.push(id);
-    addLog('warn',`??${a.icon} ${a.name} 鈭斗??怠??砍?`);
+    addLog('warn',`⏸ ${a.icon} ${a.name} 交易暫停公告`);
   }
   await push();renderAll();
 }
 
-// ????????????????????????????????????????????????????????
-//  GM ?砍??潔?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  GM 公告發佈
+// ═══════════════════════════════════════════════════════
 function postAnnouncement(){
   const text = document.getElementById('announceText').value.trim();
-  if(!text){alert('隢撓?亙?摰?);return;}
+  if(!text){alert('請輸入公告內容');return;}
   const prefix = document.getElementById('announcePrefix').value.trim();
   const cat = document.getElementById('announceCat').value;
-  const full = prefix ? `??{prefix}??{text}` : text;
+  const full = prefix ? `【${prefix}】${text}` : text;
   addLog(cat, full);
   push();
-  // 皜征頛詨
+  // 清空輸入
   document.getElementById('announceText').value='';
-  // ?湔?餈雿?
+  // 更新最近發佈區
   updateRecentAnnouncements();
-  // ????
+  // 閃爍反饋
   const btn = document.querySelector('#announceText');
   if(btn){ btn.style.borderColor='var(--dn)'; setTimeout(()=>btn.style.borderColor='',800); }
 }
@@ -2803,9 +2505,9 @@ function updateRecentAnnouncements(){
     </div>`).join('');
 }
 
-// ????????????????????????????????????????????????????????
-//  ??頞典隤踵
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  手動趨勢調整
+// ═══════════════════════════════════════════════════════
 
 function toggleTrendEdit(){
   trendEditOpen = !trendEditOpen;
@@ -2844,7 +2546,7 @@ function buildTrendEditList(){
     if(trendEditFilter==='dn' && T.bias>=-0.01) return;
 
     const biasPct = (T.bias*100).toFixed(1);
-    const arrow = T.bias>0.04?'??':T.bias>0.01?'??:T.bias<-0.04?'??':T.bias<-0.01?'??:'??;
+    const arrow = T.bias>0.04?'↑↑':T.bias>0.01?'↑':T.bias<-0.04?'↓↓':T.bias<-0.01?'↓':'→';
     const cls = T.bias>0.01?'var(--up)':T.bias<-0.01?'var(--dn)':'var(--ink3)';
 
     const row = document.createElement('div');
@@ -2854,20 +2556,20 @@ function buildTrendEditList(){
       <span style="flex:1;font-size:11px;font-weight:700;min-width:90px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" title="${a.name}">${a.name}</span>
       <span style="font-size:12px;font-weight:700;color:${cls};min-width:40px;text-align:center">${arrow} ${biasPct>0?'+':''}${biasPct}%</span>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        <label style="font-size:10px;color:var(--ink3)">??%</label>
+        <label style="font-size:10px;color:var(--ink3)">偏向%</label>
         <input type="number" id="te_bias_${a.id}" value="${biasPct}" min="-10" max="10" step="0.5"
           style="width:62px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.6);padding:4px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;text-align:center">
       </div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-        <label style="font-size:10px;color:var(--ink3)">??</label>
+        <label style="font-size:10px;color:var(--ink3)">持續</label>
         <input type="number" id="te_dur_${a.id}" value="${T.duration}" min="1" max="60" step="1"
           style="width:48px;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,0.6);padding:4px 6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;outline:none;text-align:center">
-        <label style="font-size:10px;color:var(--ink3)">??/label>
+        <label style="font-size:10px;color:var(--ink3)">日</label>
       </div>
       <div style="display:flex;gap:3px;flex-shrink:0">
-        <button onclick="quickSetTrend('${a.id}',0.08,10)" style="padding:3px 7px;border:1px solid var(--up);color:var(--up);background:rgba(192,57,43,0.06);cursor:pointer;font-size:10px;font-weight:700">撘瑟撞</button>
-        <button onclick="quickSetTrend('${a.id}',-0.08,10)" style="padding:3px 7px;border:1px solid var(--dn);color:var(--dn);background:rgba(39,174,96,0.06);cursor:pointer;font-size:10px;font-weight:700">撘瑁?</button>
-        <button onclick="quickSetTrend('${a.id}',0,5)" style="padding:3px 7px;border:1px solid var(--ink3);color:var(--ink3);background:transparent;cursor:pointer;font-size:10px">?斗</button>
+        <button onclick="quickSetTrend('${a.id}',0.08,10)" style="padding:3px 7px;border:1px solid var(--up);color:var(--up);background:rgba(192,57,43,0.06);cursor:pointer;font-size:10px;font-weight:700">強漲</button>
+        <button onclick="quickSetTrend('${a.id}',-0.08,10)" style="padding:3px 7px;border:1px solid var(--dn);color:var(--dn);background:rgba(39,174,96,0.06);cursor:pointer;font-size:10px;font-weight:700">強跌</button>
+        <button onclick="quickSetTrend('${a.id}',0,5)" style="padding:3px 7px;border:1px solid var(--ink3);color:var(--ink3);background:transparent;cursor:pointer;font-size:10px">盤整</button>
       </div>`;
     el.appendChild(row);
   });
@@ -2900,19 +2602,19 @@ async function applyTrendEdits(){
       T.volatility = Math.abs(newBias)>0.04?'volatile':(T.volatility||'normal');
       T.volDays = Math.abs(newBias)>0.04?Math.max(T.volDays||0,3):(T.volDays||0);
       count++;
-      const dir = newBias>0.01?'?撞':newBias<-0.01?'??':'?斗';
-      gmLog('ev', `?? GM ??閮剖?頞典嚗?{a.name} ??${dir}嚗?{newBias>=0?'+':''}${(newBias*100).toFixed(1)}%嚗?蝥?{newDur}?伐?`);
+      const dir = newBias>0.01?'看漲':newBias<-0.01?'看跌':'盤整';
+      gmLog('ev', `📊 GM 手動設定趨勢：${a.name} → ${dir}（${newBias>=0?'+':''}${(newBias*100).toFixed(1)}%，持續${newDur}日）`);
     }
   });
-  if(!count){alert('?芸皜砍隞颱?靽格');return;}
+  if(!count){alert('未偵測到任何修改');return;}
   await push();renderAll();
-  // ?遣?”隞亙????啣?
+  // 重建列表以反映最新值
   buildTrendEditList();
-  alert(`??撌脣???${count} ?隅?Ｚ身摰?`);
+  alert(`✅ 已套用 ${count} 項趨勢設定！`);
 }
 
 async function resetAllTrends(){
-  if(!confirm('蝣箏??蔭??隅?Ｗ?冽??潘?'))return;
+  if(!confirm('確定重置所有趨勢到隨機值？'))return;
   if(!W||!W.market)return;
   const M = W.market;
   W.assets.filter(a=>!a.delisted).forEach(a=>{
@@ -2926,17 +2628,30 @@ async function resetAllTrends(){
     T.volatility = 'normal';
     T.volDays = 0;
   });
-  gmLog('ev','??GM ?蔭????隅?Ｙ?冽???);
+  gmLog('ev','↺ GM 重置所有標的趨勢為隨機值');
   await push();renderAll(); buildTrendEditList();
 }
 
-// ??
+function initCollapsiblePanels(){
+  document.querySelectorAll('.panel>.ph').forEach((head,idx)=>{
+    if(head.dataset.collapseReady)return;
+    head.dataset.collapseReady='1';
+    head.addEventListener('click',e=>{
+      if(e.target.closest('button,input,select,textarea,a'))return;
+      const panel=head.closest('.panel');
+      panel.classList.toggle('collapsed');
+      localStorage.setItem('gm_panel_collapsed_'+idx,panel.classList.contains('collapsed')?'1':'0');
+    });
+    if(localStorage.getItem('gm_panel_collapsed_'+idx)==='1')head.closest('.panel').classList.add('collapsed');
+  });
+}
+// 啟動
 if(SURL){document.getElementById('setupOverlay').classList.add('hidden');document.getElementById('scriptUrlInput').value=SURL;init();}
-setInterval(()=>{const n=new Date();document.getElementById('gmClock').textContent=`?曉祕 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;},1000);
+setInterval(()=>{const n=new Date();document.getElementById('gmClock').textContent=`現實 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;},1000);
 
-// ????????????????????????????????????????????????????????
-//  ?日蝟餌絞嚗靽? 1 甇伐?
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  撤銷系統（只保留 1 步）
+// ═══════════════════════════════════════════════════════
 let _undoSnapshot = null;
 
 function saveUndoSnapshot(label){
@@ -2944,12 +2659,12 @@ function saveUndoSnapshot(label){
   const btn = document.getElementById('undoBtn');
   const lbl = document.getElementById('undoLabel');
   if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
-  if(lbl) lbl.textContent = `?舀?瘀?${label}`;
+  if(lbl) lbl.textContent = `可撤銷：${label}`;
 }
 
 async function undoLast(){
-  if(!_undoSnapshot){ alert('瘝??舀?瑞???'); return; }
-  if(!confirm(`蝣箏??日??{_undoSnapshot.label}??`)) return;
+  if(!_undoSnapshot){ alert('沒有可撤銷的操作'); return; }
+  if(!confirm(`確定撤銷「${_undoSnapshot.label}」？`)) return;
   W = _undoSnapshot.data;
   _undoSnapshot = null;
   const btn = document.getElementById('undoBtn');
@@ -2958,143 +2673,129 @@ async function undoLast(){
   if(lbl) lbl.textContent = '';
   document.getElementById('setY').value = W.gameYear;
   document.getElementById('setD').value = W.gameDay;
-  addLog('warn','??GM ?日鈭?銝甇交?雿?);
+  addLog('warn','↩ GM 撤銷了上一步操作');
   await push(); renderAll();
 }
 
-// ????????????????????????????????????????????????????????
-//  ??蝟餌絞
-// ????????????????????????????????????????????????????????
+// ═══════════════════════════════════════════════════════
+//  排程系統
+// ═══════════════════════════════════════════════════════
 // W.schedules = [{id, dateTime(ms), action, evtName, pcts, fired}]
 
-// ????????????????????????????????????????????????????????
-//  撠?敹恍?蝔?
-// ????????????????????????????????????????????????????????
-
-// ??????殷?08~23嚗?
-function buildSchHourSelect(){
-  const sel=document.getElementById('schHour'); if(!sel) return;
-  sel.innerHTML='';
-  const now=new Date();
-  const curH=now.getHours();
-  // 憿舐內隞予?拚??暺????芯?嚗?隞亙??予??8~23
-  for(let offset=1;offset<=24;offset++){
-    const h=(curH+offset)%24;
-    const isNextDay=(curH+offset)>=24;
-    const label=`${isNextDay?'?予 ':'隞予 '}${String(h).padStart(2,'0')}:00`;
-    const opt=document.createElement('option');
-    opt.value=offset; // 撟曉???
-    opt.textContent=label;
-    sel.appendChild(opt);
-  }
-}
-
-// 閫??敹恍?隞斗?摮???intraday plans ??pcts ?澆?
-function parseQuickCommands(text){
-  if(!W) return {};
-  const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const result={};
-  const miss=[];
-  lines.forEach(line=>{
-    const m=line.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)(?:\s+(.*))?$/);
-    if(!m){miss.push(line);return;}
-    const key=m[1].trim(), pct=parseFloat(m[2]), volRaw=(m[3]||'').trim();
-    const vol=intradayVolKey(volRaw)||'neutral';
-    // ?舀?撣???萄?
-    if(key==='?典???||key==='all'){
-      W.assets.filter(a=>!a.delisted).forEach(a=>{result[a.id]={pct:pct/100,vol};});
-      return;
-    }
-    const a=W.assets.find(x=>!x.delisted&&(x.id===key||x.name.includes(key)||key.includes(x.name)));
-    if(!a){miss.push(line);return;}
-    result[a.id]={pct:pct/100,vol};
+function buildSchPctGrid(){
+  const el = document.getElementById('schPctGrid'); if(!el||!W) return;
+  el.innerHTML='';
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const r=document.createElement('div'); r.className='evt-pct-row';
+    r.innerHTML=`<span class="elabel">${a.icon} ${a.name}</span><input type="number" id="sch_epct_${a.id}" placeholder="%" step="1">`;
+    el.appendChild(r);
   });
-  if(miss.length) console.warn('?芸??隞歹?',miss);
-  return result;
 }
 
-function buildSchPctGrid(){ /* ?撘??征畾潘?銝?雿輻 */ }
-function getSchPcts(){ return {}; }
+function getSchPcts(){
+  const p={};
+  if(!W) return p;
+  W.assets.forEach(a=>{
+    if(a.delisted) return;
+    const v=parseFloat(document.getElementById('sch_epct_'+a.id)?.value);
+    if(!isNaN(v)) p[a.id]=v/100;
+  });
+  return p;
+}
 
 function addSchedule(){
-  const sel=document.getElementById('schHour');
-  const offsetHours=parseInt(sel?.value)||1;
-  const evtName=document.getElementById('schEvtName')?.value.trim()||'';
-  const rawText=document.getElementById('schQuickText')?.value||'';
+  const dateVal = document.getElementById('schDate').value;
+  const timeVal = document.getElementById('schTime').value;
+  if(!dateVal||!timeVal){ alert('請填入日期與時間'); return; }
+  const parts=timeVal.split(':');
+  if((parseInt(parts[1]||'0',10)||0)!==0){ alert('排程只能設定整點，例如 14:00、20:00'); return; }
+  const dt = new Date(dateVal+'T'+timeVal+':00').getTime();
+  if(dt <= Date.now()){ alert('請選擇未來的時間'); return; }
 
-  const cmds=parseQuickCommands(rawText);
-
-  // 閮?閫貊??嚗?銝?暺?+ offsetHours-1
-  const now=new Date();
-  const target=new Date(now);
-  target.setMinutes(0,0,0);
-  target.setHours(now.getHours()+offsetHours);
-  const dt=target.getTime();
+  const evtName = document.getElementById('schEvtName')?.value.trim()||'';
+  const pcts = getSchPcts();
 
   if(!W.schedules) W.schedules=[];
   W.schedules.push({
     id: Date.now(),
     dateTime: dt,
     evtName,
-    quickCmds: rawText.trim(), // ?脣??????嫣噶憿舐內
-    pcts: Object.fromEntries(Object.entries(cmds).map(([id,{pct}])=>[id,pct])),
-    vols: Object.fromEntries(Object.entries(cmds).map(([id,{vol}])=>[id,vol])),
+    pcts,
     fired: false
   });
   W.schedules.sort((a,b)=>a.dateTime-b.dateTime);
 
-  document.getElementById('schEvtName').value='';
-  document.getElementById('schQuickText').value='';
+  // 清空輸入（保留日期，方便連續新增同日不同時間的排程）
+  document.getElementById('schEvtName') && (document.getElementById('schEvtName').value='');
+  W.assets.forEach(a=>{const e=document.getElementById('sch_epct_'+a.id);if(e)e.value='';});
 
   push(); renderSchedules();
-  // ?遣撠??詨嚗??歇???賊?閬?堆?
-  buildSchHourSelect();
 }
 
 function delSchedule(id){
   if(!W.schedules) return;
-  W.schedules=W.schedules.filter(s=>s.id!==id);
+  W.schedules = W.schedules.filter(s=>s.id!==id);
   push(); renderSchedules();
 }
 
 function renderSchedules(){
-  const el=document.getElementById('schedList'); if(!el) return;
-  const scheds=(W?.schedules||[]).filter(s=>!s.fired);
-  if(!scheds.length){
-    el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:4px 0">撠??</div>';
-    updateSchedNextLabel(); return;
-  }
+  const el = document.getElementById('schedList'); if(!el) return;
+  const scheds = (W?.schedules||[]).filter(s=>!s.fired);
+  if(!scheds.length){ el.innerHTML='<div style="font-size:13px;color:var(--ink3)">尚無排程</div>'; updateSchedNextLabel(); return; }
+
   el.innerHTML='';
   scheds.forEach(s=>{
-    const dt=new Date(s.dateTime);
-    const dtStr=`${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:00`;
-    const hasName=!!s.evtName;
-    const cmdCount=Object.keys(s.pcts||{}).length;
-    const preview=s.quickCmds?s.quickCmds.split('\n').slice(0,2).join(' 嚗?'):'蝟餌絞?芸?';
-    const row=document.createElement('div');
+    const dt = new Date(s.dateTime);
+    const dtStr = `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    const hasName = !!s.evtName;
+    const hasPcts = s.pcts && Object.keys(s.pcts).length > 0;
+    const actionLabel = !hasName && !hasPcts ? '純推進' : !hasName && hasPcts ? '靜默漲跌' : '事件觸發';
+    const pctSummary = Object.entries(s.pcts||{}).filter(([,v])=>v!==0).slice(0,3)
+      .map(([id,v])=>{ const a=W.assets.find(x=>x.id===id); return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:'' }).filter(Boolean).join('  ');
+
+    const row = document.createElement('div');
     row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid var(--parch3);margin-bottom:6px;background:rgba(255,255,255,0.15);flex-wrap:wrap';
     row.innerHTML=`
-      <div style="font-size:18px;flex-shrink:0">??</div>
+      <div style="font-size:18px;flex-shrink:0">🕐</div>
       <div style="flex:1;min-width:120px">
-        <div style="font-size:13px;font-weight:700;color:var(--ink)">${dtStr}${hasName?' ?? '+s.evtName:''}</div>
-        <div style="font-size:11px;color:var(--gold2);margin-top:2px">${cmdCount} ?舀???敶梢 繚 ${preview}</div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">${dtStr} — ${s.evtName}</div>
+        <div style="font-size:11px;color:var(--gold2);margin-top:2px">${actionLabel}${pctSummary?' · '+pctSummary:''}</div>
       </div>
-      <button onclick="delSchedule(${s.id})" style="padding:4px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">?芷</button>`;
+      <button onclick="delSchedule(${s.id})" style="padding:4px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">刪除</button>`;
     el.appendChild(row);
   });
   updateSchedNextLabel();
 }
 
 function updateSchedNextLabel(){
-  const el=document.getElementById('schedNextLabel'); if(!el) return;
-  const next=(W?.schedules||[]).filter(s=>!s.fired).sort((a,b)=>a.dateTime-b.dateTime)[0];
-  if(!next){el.textContent='';return;}
-  const diff=next.dateTime-Date.now();
-  if(diff<=0){el.textContent='?喳?閫貊??;return;}
-  const h=Math.floor(diff/3600000),m=Math.floor((diff%3600000)/60000),s=Math.floor((diff%60000)/1000);
-  el.textContent=`銝活閫貊嚗?{h>0?h+'??:''}${m}??{s}蝘?`;
+  const el = document.getElementById('schedNextLabel'); if(!el) return;
+  const next = (W?.schedules||[]).filter(s=>!s.fired).sort((a,b)=>a.dateTime-b.dateTime)[0];
+  if(!next){ el.textContent=''; return; }
+  const diff = next.dateTime - Date.now();
+  if(diff<=0){ el.textContent='即將觸發…'; return; }
+  const h=Math.floor(diff/3600000), m=Math.floor((diff%3600000)/60000), s=Math.floor((diff%60000)/1000);
+  el.textContent=`下次：${h>0?h+'時':''}${m}分${s}秒後`;
 }
 
+function intradayTargetSlotForHour(hour){
+  if(hour===0)return INTRADAY_SLOTS.length-1;
+  if(hour<8||hour>23)return null;
+  return Math.min(hour-8,INTRADAY_SLOTS.length-1);
+}
+async function applyScheduledIntradayHour(dateTime){
+  const dt=new Date(dateTime);
+  const target=intradayTargetSlotForHour(dt.getHours());
+  if(target===null)return false;
+  let S=intradaySession();
+  if(S.status!=='open'){
+    intradayOpen();
+    S=intradaySession();
+  }
+  while((intradaySession().slot||0)<target){
+    intradayStep();
+  }
+  return true;
+}
 let scheduleRunning=false;
 async function runDueSchedules(){
   if(scheduleRunning||!W||!W.schedules)return;
@@ -3108,51 +2809,41 @@ async function runDueSchedules(){
       const hasName=!!(s.evtName&&s.evtName.trim());
       const hasPcts=s.pcts&&Object.keys(s.pcts).length>0;
       if(hasPcts){
-        // 憟 intraday targetPct + vol
-        W.assets.forEach(a=>{
-          if(a.delisted)return;
-          if(!s.pcts[a.id]&&!s.vols?.[a.id])return;
-          const P=intradayPlan(a);
-          if(s.pcts[a.id]!==undefined) P.targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,s.pcts[a.id]));
-          if(s.vols?.[a.id]) P.volatility=s.vols[a.id];
-          // ?湔頞典??嚗?鈭辣敶梢撱嗡撓?啣?蝥嗾??
-          if(W.market?.trends[a.id]){
-            const pct=s.pcts[a.id]||0;
-            const T=W.market.trends[a.id];
-            T.bias=(pct>0?1:-1)*Math.min(0.09,Math.abs(pct)*0.7);
-            T.duration=Math.floor(Math.random()*10)+5;
-            T.momentum=(pct>0?1:-1)*Math.min(0.07,Math.abs(pct)*0.5);
-            T.volatility='volatile'; T.volDays=Math.floor(Math.random()*5)+4;
-          }
+        let ok=0;
+        Object.entries(s.pcts).forEach(([id,pct])=>{
+          const a=W.assets.find(x=>x.id===id&&!x.delisted);
+          if(!a)return;
+          const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+          queueNextHourMove(a,p,qbVolForPct(p));
+          touchTrendForQueuedMove(a,p);
+          ok++;
         });
         if(hasName){
-          addLog('ev',`??銝?鈭辣嚗?{s.evtName}`);
-          addEventLog(`??${s.evtName}`);
+          addLog('ev',`⚡ 世界事件：${s.evtName}`);
+          addEventLog(`⚡ ${s.evtName}`);
         }
-        gmLog('time',`?? ??憟嚗?{hasName?s.evtName:'敹恍?隞?} 嚗?{Object.keys(s.pcts).length} ?舀???`);
-      } else if(hasName) {
-        addLog('ev',`??銝?鈭辣嚗?{s.evtName}`);
-        addEventLog(`??${s.evtName}`);
-        gmLog('time',`?? ??鈭辣嚗?{s.evtName}`);
+        await applyScheduledIntradayHour(s.dateTime);
+        const dt=new Date(s.dateTime);
+        gmLog('time',`排程漲跌幅已在 ${String(dt.getHours()).padStart(2,'0')}:00 生效，共 ${ok} 支`);
+      }else if(hasName){
+        addLog('ev',`⚡ 世界事件：${s.evtName}`);
+        addEventLog(`⚡ ${s.evtName}`);
+        gmLog('time',`整點事件已執行：${s.evtName}`);
+      }else{
+        gmLog('time','整點排程已執行');
       }
       await push();
     }
   }finally{
     scheduleRunning=false;
     renderSchedules();
-    renderAll();
   }
 }
-
-// 瘥??湔? & ?瑁??唳???
+// GM 前端只更新排程倒數；實際觸發由 Apps Script checkSchedules 處理。
 setInterval(()=>{
-  if(!W||!W.schedules)return;
-  runDueSchedules();
+  if(!W||!W.schedules) return;
   updateSchedNextLabel();
-},1000);
-
-// ?頛敺?憪?撠??詨
-document.addEventListener('DOMContentLoaded',()=>buildSchHourSelect());
+}, 1000);
 </script>
 </body>
 </html>
