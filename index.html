@@ -2026,25 +2026,25 @@ function renderWealth(){
       const mv=a.price*pos.qty;const pnl=mv-(pos.avgCost*pos.qty);
       const s=pnl>=0?'+':'';const cls=pnl>=0?'pnl-pos':'pnl-neg';
       const rate=pos.avgCost>0?((pnl/(pos.avgCost*pos.qty))*100).toFixed(1):'-';
-      holdHtml+=`<div class="holding-row"><span>${a.icon} ${a.name} ?${pos.qty}</span><span>??{Math.round(pos.avgCost).toLocaleString()}G</span><span>${mv.toLocaleString()}G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()}G(${s}${rate}%)</span></div>`;
+      holdHtml+=`<div class="holding-row"><span>${a.icon} ${a.name} ×${pos.qty}</span><span>${Math.round(pos.avgCost).toLocaleString()}G</span><span>${mv.toLocaleString()}G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()}G(${s}${rate}%)</span></div>`;
     });
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><input class="name-input" value="${p.name}" onchange="renameP(${i},this.value)">${holdHtml?`<div class="holding-detail">${holdHtml}</div>`:''}</td>
       <td><code style="font-size:12px;color:var(--gold2)">${playerAccountLabel(p)}</code></td>
       <td><code style="font-size:12px;color:var(--gold2)">${playerPasswordLabel(p)}</code><br><button class="btn-sm" style="font-size:10px;padding:2px 8px;margin-top:3px" onclick="resetPlayerPass(${i})">&#x91cd;&#x8a2d;&#x5e33;&#x5bc6;</button></td>
       <td>${p.cash.toLocaleString()} G</td>
-      <td>${pv.toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">? ${Math.round(cost).toLocaleString()} G</span></td>
+      <td>${pv.toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">成本 ${Math.round(cost).toLocaleString()} G</span></td>
       <td><span class="${unr>=0?'pnl-pos':'pnl-neg'}">${unr>=0?'+':''}${Math.round(unr).toLocaleString()} G</span></td>
       <td><span class="${rlz>=0?'pnl-pos':'pnl-neg'}">${rlz>=0?'+':''}${Math.round(rlz).toLocaleString()} G</span></td>
       <td style="font-weight:700;color:var(--gold2)">${(p.cash+pv).toLocaleString()} G</td>
       <td style="white-space:nowrap">
-        <button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">?蔭</button>
-        <button class="btn-danger" style="font-size:10px;padding:4px 8px;margin-left:4px" onclick="deleteP(${i})">?芷</button>
+        <button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">重置</button>
+        <button class="btn-danger" style="font-size:10px;padding:4px 8px;margin-left:4px" onclick="deleteP(${i})">刪除</button>
       </td>`;
     tb.appendChild(tr);
   });
   const sel=document.getElementById('goldTarget');const cur=sel.value;
-  sel.innerHTML=`<option value="all">?券?拙振</option>`+W.players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  sel.innerHTML=`<option value="all">全部玩家</option>`+W.players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
   if(cur)sel.value=cur;
 }
 function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
@@ -2134,8 +2134,9 @@ function onVolSelChange(id, val){
   if(!W.assetVolPrefs) W.assetVolPrefs={};
   W.assetVolPrefs[id] = val;
   const P=intradayPlan(a);
+  // ★ 立即套用到當日 plan，不等明天開盤
+  P.volatility = val;
   if(P.nextSlotShock!==undefined) P.nextSlotVol=val;
-  else P.volatility=val;
   push(); renderMkt();
 }
 
@@ -2170,9 +2171,18 @@ function renderMkt(){
 
     // 波動模式（優先用 assetVolPrefs 持久設定，其次 P.volatility）
     const volPref = W.assetVolPrefs?.[a.id] || P?.volatility || 'neutral';
-    const volSelHtml = `<select class="vol-sel" onchange="onVolSelChange('${a.id}',this.value)">
-      ${VOL_OPTS.map(o=>`<option value="${o.v}"${volPref===o.v?' selected':''}>${o.l}</option>`).join('')}
-    </select>`;
+    // 實際生效中的波動模式（從 plan 讀，反映 GAS 套用的結果）
+    const volActive = P?.volatility || 'neutral';
+    const volActiveLabel = VOL_OPTS.find(o=>o.v===volActive)?.l || volActive;
+    const volMatch = volPref === volActive;
+    const volStatusHtml = volMatch
+      ? `<div style="font-size:10px;color:#27a060;margin-top:2px">✓ 生效中：${volActiveLabel}</div>`
+      : `<div style="font-size:10px;color:#e08020;margin-top:2px">⏳ 待生效（目前：${volActiveLabel}）</div>`;
+    const volSelHtml = `
+      <select class="vol-sel" onchange="onVolSelChange('${a.id}',this.value)">
+        ${VOL_OPTS.map(o=>`<option value="${o.v}"${volPref===o.v?' selected':''}>${o.l}</option>`).join('')}
+      </select>
+      ${volStatusHtml}`;
 
     // 今日收盤目標（顯示已設定的 targetPct）
     const tgt = P?.targetPct;
