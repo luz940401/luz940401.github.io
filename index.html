@@ -2088,14 +2088,16 @@ function catMatch(a, tab){
 
 // 波動模式選項
 const VOL_OPTS = [
-  {v:'neutral',    l:'一般自然盤'},
-  {v:'buyThenSell',l:'先拉後殺'},
-  {v:'sellThenBuy',l:'先殺後拉'},
-  {v:'violent',    l:'劇烈'},
-  {v:'choppy',     l:'震盪'},
-  {v:'calm',       l:'平穩'},
-  {v:'flat',       l:'窄幅盤整'},
-  {v:'quiet',      l:'沒波動'},
+  {v:'neutral',     l:'一般自然盤'},
+  {v:'buyThenSell', l:'先拉後殺'},
+  {v:'sellThenBuy', l:'先殺後拉'},
+  {v:'fakeBreakout',l:'假突破（衝高回落）'},
+  {v:'washout',     l:'洗盤（下殺反彈）'},
+  {v:'violent',     l:'劇烈'},
+  {v:'choppy',      l:'震盪'},
+  {v:'calm',        l:'平穩'},
+  {v:'flat',        l:'窄幅盤整'},
+  {v:'quiet',       l:'沒波動'},
 ];
 
 // 精簡按鈕組：[漲停][5~8%][1~4%][平盤][-1~-4%][-5~-8%][跌停]
