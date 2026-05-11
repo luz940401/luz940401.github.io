@@ -1383,6 +1383,7 @@ function intradayStep(){
   W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
   S.slot=step;
   addLog('time',`日內盤推進至 ${INTRADAY_SLOTS[step]}`);
+  runDueSchedules();
   push();renderAll();
 }
 function resetIntradayPoints(){
@@ -1427,7 +1428,9 @@ function assetWatchInterval(a){
   const rg=days=>{if(h.length<=days)return 0;const o=h[h.length-1-days],n=h[h.length-1];return o>0?(n-o)/o:0;};
   const g3=rg(3),g5=rg(5),g10=rg(10);
   if(g3>=0.28||g5>=0.45||g10>=0.80)return Math.round(180/SLOT_MINUTES); // 重度處置：3小時跳一次
+  if(g3<=-0.28||g5<=-0.45||g10<=-0.80)return Math.round(180/SLOT_MINUTES);
   if(g3>=0.18||g5>=0.30||g10>=0.55)return Math.round(30/SLOT_MINUTES);  // 輕度處置：30分鐘跳一次
+  if(g3<=-0.18||g5<=-0.30||g10<=-0.55)return Math.round(30/SLOT_MINUTES);
   return 0;
 }
 function intradayStepAsset(a,step){
@@ -3170,9 +3173,6 @@ function getSchPcts(){
 function addSchedule(){
   const timeVal = document.getElementById('schTime').value;
   if(!timeVal){ alert('請填入時間'); return; }
-  const parts = timeVal.split(':');
-  const minute = parseInt(parts[1]||'0',10);
-  if(minute % 3 !== 0){ alert('排程時間請使用 3 分鐘整點，例如 14:00、20:03'); return; }
   const gameDayInput = parseInt(document.getElementById('schGameDay')?.value);
   const gameDay = isNaN(gameDayInput) ? (W?.gameDay||1) : gameDayInput;
   if(gameDay < (W?.gameDay||1)){ alert('遊戲日期不能早於目前日期（第'+W.gameDay+'日）'); return; }
@@ -3227,6 +3227,7 @@ function renderSchedules(){
         <div style="font-size:13px;font-weight:700;color:var(--ink)">${dtStr} — ${s.evtName}</div>
         <div style="font-size:11px;color:var(--gold2);margin-top:2px">${actionLabel}${pctSummary?' · '+pctSummary:''}</div>
       </div>
+      <button onclick="fireScheduleNow(${s.id})" style="padding:4px 10px;border:1px solid var(--gold);color:var(--gold2);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">立即觸發</button>
       <button onclick="delSchedule(${s.id})" style="padding:4px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">刪除</button>`;
     el.appendChild(row);
   });
@@ -3263,54 +3264,69 @@ async function applyScheduledIntradayTime(dateTime){
   }
   return true;
 }
+function schedIsDue(s){
+  const curDay=W?.gameDay||1;
+  const sDay=s.gameDay||1;
+  if(sDay>curDay)return false;
+  if(sDay<curDay)return true;
+  // 同一天：比較 slot
+  const S=intradaySession();
+  const curSlot=S?.slot||0;
+  const parts=(s.gameTime||'00:00').split(':');
+  const h=parseInt(parts[0]||'0',10),m=parseInt(parts[1]||'0',10);
+  const schedSlot=Math.max(0,Math.min(INTRADAY_SLOTS.length-1,Math.floor(((h-MARKET_OPEN_HOUR)*60+m)/SLOT_MINUTES)));
+  return curSlot>=schedSlot;
+}
+function execSchedule(s){
+  const hasName=!!(s.evtName&&s.evtName.trim());
+  const hasPcts=s.pcts&&Object.keys(s.pcts).length>0;
+  if(hasPcts){
+    let ok=0;
+    Object.entries(s.pcts).forEach(([id,pct])=>{
+      const a=W.assets.find(x=>x.id===id&&!x.delisted);
+      if(!a)return;
+      const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+      queueNextHourMove(a,p,qbVolForPct(p));
+      touchTrendForQueuedMove(a,p);
+      ok++;
+    });
+    if(hasName){addLog('ev',`⚡ 世界事件：${s.evtName}`);addEventLog(`⚡ ${s.evtName}`);}
+    gmLog('time',`排程漲跌幅已在 ${s.gameTime||'?'} 生效，共 ${ok} 支`);
+  }else if(hasName){
+    addLog('ev',`⚡ 世界事件：${s.evtName}`);
+    addEventLog(`⚡ ${s.evtName}`);
+    gmLog('time',`排程事件已執行：${s.evtName}`);
+  }else{
+    gmLog('time','排程已執行');
+  }
+}
 let scheduleRunning=false;
-async function runDueSchedules(){
+function runDueSchedules(){
   if(scheduleRunning||!W||!W.schedules)return;
-  const due=W.schedules.filter(s=>!s.fired&&s.dateTime<=Date.now()).sort((a,b)=>a.dateTime-b.dateTime);
+  const due=W.schedules.filter(s=>!s.fired&&schedIsDue(s))
+    .sort((a,b)=>(a.gameDay||1)-(b.gameDay||1)||((a.gameTime||'')>(b.gameTime||'')?1:-1));
   if(!due.length)return;
   scheduleRunning=true;
   try{
-    for(const s of due){
-      if(s.fired)continue;
+    due.forEach(s=>{
+      if(s.fired)return;
       s.fired=true;
-      const hasName=!!(s.evtName&&s.evtName.trim());
-      const hasPcts=s.pcts&&Object.keys(s.pcts).length>0;
-      if(hasPcts){
-        let ok=0;
-        Object.entries(s.pcts).forEach(([id,pct])=>{
-          const a=W.assets.find(x=>x.id===id&&!x.delisted);
-          if(!a)return;
-          const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
-          queueNextHourMove(a,p,qbVolForPct(p));
-          touchTrendForQueuedMove(a,p);
-          ok++;
-        });
-        if(hasName){
-          addLog('ev',`⚡ 世界事件：${s.evtName}`);
-          addEventLog(`⚡ ${s.evtName}`);
-        }
-        await applyScheduledIntradayTime(s.dateTime);
-        const dt=new Date(s.dateTime);
-        gmLog('time',`排程漲跌幅已在 ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')} 生效，共 ${ok} 支`);
-      }else if(hasName){
-        addLog('ev',`⚡ 世界事件：${s.evtName}`);
-        addEventLog(`⚡ ${s.evtName}`);
-        gmLog('time',`排程事件已執行：${s.evtName}`);
-      }else{
-        gmLog('time','排程已執行');
-      }
-      await push();
-    }
+      execSchedule(s);
+    });
   }finally{
     scheduleRunning=false;
     renderSchedules();
   }
 }
-// GM 前端只更新排程倒數；實際觸發由後端或外部排程機制處理。
-setInterval(()=>{
-  if(!W||!W.schedules) return;
-  updateSchedNextLabel();
-}, 1000);
+async function fireScheduleNow(id){
+  const s=(W?.schedules||[]).find(x=>x.id===id);
+  if(!s||s.fired)return;
+  s.fired=true;
+  execSchedule(s);
+  await push();
+  renderSchedules();
+}
+setInterval(()=>{if(!W||!W.schedules)return;updateSchedNextLabel();},1000);
 </script>
 </body>
 </html>
