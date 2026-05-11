@@ -1427,10 +1427,9 @@ function assetWatchInterval(a){
   const h=a.history||[];
   const rg=days=>{if(h.length<=days)return 0;const o=h[h.length-1-days],n=h[h.length-1];return o>0?(n-o)/o:0;};
   const g3=rg(3),g5=rg(5),g10=rg(10);
-  if(g3>=0.28||g5>=0.45||g10>=0.80)return Math.round(180/SLOT_MINUTES); // 重度處置：3小時跳一次
-  if(g3<=-0.28||g5<=-0.45||g10<=-0.80)return Math.round(180/SLOT_MINUTES);
-  if(g3>=0.18||g5>=0.30||g10>=0.55)return Math.round(30/SLOT_MINUTES);  // 輕度處置：30分鐘跳一次
-  if(g3<=-0.18||g5<=-0.30||g10<=-0.55)return Math.round(30/SLOT_MINUTES);
+  // 處置股：30分鐘分盤（注意股不凍結走勢）
+  if(g3>=0.27||g5>=0.35||g10>=0.45)return Math.round(30/SLOT_MINUTES);
+  if(g3<=-0.27||g5<=-0.35||g10<=-0.45)return Math.round(30/SLOT_MINUTES);
   return 0;
 }
 function intradayStepAsset(a,step){
