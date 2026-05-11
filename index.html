@@ -376,6 +376,10 @@ firebase.auth().signInAnonymously().catch(()=>{});
         <tbody id="mktBody"></tbody>
       </table>
     </div>
+    <div style="padding:10px 16px;border-top:1px solid var(--parch3);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-gold" onclick="applyAllCloseTargets()" title="套用所有已填入的今日收盤目標欄位">✅ 一併套用所有收盤目標</button>
+      <span style="font-size:11px;color:var(--ink3)">填好各標的「今日收盤目標」欄後，點此一次套用全部</span>
+    </div>
   </div>
 
   <div class="panel">
@@ -1065,10 +1069,16 @@ async function push(){
             const fbTv=p._tv||0;const gmTv=lp._tv||0;
             const fbHasPort=Object.keys(p.portfolio||{}).length>0;
             const gmPortEmpty=Object.keys(lp.portfolio||{}).length===0;
+            // 永遠從 Firebase 補回帳號密碼（GM 本地可能是空字串的舊快照）
+            const authFix={
+              accountPlain:lp.accountPlain||p.accountPlain||'',
+              passPlain:lp.passPlain||p.passPlain||'',
+              passHash:lp.passHash||p.passHash||''
+            };
             if(fbTv>gmTv||(fbHasPort&&gmPortEmpty)){
-              return{...lp,portfolio:p.portfolio||{},shorts:p.shorts||[],realizedPnL:typeof p.realizedPnL==='number'?p.realizedPnL:lp.realizedPnL,_tv:p._tv};
+              return{...lp,portfolio:p.portfolio||{},shorts:p.shorts||[],realizedPnL:typeof p.realizedPnL==='number'?p.realizedPnL:lp.realizedPnL,_tv:p._tv,...authFix};
             }
-            return lp;
+            return{...lp,...authFix};
           });
         }
       }catch(mergeErr){console.warn('[push] 無法合併玩家資料:',mergeErr);}
@@ -1698,6 +1708,29 @@ function setCloseTarget(id){
   gmLog('time',`${a.name} 今日收盤目標：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → ${finalPrice.toLocaleString()} G`);
   el.value='';
   push();renderMkt();
+}
+// 一併套用所有已填入的今日收盤目標
+function applyAllCloseTargets(){
+  if(!W)return;
+  let count=0;
+  const applied=[];
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const el=document.getElementById('ctgt_'+a.id);
+    if(!el)return;
+    const raw=parseFloat(el.value);
+    if(isNaN(raw))return;
+    const targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,raw/100));
+    const P=intradayPlan(a);
+    P.targetPct=targetPct;
+    const finalPrice=Math.round((P.prevClose||a.price)*(1+targetPct));
+    gmLog('time',`${a.name} 收盤目標：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → ${finalPrice.toLocaleString()} G`);
+    el.value='';
+    count++;
+    applied.push(`${a.name} ${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}%`);
+  });
+  if(!count){alert('沒有任何已填入的收盤目標欄位');return;}
+  push();renderMkt();
+  alert(`✅ 已套用 ${count} 項收盤目標：\n${applied.join('\n')}`);
 }
 function initMarketState(){
   const trends={};
@@ -2663,8 +2696,6 @@ function renderTrendStatus(){
     </div>`;
   });
   html+='</div>';el.innerHTML=html;
-  // 如果趨勢編輯面板開著，同步重建（不覆蓋使用者正在輸入的值）
-  if(trendEditOpen) buildTrendEditList();
 }
 
 // ═══════════════════════════════════════════════════════
