@@ -1069,12 +1069,11 @@ async function push(){
             const fbTv=p._tv||0;const gmTv=lp._tv||0;
             const fbHasPort=Object.keys(p.portfolio||{}).length>0;
             const gmPortEmpty=Object.keys(lp.portfolio||{}).length===0;
-            // 永遠從 Firebase 補回帳號密碼（GM 本地可能是空字串的舊快照）
-            const authFix={
-              accountPlain:lp.accountPlain||p.accountPlain||'',
-              passPlain:lp.passPlain||p.passPlain||'',
-              passHash:lp.passHash||p.passHash||''
-            };
+            // GM 若刻意重置帳密（_authCleared 較新），不從 Firebase 補回舊帳密
+            const gmCleared=(lp._authCleared||0)>(p._authCleared||0);
+            const authFix=gmCleared
+              ?{accountPlain:'',passPlain:'',passHash:'',_authCleared:lp._authCleared}
+              :{accountPlain:lp.accountPlain||p.accountPlain||'',passPlain:lp.passPlain||p.passPlain||'',passHash:lp.passHash||p.passHash||''};
             if(fbTv>gmTv||(fbHasPort&&gmPortEmpty)){
               return{...lp,portfolio:p.portfolio||{},shorts:p.shorts||[],realizedPnL:typeof p.realizedPnL==='number'?p.realizedPnL:lp.realizedPnL,_tv:p._tv,...authFix};
             }
@@ -2336,6 +2335,7 @@ function resetPlayerPass(i){
   const p=W.players[i];if(!p)return;
   if(!confirm(`\u91cd\u8a2d ${p.name} \u7684\u89d2\u8272\u5e33\u865f\u8207\u5bc6\u78bc\uff1f\n\u73a9\u5bb6\u4e0b\u6b21\u9032\u5165\u89d2\u8272\u6642\u9700\u8981\u91cd\u65b0\u8a2d\u5b9a\u3002`))return;
   delete p.accountPlain;delete p.account;delete p.loginAccount;delete p.passPlain;delete p.passHash;delete p.password;
+  p._authCleared=Date.now();
   push();renderWealth();
 }
 function renderWealth(){
