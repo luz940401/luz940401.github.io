@@ -2105,12 +2105,13 @@ async function fireNow(){const name=document.getElementById('evtName').value.tri
 function savePreset(){
   const name=document.getElementById('evtName').value.trim();if(!name){alert('請輸入事件名稱');return;}
   const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}
+  if(!W.presetEvents)W.presetEvents=[];
   W.presetEvents.push({id:Date.now(),name,desc:document.getElementById('evtDesc').value.trim(),pcts:p});
   gmLog('ev',`📜 儲存事件：「${name}」`);clearForm();push();renderPresets();
 }
 function renderPresets(){
   const el=document.getElementById('presetList');el.innerHTML='';
-  if(!W.presetEvents.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:8px">尚無儲存事件</div>';return;}
+  if(!W.presetEvents||!W.presetEvents.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:8px">尚無儲存事件</div>';return;}
   W.presetEvents.forEach((ev,i)=>{
     const aff=Object.entries(ev.pcts).map(([id,v])=>{const a=W.assets.find(x=>x.id===id);return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:''}).filter(Boolean).join('  ');
     const d=document.createElement('div');d.className='preset-evt';
