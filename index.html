@@ -165,10 +165,20 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .close-target-btn{padding:3px 8px;border:1px solid #6a3ca8;background:rgba(106,60,168,.08);color:#6a3ca8;font-family:'Noto Sans TC',sans-serif;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15s;}
 .close-target-btn:hover{background:rgba(106,60,168,.2);}
 .close-target-set{font-size:10px;color:#6a3ca8;font-weight:700;min-width:36px;text-align:right;}
+.gm-kchart{width:180px;height:58px;display:block;background:rgba(255,255,255,.25);border:1px solid rgba(184,134,11,.22);border-radius:6px}
+.blaze-btn{display:inline-flex;align-items:center;justify-content:center;min-width:76px;font-size:12px;border-radius:8px;padding:6px 8px;cursor:pointer;margin-right:4px;font-weight:900;box-shadow:0 1px 0 rgba(255,255,255,.55) inset;filter:saturate(1.18)}
+.blaze-btn.up{background:#fff1ed;border:2px solid #c0392b;color:#9b1d13}
+.blaze-btn.dn{background:#edf9f1;border:2px solid #1e9b55;color:#0f7438}
+.blaze-btn.active.up{background:#c0392b;color:#fff;border-color:#7b160f;box-shadow:0 0 0 3px rgba(192,57,43,.24),0 4px 12px rgba(80,20,12,.30)}
+.blaze-btn.active.dn{background:#1e9b55;color:#fff;border-color:#07582a;box-shadow:0 0 0 3px rgba(39,174,96,.24),0 4px 12px rgba(8,70,36,.30);opacity:1}
+.temp-intervene{display:grid;grid-template-columns:58px 58px auto;gap:4px;align-items:center;min-width:174px}
+.temp-intervene input{width:100%;border:1px solid var(--parch3);border-bottom:2px solid var(--gold);background:rgba(255,255,255,.5);padding:4px 5px;font-family:'Noto Sans TC',sans-serif;font-size:11px;outline:none;text-align:right;color:var(--ink)}
+.temp-intervene button{padding:4px 8px;border:1px solid var(--purple);background:rgba(123,45,139,.08);color:var(--purple);font-family:'Noto Sans TC',sans-serif;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap}
+.temp-note{grid-column:1/-1;font-size:10px;color:var(--ink3);min-height:13px}
 .intraday-target-input{width:76px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;text-align:right;}
 .intraday-vol-select{width:112px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:5px 6px;font-family:'Noto Sans TC',sans-serif;}
 .intraday-batch-box{width:100%;min-height:88px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:8px 10px;font-family:'Noto Sans TC',sans-serif;font-size:12px;resize:vertical;color:var(--ink);}
-.group-tools{display:grid;grid-template-columns:1.2fr .7fr .9fr auto;gap:8px;align-items:end;margin-bottom:10px}
+.group-tools{display:grid;grid-template-columns:1.2fr .8fr .9fr auto;gap:8px;align-items:end;margin-bottom:10px}
 .group-card{border:1px solid var(--parch3);background:rgba(255,255,255,.34);border-radius:8px;padding:10px;margin:8px 0}
 .group-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .group-name-input{flex:1;min-width:150px;border:1px solid var(--parch3);background:rgba(255,255,255,.55);border-radius:7px;padding:7px 9px;font-weight:800;color:var(--ink)}
@@ -176,6 +186,7 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .group-asset-check{font-size:12px;color:var(--ink);display:flex;align-items:center;gap:6px;min-width:0}
 .group-asset-check input{width:auto}
 .group-asset-check span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-apply-status{font-size:12px;font-weight:800;color:var(--up);min-height:18px;margin:-2px 0 8px}
 @media(max-width:700px){.intraday-mini-chart{width:130px;height:48px}.intraday-vol-select{width:96px}.intraday-target-input{width:64px}}
 @media(max-width:700px){.group-tools{grid-template-columns:1fr}.group-assets{grid-template-columns:1fr}}
 .log-box{max-height:200px;overflow-y:auto;border:1px solid var(--parch3);padding:10px;background:rgba(255,255,255,0.12);}
@@ -214,8 +225,6 @@ firebase.auth().signInAnonymously().catch(()=>{});
 </head>
 <body>
 
-</div>
-
 <!-- 走勢圖 Modal -->
 <div class="modal-overlay hidden" id="chartModal" onclick="closeModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
@@ -244,8 +253,6 @@ firebase.auth().signInAnonymously().catch(()=>{});
   <h1>格蘭大陸</h1>
   <div class="sub">皇家交易所</div>
   <div class="nav-row">
-    <a href="player.html" target="_blank" class="nav-link">玩家頁面 ↗</a>
-    <a href="overview.html" target="_blank" class="nav-link">大盤總覽 ↗</a>
     <div class="sync-bar"><div class="sdot" id="sdot"></div><span id="slabel">未連線</span></div>
     <button class="btn-sm" onclick="document.getElementById('setupOverlay').classList.remove('hidden')" style="font-size:11px">Firebase 狀態</button>
     <span id="gmClock" style="font-size:12px;color:var(--ink3)"></span>
@@ -366,11 +373,10 @@ firebase.auth().signInAnonymously().catch(()=>{});
     <div class="pb" style="padding:0;overflow-x:auto">
       <table class="mkt-table">
         <thead><tr>
-          <th>商品</th><th>現價</th><th>漲跌</th>
-          <th style="min-width:220px">下一小時設定</th>
+          <th>商品</th><th style="min-width:190px">K棒走勢</th><th>現價</th><th>漲跌</th>
           <th style="min-width:130px">波動模式</th>
           <th style="min-width:110px">今日收盤目標</th>
-          <th style="min-width:72px">已排入</th>
+          <th style="min-width:180px">自訂干預</th>
           <th style="min-width:58px">強勢</th>
         </tr></thead>
         <tbody id="mktBody"></tbody>
@@ -384,27 +390,18 @@ firebase.auth().signInAnonymously().catch(()=>{});
 
   <div class="panel">
     <div class="ph">
-      <div class="ph-title">族群管理與批次指令</div>
+      <div class="ph-title">族群管理</div>
       <button class="btn-sm" onclick="addAssetGroup()">新增族群</button>
     </div>
     <div class="pb">
-      <div class="notice">把標的勾進同一個族群後，可以一次設定整個族群在該小時生效的漲跌幅；已走過的日內價格會保留。</div>
+      <div class="notice">把標的勾進同一個族群後，可以一次設定整個族群的當日收盤目標與波動模式。</div>
       <div class="group-tools">
         <div class="field"><label>族群</label><select id="groupCommandSelect"></select></div>
-        <div class="field"><label>該小時漲跌幅 %</label><input type="number" id="groupCommandPct" min="-10" max="10" step="0.5" value="3"></div>
-        <div class="field"><label>波動</label><select id="groupCommandVol"></select></div>
+        <div class="field"><label>當日目標 %</label><input type="number" id="groupCommandPct" min="-10" max="10" step="0.5" value="3"></div>
+        <div class="field"><label>波動模式</label><select id="groupCommandVol"></select></div>
         <button class="btn btn-purple" onclick="applyGroupCommand()">套用族群指令</button>
       </div>
-      <div class="g3" style="margin-bottom:10px">
-        <button class="btn btn-red" onclick="applyGroupPreset(10,'violent')">族群強勢漲停</button>
-        <button class="btn btn-gold" onclick="applyGroupPreset(0,'choppy')">族群震盪</button>
-        <button class="btn btn-ghost" onclick="applyGroupPreset(0,'quiet')">族群沒波動</button>
-      </div>
-      <div class="g3" style="margin-bottom:10px">
-        <button class="btn btn-purple" onclick="applyGroupPreset(5,'buyThenSell')">先拉後殺</button>
-        <button class="btn btn-purple" onclick="applyGroupPreset(-5,'sellThenBuy')">先殺後拉</button>
-        <button class="btn btn-red" onclick="applyGroupPreset(-10,'violent')">族群弱勢跌停</button>
-      </div>
+      <div class="group-apply-status" id="groupApplyStatus"></div>
       <div id="assetGroupList"></div>
     </div>
   </div>
@@ -439,30 +436,6 @@ firebase.auth().signInAnonymously().catch(()=>{});
 </div>
 
 <div>
-  <!-- 事件編輯器 -->
-  <div class="panel">
-    <div class="ph"><div class="ph-title">⚡ 世界事件編輯器</div></div>
-    <div class="pb">
-      <div class="sec">建立新事件</div>
-      <div class="field"><label>事件名稱</label><input type="text" id="evtName" placeholder="例：銀翼軍宣布聖戰"></div>
-      <div class="field"><label>事件描述（選填）</label><textarea id="evtDesc" placeholder="描述這場事件的背景…"></textarea></div>
-      <button class="btn btn-purple" onclick="inferEvent()">✨ 自動聯想各標的漲跌幅</button>
-      <div class="infer-box hidden" id="inferBox">
-        <span class="infer-tag">✨ 聯想分析（已自動填入，可手動調整）</span>
-        <div id="inferReason"></div>
-      </div>
-      <div class="sec" style="margin-top:4px">各標的漲跌幅（正漲・負跌・每日限 ±10%・留空不影響）</div>
-      <div class="evt-pct-grid" id="evtPctGrid"></div>
-      <div class="g2" style="margin-top:12px">
-        <button class="btn btn-gold" onclick="savePreset()">📜 儲存為預設</button>
-        <button class="btn btn-red" onclick="fireNow()">⚡ 立即觸發</button>
-      </div>
-      <hr class="divider">
-      <div class="sec">已儲存的預設事件</div>
-      <div id="presetList"></div>
-    </div>
-  </div>
-
   <!-- IPO / 下市管理 -->
   <div class="panel">
     <div class="ph"><div class="ph-title">📋 標的管理（IPO ／ 下市）</div></div>
@@ -526,6 +499,18 @@ firebase.auth().signInAnonymously().catch(()=>{});
         <div class="field"><label>對象</label><select id="goldTarget"></select></div>
         <div class="field"><label>金額</label><input type="number" id="goldAmt" placeholder="金額"></div>
         <button class="btn-sm" onclick="giveGold()">發放</button>
+      </div>
+      <hr class="divider">
+      <div class="sec">玩家帳務調整</div>
+      <div class="form-row">
+        <div class="field"><label>玩家</label><select id="playerAdjustTarget"></select></div>
+        <div class="field"><label>現金（設定）</label><input type="number" id="playerCashSet" placeholder="例：3500"></div>
+        <div class="field"><label>現金（增減）</label><input type="number" id="playerCashDelta" placeholder="例：-200"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>已實現損益（設定）</label><input type="number" id="playerRealizedSet" placeholder="例：0"></div>
+        <div class="field"><label>已實現損益（增減）</label><input type="number" id="playerRealizedDelta" placeholder="例：50"></div>
+        <button class="btn-sm" onclick="adjustPlayerAccount()">套用</button>
       </div>
       <hr class="divider">
       <div class="sec">新增玩家</div>
@@ -1027,9 +1012,18 @@ function mergeWorldForFirebaseSave(incoming,current){
   next.eventLog=mergeLogsForSave(next.eventLog,current.eventLog,180);
   return next;
 }
-function getPos(p,id){const raw=(p.portfolio||{})[id];if(!raw)return{qty:0,avgCost:0};if(typeof raw==='number')return{qty:raw,avgCost:0};return raw;}
+function getPos(p,id){
+  const raw=(p.portfolio||{})[id];
+  // 如果無此持倉，返回預設零持倉
+  if(!raw)return{qty:0,avgCost:0};
+  // 相容舊格式：數字表示數量
+  if(typeof raw==='number')return{qty:raw,avgCost:0};
+  // 新格式：確保 qty 和 avgCost 都存在
+  return{qty:Number(raw.qty)||0,avgCost:Number(raw.avgCost)||0};
+}
 function pvOf(p){return Object.keys(p.portfolio||{}).reduce((s,id)=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);const pos=getPos(p,id);return s+(a?a.price*pos.qty:0);},0);}
 function totalCost(p){return Object.keys(p.portfolio||{}).reduce((s,id)=>{const pos=getPos(p,id);return s+(pos.avgCost*pos.qty);},0);}
+function shortPnL(s){const a=W.assets.find(x=>x.id===s.assetId&&!x.delisted);if(!a)return 0;return s.shortQty*(s.entryPrice - a.price);}
 
 function setSS(state,txt){document.getElementById('sdot').className='sdot '+state;document.getElementById('slabel').textContent=txt;}
 
@@ -1357,6 +1351,8 @@ function calcNextDayTargetPct(a,keepPct){
     // 5. 雜訊
     pct+=(Math.random()-0.5)*0.012;
   }
+  if(a.blaze==='up')return DAILY_LIMIT;
+  if(a.blaze==='dn')return -DAILY_LIMIT;
   return Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pct));
 }
 function intradayOpen(){
@@ -1377,7 +1373,10 @@ function intradayOpen(){
       return;
     }
     a.price=prev;
-    plans[a.id]={prevClose:prev,targetPct:calcNextDayTargetPct(a,keep.targetPct||0),volatility:keep.volatility||'neutral',points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
+    const nextTarget=calcNextDayTargetPct(a,keep.targetPct||0);
+    plans[a.id]={prevClose:prev,targetPct:nextTarget,volatility:a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':(keep.volatility||'neutral'),points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
+    if(a.blaze==='up')plans[a.id].limitLocked='up';
+    if(a.blaze==='dn')plans[a.id].limitLocked='dn';
   });
   W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
   syncIntradaySlotFromPoints();
@@ -1459,8 +1458,20 @@ function intradayStepAsset(a,step){
   }
   const limitUp=Math.round(P.prevClose*1.1), limitDown=Math.max(1,Math.round(P.prevClose*0.9));
   let hourClose;
+  if(P.tempIntervention&&step>P.tempIntervention.endSlot)delete P.tempIntervention;
+  const tempActive=P.tempIntervention&&step>=P.tempIntervention.startSlot&&step<=P.tempIntervention.endSlot;
 
-  if(P.limitLocked&&P.nextSlotShock===undefined){
+  if(a.blaze==='up'&&!tempActive){
+    P.targetPct=DAILY_LIMIT;
+    P.volatility='blazeUp';
+    P.limitLocked='up';
+    hourClose=limitUp;
+  }else if(a.blaze==='dn'&&!tempActive){
+    P.targetPct=-DAILY_LIMIT;
+    P.volatility='blazeDn';
+    P.limitLocked='dn';
+    hourClose=limitDown;
+  }else if(P.limitLocked&&!tempActive&&P.nextSlotShock===undefined){
     // 跌停/漲停鎖死：無新指令則維持貼邊平走
     hourClose=P.limitLocked==='dn'?limitDown:limitUp;
   }else{
@@ -1492,7 +1503,8 @@ function intradayStepAsset(a,step){
         activeCfg=P.volatility;
       }
       const cfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
-      const targetPct=Math.max(-0.10,Math.min(0.10,P.targetPct||0));
+      const baseTarget=tempActive?(P.tempIntervention.baseTargetPct||0):(P.targetPct||0);
+      const targetPct=Math.max(-0.10,Math.min(0.10,baseTarget+(tempActive?(P.tempIntervention.pct||0):0)));
       const progress=step/(INTRADAY_SLOTS.length-1);
       if(P.intradayPhase===undefined)P.intradayPhase=Math.random()*Math.PI*2;
       if(P.intradayDrift===undefined)P.intradayDrift=(Math.random()-0.5)*0.05;
@@ -1614,6 +1626,52 @@ function queueNextHourMove(a,pct,vol){
   P.nextSlotShockSlot=startSlot;
   P.nextSlotShockEndSlot=Math.min(startSlot+SLOTS_2H-1,INTRADAY_SLOTS.length-2);
   return P;
+}
+function naturalizePct(pct){
+  const p=Number(pct)||0;
+  if(!p)return 0;
+  const sign=p>=0?1:-1;
+  const jitter=(Math.random()*0.006)+0.0005; // 0.05% ~ 0.65%
+  return Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,p+sign*jitter));
+}
+function setTodayCloseTarget(a,pct){
+  if(!a||a.delisted)return null;
+  let S=intradaySession();
+  if(S.status!=='open'){
+    intradayOpen();
+    S=intradaySession();
+  }
+  const P=intradayPlan(a);
+  if(!P)return null;
+  const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+  P.targetPct=p;
+  return P;
+}
+function applyTempIntervention(id){
+  const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return;
+  const minutes=parseFloat(document.getElementById('tmin_'+id)?.value);
+  const pctInput=parseFloat(document.getElementById('tpct_'+id)?.value);
+  if(!Number.isFinite(minutes)||minutes<=0){alert('請輸入影響分鐘數');return;}
+  if(!Number.isFinite(pctInput)||pctInput===0){alert('請輸入影響漲跌幅');return;}
+  let S=intradaySession();
+  if(S.status!=='open'){
+    intradayOpen();
+    S=intradaySession();
+  }
+  const P=intradayPlan(a);if(!P)return;
+  const start=nextQueuedIntradaySlot();
+  const durSlots=Math.max(1,Math.round(minutes/SLOT_MINUTES));
+  P.tempIntervention={
+    startSlot:start,
+    endSlot:Math.min(start+durSlots-1,INTRADAY_SLOTS.length-2),
+    pct:Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,pctInput/100)),
+    baseTargetPct:Number(P.targetPct)||0
+  };
+  const note=document.getElementById('tnote_'+id);
+  if(note)note.textContent=`已套用：${minutes} 分鐘 ${pctInput>=0?'+':''}${pctInput}%`;
+  gmLog('time',`GM 短期干預《${a.name}》：${minutes} 分鐘內 ${pctInput>=0?'+':''}${pctInput}%，結束後回到原收盤目標`);
+  alert(`已套用《${a.name}》短期干預：${minutes} 分鐘內 ${pctInput>=0?'+':''}${pctInput}%`);
+  push();renderMkt();
 }
 function knockOpenLimit(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
@@ -1985,8 +2043,11 @@ async function adv(n){
 //  事件推理
 // ═══════════════════════════════════════════════════════
 function inferEvent(){
-  const name=document.getElementById('evtName').value.trim();
-  const desc=document.getElementById('evtDesc').value.trim();
+  const nameEl=document.getElementById('evtName');
+  const descEl=document.getElementById('evtDesc');
+  if(!nameEl||!descEl)return;
+  const name=nameEl.value.trim();
+  const desc=descEl.value.trim();
   if(!name&&!desc){alert('請先輸入事件名稱或描述');return;}
   const txt=(name+' '+desc).toLowerCase();
   const sc={};W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=0;});
@@ -2000,8 +2061,10 @@ function inferEvent(){
   if(!hits){W.assets.forEach(a=>{if(!a.delisted)sc[a.id]=Math.round(Math.random()*10-5);});reasons=['未識別關鍵字，套用輕微隨機波動。'];}
   else if(hits>1){Object.keys(sc).forEach(id=>sc[id]=Math.round(sc[id]/hits*1.3));}
   W.assets.forEach(a=>{if(a.delisted)return;const el=document.getElementById('epct_'+a.id);if(el)el.value=sc[a.id]!==0?sc[a.id]:'';});
-  document.getElementById('inferReason').textContent=reasons.join(' / ');
-  document.getElementById('inferBox').classList.remove('hidden');
+  const reasonEl=document.getElementById('inferReason');
+  const boxEl=document.getElementById('inferBox');
+  if(reasonEl)reasonEl.textContent=reasons.join(' / ');
+  if(boxEl)boxEl.classList.remove('hidden');
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2093,24 +2156,26 @@ async function applyPcts(pcts,label,opts={}){
   await push();
 }
 function buildEvtGrid(){
-  const el=document.getElementById('evtPctGrid');el.innerHTML='';
+  const el=document.getElementById('evtPctGrid');if(!el)return;
+  el.innerHTML='';
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const r=document.createElement('div');r.className='evt-pct-row';
     r.innerHTML=`<span class="elabel">${a.icon} ${a.name}</span><input type="number" id="epct_${a.id}" placeholder="%" step="1">`;
     el.appendChild(r);
   });
 }
-function clearForm(){document.getElementById('evtName').value='';document.getElementById('evtDesc').value='';document.getElementById('inferBox').classList.add('hidden');W.assets.forEach(a=>{const e=document.getElementById('epct_'+a.id);if(e)e.value='';});}
-async function fireNow(){const name=document.getElementById('evtName').value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}if(!confirm(`確定觸發「${name}」並排入下一個小時嗎？`))return;await applyPcts(p,name);}
+function clearForm(){const nameEl=document.getElementById('evtName');const descEl=document.getElementById('evtDesc');const boxEl=document.getElementById('inferBox');if(nameEl)nameEl.value='';if(descEl)descEl.value='';if(boxEl)boxEl.classList.add('hidden');W.assets.forEach(a=>{const e=document.getElementById('epct_'+a.id);if(e)e.value='';});}
+async function fireNow(){const name=document.getElementById('evtName')?.value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}if(!confirm(`確定觸發「${name}」並排入下一個小時嗎？`))return;await applyPcts(p,name);}
 function savePreset(){
-  const name=document.getElementById('evtName').value.trim();if(!name){alert('請輸入事件名稱');return;}
+  const name=document.getElementById('evtName')?.value.trim()||'';if(!name){alert('請輸入事件名稱');return;}
   const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}
   if(!W.presetEvents)W.presetEvents=[];
-  W.presetEvents.push({id:Date.now(),name,desc:document.getElementById('evtDesc').value.trim(),pcts:p});
+  W.presetEvents.push({id:Date.now(),name,desc:document.getElementById('evtDesc')?.value.trim()||'',pcts:p});
   gmLog('ev',`📜 儲存事件：「${name}」`);clearForm();push();renderPresets();
 }
 function renderPresets(){
-  const el=document.getElementById('presetList');el.innerHTML='';
+  const el=document.getElementById('presetList');if(!el)return;
+  el.innerHTML='';
   if(!W.presetEvents||!W.presetEvents.length){el.innerHTML='<div style="font-size:13px;color:var(--ink3);padding:8px">尚無儲存事件</div>';return;}
   W.presetEvents.forEach((ev,i)=>{
     const aff=Object.entries(ev.pcts).map(([id,v])=>{const a=W.assets.find(x=>x.id===id);return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:''}).filter(Boolean).join('  ');
@@ -2344,6 +2409,9 @@ function renderWealth(){
   W.players.forEach((p,i)=>{
     if(!p)return;
     const pv=pvOf(p);const cost=totalCost(p);const unr=pv-cost;const rlz=p.realizedPnL||0;
+    const shortPnlTotal=(p.shorts||[]).reduce((s,sn)=>s+shortPnL(sn),0);
+    const shortPrincipal=(p.shorts||[]).reduce((s,sn)=>s+(sn.principal||0),0);
+    const totalAsset=p.cash+pv+shortPrincipal+shortPnlTotal;
     const held=Object.keys(p.portfolio||{}).filter(id=>getPos(p,id).qty>0);
     let holdHtml='';
     held.forEach(id=>{
@@ -2361,7 +2429,7 @@ function renderWealth(){
       <td>${pv.toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">成本 ${Math.round(cost).toLocaleString()} G</span></td>
       <td><span class="${unr>=0?'pnl-pos':'pnl-neg'}">${unr>=0?'+':''}${Math.round(unr).toLocaleString()} G</span></td>
       <td><span class="${rlz>=0?'pnl-pos':'pnl-neg'}">${rlz>=0?'+':''}${Math.round(rlz).toLocaleString()} G</span></td>
-      <td style="font-weight:700;color:var(--gold2)">${(p.cash+pv).toLocaleString()} G</td>
+      <td style="font-weight:700;color:var(--gold2)">${Math.round(totalAsset).toLocaleString()} G</td>
       <td style="white-space:nowrap">
         <button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">重置</button>
         <button class="btn-danger" style="font-size:10px;padding:4px 8px;margin-left:4px" onclick="deleteP(${i})">刪除</button>
@@ -2371,6 +2439,31 @@ function renderWealth(){
   const sel=document.getElementById('goldTarget');const cur=sel.value;
   sel.innerHTML=`<option value="all">全部玩家</option>`+W.players.map((p,i)=>p?`<option value="${i}">${p.name}</option>`:'').join('');
   if(cur)sel.value=cur;
+  renderPlayerAdjustTargets();
+}
+function renderPlayerAdjustTargets(){
+  const sel=document.getElementById('playerAdjustTarget');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML=W.players.map((p,i)=>p?`<option value="${i}">${p.name}</option>`:'').join('');
+  if(cur)sel.value=cur;
+}
+function adjustPlayerAccount(){
+  const sel=document.getElementById('playerAdjustTarget');
+  if(!sel)return;
+  const idx=parseInt(sel.value);
+  if(isNaN(idx)||!W.players[idx])return;
+  const p=W.players[idx];
+  const cashSet=parseInt(document.getElementById('playerCashSet').value);
+  const cashDelta=parseInt(document.getElementById('playerCashDelta').value);
+  const realSet=parseInt(document.getElementById('playerRealizedSet').value);
+  const realDelta=parseInt(document.getElementById('playerRealizedDelta').value);
+  let note=[];
+  if(!Number.isNaN(cashSet)){p.cash=cashSet;note.push(`現金設為 ${cashSet.toLocaleString()} G`);} 
+  if(!Number.isNaN(cashDelta)){p.cash+=(cashDelta||0);note.push(`現金 ${cashDelta>=0?'+':''}${cashDelta.toLocaleString()} G`);} 
+  if(!Number.isNaN(realSet)){p.realizedPnL=realSet;note.push(`已實現損益設為 ${realSet.toLocaleString()} G`);} 
+  if(!Number.isNaN(realDelta)){p.realizedPnL=(p.realizedPnL||0)+(realDelta||0);note.push(`已實現損益 ${realDelta>=0?'+':''}${realDelta.toLocaleString()} G`);} 
+  if(note.length){gmLog('good',`GM 調整 ${p.name}：${note.join('，')}`);push();renderWealth();}
 }
 function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
 function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];push();renderWealth();}
@@ -2413,6 +2506,8 @@ function catMatch(a, tab){
 
 // 波動模式選項
 const VOL_OPTS = [
+  {v:'blazeUp',     l:'強勢漲停'},
+  {v:'blazeDn',     l:'強勢跌停'},
   {v:'neutral',     l:'一般自然盤'},
   {v:'buyThenSell', l:'先拉後殺'},
   {v:'sellThenBuy', l:'先殺後拉'},
@@ -2465,13 +2560,57 @@ function setAssetHourMovePick(id, range){
 // 波動模式 select 變更
 function onVolSelChange(id, val){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(val==='blazeUp'){toggleBlaze(id,'up');return;}
+  if(val==='blazeDn'){toggleBlaze(id,'dn');return;}
   if(!W.assetVolPrefs) W.assetVolPrefs={};
   W.assetVolPrefs[id] = val;
   const P=intradayPlan(a);
   // ★ 立即套用到當日 plan，不等明天開盤
-  P.volatility = val;
-  if(P.nextSlotShock!==undefined) P.nextSlotVol=val;
+  if(P){
+    P.volatility = val;
+    if(P.nextSlotShock!==undefined) P.nextSlotVol=val;
+  }
   push(); renderMkt();
+}
+function gmMiniCandles(a,limit=20){
+  const h=(a.history||[]).slice(-Math.max(1,limit-2));
+  const out=[];
+  h.forEach((close,i)=>{
+    const open=i>0?h[i-1]:close;
+    const hi=Math.max(open,close),lo=Math.min(open,close);
+    out.push({open,high:hi,low:lo,close});
+  });
+  const P=intradayPlan(a),pts=P?.points||[];
+  if(P&&pts.length){
+    const open=pts[0].price,close=pts[pts.length-1].price;
+    let high=Math.max(open,close),low=Math.min(open,close);
+    pts.forEach(pt=>{high=Math.max(high,pt.price);low=Math.min(low,pt.price);});
+    out.push({open,high,low,close});
+  }
+  return out.slice(-limit);
+}
+function drawGmKChart(a){
+  const c=document.getElementById('gmk_'+a.id);if(!c)return;
+  const ctx=c.getContext('2d'), Wd=c.width||180,Hd=c.height||58;
+  ctx.clearRect(0,0,Wd,Hd);
+  const candles=gmMiniCandles(a,20);
+  if(!candles.length)return;
+  const vals=candles.flatMap(x=>[x.high,x.low,x.open,x.close]);
+  const mx=Math.max(...vals),mn=Math.min(...vals),rng=mx-mn||1;
+  const pad=5,plotW=Wd-pad*2,barW=Math.max(3,Math.floor(plotW/candles.length*.52));
+  const y=v=>pad+(mx-v)/rng*(Hd-pad*2);
+  ctx.strokeStyle='rgba(90,60,20,.18)';ctx.lineWidth=1;
+  for(let i=0;i<3;i++){const yy=pad+i*(Hd-pad*2)/2;ctx.beginPath();ctx.moveTo(pad,yy);ctx.lineTo(Wd-pad,yy);ctx.stroke();}
+  candles.forEach((cd,i)=>{
+    const x=pad+(i+.5)*(plotW/candles.length);
+    const up=cd.close>=cd.open;
+    const col=up?'#c0392b':'#27ae60';
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(x,y(cd.high));ctx.lineTo(x,y(cd.low));ctx.stroke();
+    const top=y(Math.max(cd.open,cd.close)),bot=y(Math.min(cd.open,cd.close));
+    const h=Math.max(2,bot-top);
+    ctx.fillRect(x-barW/2,top,barW,h);
+  });
 }
 
 function renderMkt(){
@@ -2484,7 +2623,7 @@ function renderMkt(){
     if(!catMatch(a, _mktTab)) return;
     if(a.delisted){
       const tr=document.createElement('tr');tr.className='is-delisted';
-      tr.innerHTML=`<td colspan="6"><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">下市</span></td>`;
+      tr.innerHTML=`<td colspan="8"><span style="font-size:15px;margin-right:5px">${a.icon}</span><span style="font-size:12px">${a.name}</span><span class="delist-badge">下市</span></td>`;
       tb.appendChild(tr);return;
     }
     const ch=gc(a),pct=(ch*100).toFixed(1),sign=ch>=0?'+':'',col=chCol(ch);
@@ -2495,18 +2634,12 @@ function renderMkt(){
     const tr=document.createElement('tr');
     tr.className=(lUp?'is-limit-up':lDn?'is-limit-dn':isWarn?'is-warning':'');
 
-    // 今日收盤目標欄
     const P = intradayPlan(a);
-    const pending = P?.nextSlotShock;
-    const pendingSlot = P?.nextSlotShockSlot;
-    const pendingLabel = pending!==undefined
-      ? `<span style="color:#6a3ca8;font-weight:700">${INTRADAY_SLOTS[pendingSlot]||'下一時'} ${pending>=0?'+':''}${(pending*100).toFixed(0)}%</span>`
-      : '<span style="color:var(--ink3)">－</span>';
-
     // 波動模式（優先用 assetVolPrefs 持久設定，其次 P.volatility）
-    const volPref = W.assetVolPrefs?.[a.id] || P?.volatility || 'neutral';
+    const blazeVol=a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':null;
+    const volPref = blazeVol || W.assetVolPrefs?.[a.id] || P?.volatility || 'neutral';
     // 實際生效中的波動模式（從 plan 讀，反映 GAS 套用的結果）
-    const volActive = P?.volatility || 'neutral';
+    const volActive = blazeVol || P?.volatility || 'neutral';
     const volActiveLabel = VOL_OPTS.find(o=>o.v===volActive)?.l || volActive;
     const volMatch = volPref === volActive;
     const volStatusHtml = volMatch
@@ -2531,6 +2664,17 @@ function renderMkt(){
         <button class="close-target-btn" onclick="setCloseTarget('${a.id}')">設定</button>
       </div>
       ${tgtLabel}`;
+    const temp=P?.tempIntervention;
+    const tempNote=temp
+      ? `作用 ${INTRADAY_SLOTS[temp.startSlot]||''}~${INTRADAY_SLOTS[temp.endSlot]||''}，${temp.pct>=0?'+':''}${(temp.pct*100).toFixed(1)}%`
+      : '';
+    const tempHtml=`
+      <div class="temp-intervene">
+        <input id="tmin_${a.id}" type="number" min="1" step="1" placeholder="分鐘">
+        <input id="tpct_${a.id}" type="number" min="-10" max="10" step="0.5" placeholder="%">
+        <button onclick="applyTempIntervention('${a.id}')">套用</button>
+        <div class="temp-note" id="tnote_${a.id}">${tempNote}</div>
+      </div>`;
 
     tr.innerHTML=`
       <td onclick="openChart('${a.id}')" style="cursor:pointer">
@@ -2538,6 +2682,7 @@ function renderMkt(){
         <strong style="font-size:12px">${a.name}</strong>
         <div style="font-size:10px;color:var(--ink3)">${a.cat}</div>
       </td>
+      <td onclick="openChart('${a.id}')" style="cursor:pointer"><canvas class="gm-kchart" id="gmk_${a.id}" width="180" height="58"></canvas></td>
       <td onclick="openChart('${a.id}')" style="cursor:pointer">
         <strong style="font-size:13px;color:${col}">${a.price.toLocaleString()}</strong>
         <span style="font-size:10px;color:var(--ink3)"> G</span>
@@ -2545,14 +2690,14 @@ function renderMkt(){
       <td onclick="openChart('${a.id}')" style="cursor:pointer">
         <strong style="font-size:12px;color:${col}">${sign}${pct}%</strong>
       </td>
-      <td>${hourBtnHtml(a.id, pending, P?.limitLocked)}</td>
       <td>${volSelHtml}</td>
       <td>${closeTargetHtml}</td>
-      <td>${pendingLabel}</td>
+      <td>${tempHtml}</td>
       <td style="white-space:nowrap">
-        <button onclick="toggleBlaze('${a.id}','up')" title="強勢上漲：動能持續、抗回調" style="font-size:15px;background:${a.blaze==='up'?'rgba(200,40,20,0.15)':'transparent'};border:1px solid ${a.blaze==='up'?'#c02820':'rgba(180,140,0,0.3)'};border-radius:6px;padding:2px 6px;cursor:pointer;margin-right:3px">${a.blaze==='up'?'🔥':'🔥'}</button><button onclick="toggleBlaze('${a.id}','dn')" title="強勢下跌：動能持續下殺、抗反彈" style="font-size:15px;background:${a.blaze==='dn'?'rgba(0,100,50,0.18)':'transparent'};border:1px solid ${a.blaze==='dn'?'#007a3d':'rgba(180,140,0,0.3)'};border-radius:6px;padding:2px 6px;cursor:pointer;opacity:${a.blaze==='dn'?1:0.35}">💀</button>
+        <button class="blaze-btn up${a.blaze==='up'?' active':''}" onclick="toggleBlaze('${a.id}','up')" title="強勢漲停">▲ 漲停</button><button class="blaze-btn dn${a.blaze==='dn'?' active':''}" onclick="toggleBlaze('${a.id}','dn')" title="強勢跌停">▼ 跌停</button>
       </td>`;
     tb.appendChild(tr);
+    requestAnimationFrame(()=>drawGmKChart(a));
   });
 }
 
@@ -2560,16 +2705,33 @@ function toggleBlaze(id,mode){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
   if(a.blaze===mode){
     a.blaze=null;
+    if(W.assetVolPrefs&&(W.assetVolPrefs[a.id]==='blazeUp'||W.assetVolPrefs[a.id]==='blazeDn'))W.assetVolPrefs[a.id]='neutral';
+    const P=intradayPlan(a);
+    if(P&&(P.volatility==='blazeUp'||P.volatility==='blazeDn')){P.volatility='neutral';delete P.limitLocked;}
     gmLog('ev',`· ${a.name} 退出強勢${mode==='up'?'上漲':'下跌'}模式`);
   }else{
     a.blaze=mode;
     const P=intradayPlan(a);
     if(mode==='up'){
-      if(P.targetPct<0.04)P.targetPct=0.04+Math.random()*0.03;
-      gmLog('ev',`🔥 ${a.name} 進入強勢上漲模式`);
+      if(!W.assetVolPrefs)W.assetVolPrefs={};
+      W.assetVolPrefs[a.id]='blazeUp';
+      if(P){
+        P.targetPct=DAILY_LIMIT;
+        P.volatility='blazeUp';
+        P.limitLocked='up';
+        delete P.nextSlotShock;delete P.nextSlotVol;delete P.nextSlotShockSlot;delete P.nextSlotShockEndSlot;
+      }
+      gmLog('ev',`🔥 ${a.name} 進入強勢上漲模式，隔日鎖漲停`);
     }else{
-      if(P.targetPct>-0.04)P.targetPct=-(0.04+Math.random()*0.03);
-      gmLog('ev',`💀 ${a.name} 進入強勢下跌模式`);
+      if(!W.assetVolPrefs)W.assetVolPrefs={};
+      W.assetVolPrefs[a.id]='blazeDn';
+      if(P){
+        P.targetPct=-DAILY_LIMIT;
+        P.volatility='blazeDn';
+        P.limitLocked='dn';
+        delete P.nextSlotShock;delete P.nextSlotVol;delete P.nextSlotShockSlot;delete P.nextSlotShockEndSlot;
+      }
+      gmLog('ev',`💀 ${a.name} 進入強勢下跌模式，隔日鎖跌停`);
     }
   }
   push();renderMkt();
@@ -2583,7 +2745,7 @@ function renderAssetGroups(){
   const groups=ensureAssetGroups(W), assets=W.assets.filter(a=>!a.delisted);
   sel.innerHTML=groups.map(g=>`<option value="${g.id}">${g.name}（${g.assetIds.length}）</option>`).join('');
   if(volSel&&!volSel.dataset.ready){
-    volSel.innerHTML=Object.entries(INTRADAY_PATTERNS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
+    volSel.innerHTML=VOL_OPTS.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
     volSel.value='neutral';volSel.dataset.ready='1';
   }
   list.innerHTML=groups.map(g=>`
@@ -2626,24 +2788,41 @@ function toggleAssetGroup(gid,aid,checked){
   push();renderAssetGroups();
 }
 function selectedGroup(){return ensureAssetGroups(W).find(g=>g.id===document.getElementById('groupCommandSelect')?.value);}
-function applyGroupPreset(pct,vol){const p=document.getElementById('groupCommandPct'),v=document.getElementById('groupCommandVol');if(p)p.value=pct;if(v)v.value=vol;applyGroupCommand();}
-function applyGroupCommand(){
+async function applyGroupCommand(){
   const g=selectedGroup();if(!g){alert('請先選擇族群');return;}
-  const pct=Math.max(-10,Math.min(10,parseFloat(document.getElementById('groupCommandPct')?.value)||0));
+  const raw=parseFloat(document.getElementById('groupCommandPct')?.value);
+  if(!Number.isFinite(raw)){alert('請輸入當日目標，例如 5 或 -3');return;}
   const vol=document.getElementById('groupCommandVol')?.value||'neutral';
-  if(!confirm(`確定要把「${g.name}」排入下一個小時 ${pct>=0?'+':''}${pct}% 嗎？已經走過的日內價格會保留。`))return;
-  let ok=0;
+  const targetRaw=vol==='blazeUp'?10:vol==='blazeDn'?-10:raw;
+  const pct=Math.max(-10,Math.min(10,targetRaw));
+  const p=pct/100;
+  let ok=0, previews=[];
+  if(!W.assetVolPrefs)W.assetVolPrefs={};
   g.assetIds.forEach(id=>{
     const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return;
-    const p=pct/100;
-    queueNextHourMove(a,p,vol);
-    touchTrendForQueuedMove(a,p);
+    const P=setTodayCloseTarget(a,p);if(!P)return;
+    a.blaze=vol==='blazeUp'?'up':vol==='blazeDn'?'dn':null;
+    W.assetVolPrefs[a.id]=vol;
+    P.volatility=vol;
+    P.targetPct=p;
+    delete P.nextSlotShock;delete P.nextSlotVol;delete P.nextSlotShockSlot;delete P.nextSlotShockEndSlot;
+    if(a.blaze==='up')P.limitLocked='up';
+    else if(a.blaze==='dn')P.limitLocked='dn';
+    else delete P.limitLocked;
     ok++;
+    if(previews.length<3){
+      const finalPrice=Math.round((P.prevClose||a.price)*(1+p));
+      previews.push(`${a.name} → ${finalPrice.toLocaleString()} G`);
+    }
   });
-  const S=syncIntradaySlotFromPoints();
-  gmLog('ev',`族群指令已排入下一小時：${g.name} ${pct>=0?'+':''}${pct}% / ${(INTRADAY_PATTERNS[vol]||INTRADAY_PATTERNS.neutral).name}，共 ${ok} 支`);
-  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
-  push();renderAll();
+  if(!ok){alert(`族群「${g.name}」目前沒有可套用的上市標的`);return;}
+  const volLabel=VOL_OPTS.find(o=>o.v===vol)?.l || INTRADAY_PATTERNS[vol]?.name || vol;
+  const msg=`已套用「${g.name}」：當日目標 ${pct>=0?'+':''}${pct.toFixed(1)}% / ${volLabel}，共 ${ok} 支`;
+  gmLog('time',`${msg}${previews.length?`（${previews.join('、')}${ok>previews.length?'...':''}）`:''}`);
+  await push();renderAll();
+  const status=document.getElementById('groupApplyStatus');
+  if(status)status.textContent=`✓ ${msg}`;
+  alert(`✅ ${msg}`);
 }
 function drawIntradaySpark(a,cid){
   const c=document.getElementById(cid);if(!c)return;
@@ -2706,51 +2885,51 @@ function renderTrendStatus(){
 // ═══════════════════════════════════════════════════════
 function openChart(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
-  const ch=gc(a),h=a.history;let hi=h[0],lo=h[0];for(let i=1;i<h.length;i++){if(h[i]>hi)hi=h[i];if(h[i]<lo)lo=h[i];}const cur=h[h.length-1],first=h[0],tot=(cur-first)/first*100;
+  const ch=gc(a),h=a.history||[],series=h.length?h.slice():[a.price];if(series[series.length-1]!==a.price)series.push(a.price);
+  let hi=series[0],lo=series[0];for(let i=1;i<series.length;i++){if(series[i]>hi)hi=series[i];if(series[i]<lo)lo=series[i];}const cur=a.price,first=series[0],tot=(cur-first)/first*100;
   document.getElementById('modalTitle').textContent=`${a.icon} ${a.name} 走勢圖`;
   document.getElementById('modalStats').innerHTML=`
     <div class="mstat"><div class="mstat-val" style="color:${chCol(ch)}">${cur.toLocaleString()} G</div><div class="mstat-lbl">現價</div></div>
     <div class="mstat"><div class="mstat-val" style="color:${upCol}">${hi.toLocaleString()} G</div><div class="mstat-lbl">歷史最高</div></div>
     <div class="mstat"><div class="mstat-val" style="color:${dnCol}">${lo.toLocaleString()} G</div><div class="mstat-lbl">歷史最低</div></div>
     <div class="mstat"><div class="mstat-val" style="color:${chCol(tot)}">${tot>=0?'+':''}${tot.toFixed(1)}%</div><div class="mstat-lbl">總漲跌幅</div></div>
-    <div class="mstat"><div class="mstat-val">${h.length}</div><div class="mstat-lbl">記錄天數</div></div>`;
+    <div class="mstat"><div class="mstat-val">${series.length}</div><div class="mstat-lbl">記錄天數</div></div>`;
   document.getElementById('chartModal').classList.remove('hidden');
   requestAnimationFrame(()=>drawFull(a));
 }
 function closeModal(e){if(e&&e.target!==document.getElementById('chartModal'))return;document.getElementById('chartModal').classList.add('hidden');}
 function drawFull(a){
-  const c=document.getElementById('modalChart');const w=c.parentElement.clientWidth-40;c.width=w;c.height=240;
-  const ctx=c.getContext('2d');const raw=a.history;if(raw.length<2)return;
-
-  // 降採樣：超過 600 點時，用 LTTB 降採樣至 600 點，保留峰谷形態
-  const MAX_PTS=600;
-  let d=raw;
-  if(raw.length>MAX_PTS){
-    const step=raw.length/MAX_PTS;
-    d=[];for(let i=0;i<MAX_PTS;i++){const idx=Math.min(raw.length-1,Math.round(i*step));d.push(raw[idx]);}
-    d[d.length-1]=raw[raw.length-1]; // 確保最後一點是最新價
+  const c=document.getElementById('modalChart');const w=c.parentElement.clientWidth-40,H=280;c.width=w;c.height=H;c.style.height=H+'px';
+  const ctx=c.getContext('2d');
+  const candles=gmMiniCandles(a,48);
+  if(!candles.length)return;
+  const vals=candles.flatMap(cd=>[cd.open,cd.high,cd.low,cd.close]);
+  const rawMn=Math.min(...vals),rawMx=Math.max(...vals);
+  const padRange=Math.max((rawMx-rawMn)*0.14,rawMx*0.012,1);
+  const mn=rawMn-padRange,mx=rawMx+padRange,rng=mx-mn||1;
+  const pl=54,pr=12,pt=16,pb=28,cw=w-pl-pr,ch=H-pt-pb;
+  const gap=cw/candles.length,barW=Math.max(4,Math.min(16,Math.floor(gap*.55)));
+  const px=i=>pl+i*gap+gap/2,py=v=>pt+(1-(v-mn)/rng)*ch;
+  ctx.clearRect(0,0,w,H);
+  for(let i=0;i<=4;i++){
+    const frac=i/4,y=pt+frac*ch,val=Math.round(mx-frac*(mx-mn));
+    ctx.strokeStyle='rgba(139,105,20,0.15)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(w-pr,y);ctx.stroke();
+    ctx.fillStyle='rgba(74,56,16,0.55)';ctx.font='10px sans-serif';ctx.textAlign='right';
+    ctx.fillText(val.toLocaleString(),pl-4,y+3);
   }
-
-  // 用 reduce 取代 Math.min/max(...d) 避免超大陣列棧溢出
-  let mn=d[0],mx=d[0];
-  for(let i=1;i<d.length;i++){if(d[i]<mn)mn=d[i];if(d[i]>mx)mx=d[i];}
-  const rng=mx-mn||1;
-
-  const pl=54,pr=10,pt=14,pb=26,cw=w-pl-pr,ch2=240-pt-pb;
-  const px=i=>pl+(i/(d.length-1))*cw,py=v=>pt+(1-(v-mn)/rng)*ch2;
-  ctx.clearRect(0,0,w,240);
-  for(let i=0;i<=4;i++){const frac=i/4,y=pt+frac*ch2,val=Math.round(mx-frac*(mx-mn));ctx.strokeStyle='rgba(139,105,20,0.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(w-pr,y);ctx.stroke();ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='right';ctx.fillText(val.toLocaleString(),pl-4,y+3);}
-  ctx.textAlign='left';const col=chCol(gc(a));const rgb=gc(a)>=0?'192,57,43':'39,174,96';
-  const grad=ctx.createLinearGradient(0,pt,0,pt+ch2);grad.addColorStop(0,`rgba(${rgb},0.2)`);grad.addColorStop(1,`rgba(${rgb},0.01)`);
-  ctx.beginPath();d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.lineTo(px(d.length-1),pt+ch2);ctx.lineTo(px(0),pt+ch2);ctx.closePath();ctx.fillStyle=grad;ctx.fill();
-  ctx.beginPath();ctx.strokeStyle=col;ctx.lineWidth=2.5;d.forEach((v,i)=>{i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v));});ctx.stroke();
-  [[0,d[0]],[d.length-1,d[d.length-1]]].forEach(([i,v])=>{ctx.beginPath();ctx.arc(px(i),py(v),4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();});
-  // X 軸標籤：顯示實際的原始天數（T1, T120, T240...）
-  const totalDays=raw.length;
-  const xs=Math.max(1,Math.floor(d.length/8));
-  const rawStep=totalDays/d.length;
+  candles.forEach((cd,i)=>{
+    const x=px(i),up=cd.close>=cd.open,col=up?'#c0392b':'#27ae60';
+    ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(x,py(cd.high));ctx.lineTo(x,py(cd.low));ctx.stroke();
+    const top=py(Math.max(cd.open,cd.close)),bot=py(Math.min(cd.open,cd.close));
+    const h=Math.max(3,bot-top);
+    ctx.fillRect(x-barW/2,top,barW,h);
+    if(i===candles.length-1){ctx.strokeStyle='rgba(26,16,8,.45)';ctx.strokeRect(x-barW/2,top,barW,h);}
+  });
+  const step=Math.max(1,Math.floor(candles.length/6));
   ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';
-  for(let i=0;i<d.length;i+=xs){const dayLabel=Math.round(i*rawStep)+1;ctx.fillText(`T${dayLabel}`,px(i),238);}
+  candles.forEach((_,i)=>{if(i%step===0||i===candles.length-1)ctx.fillText(i===candles.length-1?'今日':`-${candles.length-1-i}`,px(i),H-8);});
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3207,6 +3386,7 @@ function getSchPcts(){
 function addSchedule(){
   const timeVal = document.getElementById('schTime').value;
   if(!timeVal){ alert('請填入時間'); return; }
+  const normalizedTime=timeLabelForSlot(nearestIntradaySlotForTime(timeVal));
   const gameDayInput = parseInt(document.getElementById('schGameDay')?.value);
   const gameDay = isNaN(gameDayInput) ? (W?.gameDay||1) : gameDayInput;
   if(gameDay < (W?.gameDay||1)){ alert('遊戲日期不能早於目前日期（第'+W.gameDay+'日）'); return; }
@@ -3218,7 +3398,8 @@ function addSchedule(){
   W.schedules.push({
     id: Date.now(),
     gameDay,
-    gameTime: timeVal,
+    gameTime: normalizedTime,
+    requestedTime: timeVal,
     evtName,
     pcts,
     fired: false
@@ -3283,7 +3464,20 @@ function intradayTargetSlotForTime(dateTime){
   if(h===0&&m===0) return INTRADAY_SLOTS.length-1;
   if(h<MARKET_OPEN_HOUR||h>23) return null;
   const offsetMinutes = (h - MARKET_OPEN_HOUR) * 60 + m;
-  return Math.min(Math.max(Math.floor(offsetMinutes / SLOT_MINUTES), 0), INTRADAY_SLOTS.length-1);
+  return Math.min(Math.max(Math.round(offsetMinutes / SLOT_MINUTES), 0), INTRADAY_SLOTS.length-1);
+}
+function nearestIntradaySlotForTime(timeVal){
+  const [hh,mm]=(timeVal||'00:00').split(':').map(x=>parseInt(x||'0',10));
+  if(hh===0&&mm===0)return INTRADAY_SLOTS.length-1;
+  const offsetMinutes=(hh-MARKET_OPEN_HOUR)*60+mm;
+  return Math.min(Math.max(Math.round(offsetMinutes/SLOT_MINUTES),0),INTRADAY_SLOTS.length-1);
+}
+function timeLabelForSlot(slot){
+  const total=Math.max(0,Math.min(INTRADAY_SLOTS.length-1,slot))*SLOT_MINUTES;
+  const h=MARKET_OPEN_HOUR+Math.floor(total/60);
+  const m=total%60;
+  const hh=h===24?0:h;
+  return String(hh).padStart(2,'0')+':'+String(m).padStart(2,'0');
 }
 async function applyScheduledIntradayTime(dateTime){
   const target=intradayTargetSlotForTime(dateTime);
@@ -3308,7 +3502,7 @@ function schedIsDue(s){
   const curSlot=S?.slot||0;
   const parts=(s.gameTime||'00:00').split(':');
   const h=parseInt(parts[0]||'0',10),m=parseInt(parts[1]||'0',10);
-  const schedSlot=Math.max(0,Math.min(INTRADAY_SLOTS.length-1,Math.floor(((h-MARKET_OPEN_HOUR)*60+m)/SLOT_MINUTES)));
+  const schedSlot=nearestIntradaySlotForTime(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
   return curSlot>=schedSlot;
 }
 function execSchedule(s){
@@ -3319,13 +3513,14 @@ function execSchedule(s){
     Object.entries(s.pcts).forEach(([id,pct])=>{
       const a=W.assets.find(x=>x.id===id&&!x.delisted);
       if(!a)return;
-      const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+      const p=naturalizePct(pct);
+      setTodayCloseTarget(a,p);
       queueNextHourMove(a,p,qbVolForPct(p));
       touchTrendForQueuedMove(a,p);
       ok++;
     });
     if(hasName){addLog('ev',`⚡ 世界事件：${s.evtName}`);addEventLog(`⚡ ${s.evtName}`);}
-    gmLog('time',`排程漲跌幅已在 ${s.gameTime||'?'} 生效，共 ${ok} 支`);
+    gmLog('time',`排程漲跌幅已在 ${s.gameTime||'?'} 生效，並設定為當日收盤目標，共 ${ok} 支`);
   }else if(hasName){
     addLog('ev',`⚡ 世界事件：${s.evtName}`);
     addEventLog(`⚡ ${s.evtName}`);
@@ -3364,7 +3559,3 @@ setInterval(()=>{if(!W||!W.schedules)return;updateSchedNextLabel();},1000);
 </script>
 </body>
 </html>
-
-
-
-
