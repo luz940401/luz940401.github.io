@@ -1929,7 +1929,7 @@ function rollMkt(eventBiasFn){
   // 做空手續費結算
   if(W.players){
     W.players.forEach(p=>{
-      if(!p.shorts||!p.shorts.length)return;
+      if(!p||!p.shorts||!p.shorts.length)return;
       const toClose=[];
       p.shorts.forEach((s,i)=>{
         s.daysHeld=(s.daysHeld||0)+1;
@@ -2208,6 +2208,7 @@ async function doDelistAsset(id){
   a.delisted=true;a.delistedAt=ds();
   // 清算所有玩家持倉
   W.players.forEach(p=>{
+    if(!p)return;
     const pos=getPos(p,id);
     if(pos.qty>0){
       const costVal=pos.avgCost*pos.qty;
@@ -2340,8 +2341,9 @@ function resetPlayerPass(i){
 function renderWealth(){
   const tb=document.getElementById('wealthBody');tb.innerHTML='';
   W.players.forEach((p,i)=>{
+    if(!p)return;
     const pv=pvOf(p);const cost=totalCost(p);const unr=pv-cost;const rlz=p.realizedPnL||0;
-    const held=Object.keys(p.portfolio).filter(id=>getPos(p,id).qty>0);
+    const held=Object.keys(p.portfolio||{}).filter(id=>getPos(p,id).qty>0);
     let holdHtml='';
     held.forEach(id=>{
       const a=W.assets.find(x=>x.id===id);const pos=getPos(p,id);if(!a||!pos.qty)return;
@@ -2366,7 +2368,7 @@ function renderWealth(){
     tb.appendChild(tr);
   });
   const sel=document.getElementById('goldTarget');const cur=sel.value;
-  sel.innerHTML=`<option value="all">全部玩家</option>`+W.players.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  sel.innerHTML=`<option value="all">全部玩家</option>`+W.players.map((p,i)=>p?`<option value="${i}">${p.name}</option>`:'').join('');
   if(cur)sel.value=cur;
 }
 function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
@@ -2374,7 +2376,7 @@ function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.player
 function deleteP(i){if(!confirm(`確定刪除玩家「${W.players[i].name}」？\n此操作無法復原，所有持倉與金幣將一併刪除。`))return;W.players.splice(i,1);push();renderWealth();}
 function giveGold(){
   const t=document.getElementById('goldTarget').value,g=parseInt(document.getElementById('goldAmt').value);if(!g)return;
-  if(t==='all'){W.players.forEach(p=>p.cash+=g);gmLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
+  if(t==='all'){W.players.forEach(p=>{if(p)p.cash+=g;});gmLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
   else{const idx=parseInt(t);W.players[idx].cash+=g;gmLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
   document.getElementById('goldAmt').value='';push();renderWealth();
 }
@@ -2881,8 +2883,9 @@ function renderHeat(){
     stats[a.id]={asset:a,holders:[],totalQty:0,shorters:[]};
   });
   W.players.forEach(p=>{
+    if(!p)return;
     // 多單持倉
-    Object.keys(p.portfolio).forEach(id=>{
+    Object.keys(p.portfolio||{}).forEach(id=>{
       const pos=p.portfolio[id];
       const qty=typeof pos==='number'?pos:(pos?.qty||0);
       if(qty>0&&stats[id]){
