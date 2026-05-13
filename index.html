@@ -134,8 +134,36 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .name-input{border:none;border-bottom:1px dashed var(--parch3);background:transparent;width:90px;font-family:'Noto Sans TC',sans-serif;font-size:13px;padding:2px;outline:none;color:var(--ink);}
 .holding-detail{font-size:11px;color:var(--ink3);margin-top:3px;line-height:1.8;}
 .holding-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 0;}
+.holding-badge{display:inline-flex;align-items:center;padding:1px 6px;border:1px solid var(--parch3);font-size:10px;font-weight:700;color:var(--ink3);background:rgba(255,255,255,.24);}
+.holding-badge.odd{border-color:rgba(123,45,139,.35);color:var(--purple);}
+.holding-badge.short{border-color:rgba(184,134,11,.45);color:var(--gold2);}
+.holding-badge.future{border-color:rgba(44,95,138,.45);color:#2c5f8a;}
+.trade-toggle{margin-top:6px;padding:4px 9px;border:1px solid var(--parch3);background:rgba(255,255,255,.22);color:var(--ink3);font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;cursor:pointer;}
+.trade-history{display:none;margin-top:8px;padding:8px;border:1px solid var(--parch3);background:rgba(255,255,255,.20);max-width:520px;}
+.trade-history.open{display:block;}
+.trade-item{padding:7px 0;border-bottom:1px dashed rgba(222,206,150,.75);}
+.trade-item:last-child{border-bottom:none;}
+.trade-line{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;font-size:12px;line-height:1.5;}
+.trade-text{color:var(--ink2);font-weight:600;}
+.trade-meta{font-size:10px;color:var(--ink3);margin-top:2px;line-height:1.5;}
 .pnl-pos{color:var(--up);font-weight:700;}
 .pnl-neg{color:var(--dn);font-weight:700;}
+@media(max-width:680px){
+  body{padding:8px;font-size:14px;}
+  .pb{padding:12px;}
+  .w-table,.w-table tbody,.w-table tr,.w-table td{display:block;width:100%;}
+  .w-table thead{display:none;}
+  .w-table tr{border:1px solid var(--parch3);background:rgba(255,255,255,.18);margin-bottom:10px;padding:10px;}
+  .w-table td{border-bottom:none;padding:5px 0;}
+  .w-table td::before{content:attr(data-label);display:block;font-size:10px;font-weight:800;color:var(--ink3);letter-spacing:1px;margin-bottom:2px;}
+  .name-input{width:100%;font-size:15px;font-weight:800;}
+  .holding-row{align-items:flex-start;border-top:1px dashed rgba(222,206,150,.55);padding:6px 0;}
+  .trade-history{max-width:none;}
+  .trade-line{display:block;}
+  .form-row{display:grid;grid-template-columns:1fr;gap:8px;}
+  .form-row .field{min-width:0;}
+  .btn-sm,.btn-danger{min-height:34px;}
+}
 /* IPO 表單 */
 .ipo-form{background:rgba(123,45,139,0.05);border:1px solid rgba(123,45,139,0.2);padding:14px;margin-bottom:12px;}
 /* 趨勢面板 */
@@ -1024,6 +1052,13 @@ function getPos(p,id){
 function pvOf(p){return Object.keys(p.portfolio||{}).reduce((s,id)=>{const a=W.assets.find(x=>x.id===id&&!x.delisted);const pos=getPos(p,id);return s+(a?a.price*pos.qty:0);},0);}
 function totalCost(p){return Object.keys(p.portfolio||{}).reduce((s,id)=>{const pos=getPos(p,id);return s+(pos.avgCost*pos.qty);},0);}
 function shortPnL(s){const a=W.assets.find(x=>x.id===s.assetId&&!x.delisted);if(!a)return 0;return s.shortQty*(s.entryPrice - a.price);}
+function futurePnL(f){
+  const a=W.assets.find(x=>x.id===f.assetId&&!x.delisted);if(!a)return 0;
+  const dir=f.side==='short'?-1:1;
+  return (a.price-(Number(f.entryPrice)||0))*dir*(Number(f.contracts)||0)*(Number(f.multiplier)||2);
+}
+function futuresMarginValue(p){return (p.futures||[]).reduce((s,f)=>s+(Number(f.margin)||0),0);}
+function futuresPnLValue(p){return (p.futures||[]).reduce((s,f)=>s+futurePnL(f),0);}
 
 function setSS(state,txt){document.getElementById('sdot').className='sdot '+state;document.getElementById('slabel').textContent=txt;}
 
@@ -1069,7 +1104,7 @@ async function push(){
               ?{accountPlain:'',passPlain:'',passHash:'',_authCleared:lp._authCleared}
               :{accountPlain:lp.accountPlain||p.accountPlain||'',passPlain:lp.passPlain||p.passPlain||'',passHash:lp.passHash||p.passHash||''};
             if(fbTv>gmTv||(fbHasPort&&gmPortEmpty)){
-              return{...lp,portfolio:p.portfolio||{},shorts:p.shorts||[],realizedPnL:typeof p.realizedPnL==='number'?p.realizedPnL:lp.realizedPnL,_tv:p._tv,...authFix};
+              return{...lp,portfolio:p.portfolio||{},shorts:p.shorts||[],futures:p.futures||[],tradeHistory:(p.tradeHistory||[]).slice(0,15),dayTrades:p.dayTrades||lp.dayTrades||{},watchTradeLocks:p.watchTradeLocks||lp.watchTradeLocks||{},realizedPnL:typeof p.realizedPnL==='number'?p.realizedPnL:lp.realizedPnL,_tv:p._tv,...authFix};
             }
             return{...lp,...authFix};
           });
@@ -1109,12 +1144,12 @@ function makeDefault(){
   return{
     assets:ASSETS0.map(a=>({...a,history:[a.price]})),
     players:[
-      {id:'p1',name:'冒險者一',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p2',name:'冒險者二',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p3',name:'冒險者三',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p4',name:'冒險者四',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p5',name:'冒險者五',cash:1500,portfolio:{},realizedPnL:0},
-      {id:'p6',name:'冒險者六',cash:1500,portfolio:{},realizedPnL:0},
+      {id:'p1',name:'冒險者一',cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[]},
+      {id:'p2',name:'冒險者二',cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[]},
+      {id:'p3',name:'冒險者三',cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[]},
+      {id:'p4',name:'冒險者四',cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[]},
+      {id:'p5',name:'冒險者五',cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[]},
+      {id:'p6',name:'冒險者六',cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[]},
     ],
     gameYear:1,gameDay:1,gameMonth:1,
     presetEvents:[],log:[],eventLog:[],lastSaved:Date.now(),
@@ -1144,12 +1179,15 @@ function migrateAssets(world){
     if(typeof p.realizedPnL!=='number')p.realizedPnL=0;
     if(!p.portfolio)p.portfolio={};
     if(!p.shorts)p.shorts=[];
+    if(!Array.isArray(p.futures))p.futures=[];
+    if(!Array.isArray(p.tradeHistory))p.tradeHistory=[];else p.tradeHistory=p.tradeHistory.slice(0,15);
     // 移除持有舊標的的記錄
     Object.keys(p.portfolio).forEach(id=>{
       if(!validIds.has(id)&&!id.startsWith('ipo_'))delete p.portfolio[id];
     });
     // 移除舊標的的做空記錄
     p.shorts=p.shorts.filter(s=>validIds.has(s.assetId)||s.assetId.startsWith('ipo_'));
+    p.futures=p.futures.filter(f=>validIds.has(f.assetId)||f.assetId.startsWith('ipo_'));
   });
 
   if(!world.eventLog)world.eventLog=[];
@@ -1279,9 +1317,20 @@ function nextQueuedIntradaySlot(){
 function normalizeQueuedIntradayShocks(){
   if(!W?.market?.intraday?.plans)return;
   const next=nextQueuedIntradaySlot();
+  const S=W.market.intraday;
+  const currentSlot=S.status==='open'?(S.slot||0):0;
   Object.values(W.market.intraday.plans).forEach(P=>{
-    if(!P||P.nextSlotShock===undefined)return;
-    if(!Number.isFinite(P.nextSlotShockSlot)||P.nextSlotShockSlot<next)P.nextSlotShockSlot=next;
+    if(!P)return;
+    if(P.nextSlotShock!==undefined){
+      if(!Number.isFinite(P.nextSlotShockSlot)||P.nextSlotShockSlot<next)P.nextSlotShockSlot=next;
+    }
+    if(P.tempIntervention){
+      if(!Number.isFinite(P.tempIntervention.startSlot))P.tempIntervention.startSlot=next;
+      if(!Number.isFinite(P.tempIntervention.endSlot)||P.tempIntervention.endSlot<P.tempIntervention.startSlot){
+        P.tempIntervention.endSlot=P.tempIntervention.startSlot;
+      }
+      if(P.tempIntervention.endSlot<=currentSlot)delete P.tempIntervention;
+    }
   });
 }
 function intradayAvg(P){return P.points.reduce((s,p)=>s+p.price,0)/Math.max(1,P.points.length);}
@@ -1423,6 +1472,20 @@ function intradayDesiredPct(targetPct,progress,cfg,step,phase,drift){
     const t=(p-0.28)/0.72;
     return clampPct(peak+(targetPct-peak)*Math.pow(t,0.72)+(drift||0)*Math.sin(Math.PI*p)*0.4);
   }
+  if(cfg.shape==='fakeBreakout'){
+    const spike=Math.max(Math.abs(targetPct)+0.045,cfg.shock||0.055);
+    if(p<=0.20)return clampPct(spike*(p/0.20));
+    if(p<=0.45)return clampPct(spike-(spike-targetPct+0.02)*((p-0.20)/0.25));
+    const t=(p-0.45)/0.55;
+    return clampPct((targetPct-0.02)+0.02*t);
+  }
+  if(cfg.shape==='washout'){
+    const flush=-Math.max(Math.abs(targetPct)+0.045,cfg.shock||0.055);
+    if(p<=0.18)return clampPct(flush*(p/0.18));
+    if(p<=0.40)return clampPct(flush+(targetPct-flush+0.015)*((p-0.18)/0.22));
+    const t=(p-0.40)/0.60;
+    return clampPct((targetPct+0.015)-0.015*t);
+  }
   let desired=targetPct*p;
   // 個股中段偏移：鐘形曲線，開收盤為零，中段最大，讓同目標股票走出不同形狀
   if(drift)desired+=(drift)*Math.sin(Math.PI*p);
@@ -1460,6 +1523,8 @@ function intradayStepAsset(a,step){
   let hourClose;
   if(P.tempIntervention&&step>P.tempIntervention.endSlot)delete P.tempIntervention;
   const tempActive=P.tempIntervention&&step>=P.tempIntervention.startSlot&&step<=P.tempIntervention.endSlot;
+  const hardLimitLock=!tempActive&&P.nextSlotShock===undefined&&
+    ((a.blaze==='up'&&P.limitLocked==='up')||(a.blaze==='dn'&&P.limitLocked==='dn'));
 
   if(a.blaze==='up'&&!tempActive){
     P.targetPct=DAILY_LIMIT;
@@ -1471,8 +1536,8 @@ function intradayStepAsset(a,step){
     P.volatility='blazeDn';
     P.limitLocked='dn';
     hourClose=limitDown;
-  }else if(P.limitLocked&&!tempActive&&P.nextSlotShock===undefined){
-    // 跌停/漲停鎖死：無新指令則維持貼邊平走
+  }else if(hardLimitLock){
+    // 強勢模式的跌停/漲停鎖死：無新指令則維持貼邊平走
     hourClose=P.limitLocked==='dn'?limitDown:limitUp;
   }else{
     if(P.limitLocked)delete P.limitLocked; // 有新指令 → 解鎖
@@ -1679,7 +1744,7 @@ function knockOpenLimit(id){
   // 敲開：推一個往反方向的小幅衝擊，讓股票恢復波動
   const side=P.limitLocked;
   const pct=side==='dn'?(1.5+Math.random()*2):-(1.5+Math.random()*2);
-  const vol=side==='dn'?'breakout':'washout';
+  const vol=side==='dn'?'fakeBreakout':'washout';
   queueNextHourMove(a,pct,vol);
   push();renderMkt();
 }
@@ -2404,6 +2469,42 @@ function resetPlayerPass(i){
   p._authCleared=Date.now();
   push();renderWealth();
 }
+function fmtQty(q){const n=Number(q)||0;return Number.isInteger(n)?String(n):n.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');}
+function tradeProductLabel(v){
+  return ({stock:'現股',odd:'零股',short:'空單',future:'期貨'}[v]||'交易');
+}
+function tradeSideLabel(v){
+  return ({buy:'買入',sell:'賣出',open:'開倉',cover:'平倉',long:'多單',short:'空單',close:'平倉',margin:'補保證金',forceCover:'強制平倉',forceClose:'強制平倉'}[v]||v||'');
+}
+function renderTradeHistory(p,i){
+  const hist=(p.tradeHistory||[]).slice(0,15);
+  if(!hist.length)return `<button class="trade-toggle" disabled>交易紀錄：尚無</button>`;
+  const rows=hist.map(t=>{
+    const pnl=Number(t.pnl)||0;
+    const pnlHtml=(pnl||t.side==='sell'||t.side==='cover'||t.side==='close'||t.side==='forceCover'||t.side==='forceClose')
+      ? `<span class="${pnl>=0?'pnl-pos':'pnl-neg'}">${pnl>=0?'+':''}${Math.round(pnl).toLocaleString()} G</span>`
+      : '<span style="color:var(--ink3)">-</span>';
+    const asset=escHtml(t.assetName||((W.assets||[]).find(a=>a.id===t.assetId)?.name)||t.assetId||'');
+    const text=escHtml(t.text||`${tradeProductLabel(t.product)}${tradeSideLabel(t.side)} ${asset}`);
+    const meta=[
+      tradeProductLabel(t.product),
+      tradeSideLabel(t.side),
+      asset,
+      t.qty?`×${fmtQty(t.qty)}`:'',
+      t.price?`@${Math.round(t.price).toLocaleString()}G`:'',
+      t.fee?`手續費 ${Math.round(t.fee).toLocaleString()}G`:'',
+      t.cashAfter?`餘額 ${Math.round(t.cashAfter).toLocaleString()}G`:''
+    ].filter(Boolean).join(' · ');
+    return `<div class="trade-item">
+      <div class="trade-line"><div><div class="trade-text">${text}</div><div class="trade-meta">${escHtml(t.time||'')} · ${meta}</div></div><div>${pnlHtml}</div></div>
+    </div>`;
+  }).join('');
+  return `<button class="trade-toggle" onclick="togglePlayerTrades(${i})">近 15 筆交易紀錄 ▼</button><div class="trade-history" id="tradeHistory_${i}">${rows}</div>`;
+}
+function togglePlayerTrades(i){
+  const el=document.getElementById('tradeHistory_'+i);
+  if(el)el.classList.toggle('open');
+}
 function renderWealth(){
   const tb=document.getElementById('wealthBody');tb.innerHTML='';
   W.players.forEach((p,i)=>{
@@ -2411,7 +2512,9 @@ function renderWealth(){
     const pv=pvOf(p);const cost=totalCost(p);const unr=pv-cost;const rlz=p.realizedPnL||0;
     const shortPnlTotal=(p.shorts||[]).reduce((s,sn)=>s+shortPnL(sn),0);
     const shortPrincipal=(p.shorts||[]).reduce((s,sn)=>s+(sn.principal||0),0);
-    const totalAsset=p.cash+pv+shortPrincipal+shortPnlTotal;
+    const futurePnlTotal=futuresPnLValue(p);
+    const futureMarginTotal=futuresMarginValue(p);
+    const totalAsset=p.cash+pv+shortPrincipal+shortPnlTotal+futureMarginTotal+futurePnlTotal;
     const held=Object.keys(p.portfolio||{}).filter(id=>getPos(p,id).qty>0);
     let holdHtml='';
     held.forEach(id=>{
@@ -2419,18 +2522,32 @@ function renderWealth(){
       const mv=a.price*pos.qty;const pnl=mv-(pos.avgCost*pos.qty);
       const s=pnl>=0?'+':'';const cls=pnl>=0?'pnl-pos':'pnl-neg';
       const rate=pos.avgCost>0?((pnl/(pos.avgCost*pos.qty))*100).toFixed(1):'-';
-      holdHtml+=`<div class="holding-row"><span>${a.icon} ${a.name} ×${pos.qty}</span><span>${Math.round(pos.avgCost).toLocaleString()}G</span><span>${mv.toLocaleString()}G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()}G(${s}${rate}%)</span></div>`;
+      const lotCls=pos.qty<1&&!Number.isInteger(pos.qty)?' odd':'';
+      const lotLabel=pos.qty<1&&!Number.isInteger(pos.qty)?'零股':'現股';
+      holdHtml+=`<div class="holding-row"><span class="holding-badge${lotCls}">${lotLabel}</span><span>${a.icon} ${a.name} ×${fmtQty(pos.qty)}</span><span>均 ${Math.round(pos.avgCost).toLocaleString()}G</span><span>市值 ${Math.round(mv).toLocaleString()}G</span><span class="${cls}">${s}${Math.round(pnl).toLocaleString()}G(${s}${rate}%)</span></div>`;
     });
+    (p.shorts||[]).forEach(s=>{
+      const a=W.assets.find(x=>x.id===s.assetId);if(!a)return;
+      const pnl=shortPnL(s);const cls=pnl>=0?'pnl-pos':'pnl-neg';const sign=pnl>=0?'+':'';
+      holdHtml+=`<div class="holding-row"><span class="holding-badge short">空單</span><span>${a.icon} ${a.name} ×${fmtQty(s.shortQty)}</span><span>進 ${Math.round(s.entryPrice||0).toLocaleString()}G</span><span>本金 ${Math.round(s.principal||0).toLocaleString()}G</span><span class="${cls}">${sign}${Math.round(pnl).toLocaleString()}G</span></div>`;
+    });
+    (p.futures||[]).forEach(f=>{
+      const a=W.assets.find(x=>x.id===f.assetId);if(!a)return;
+      const pnl=futurePnL(f);const cls=pnl>=0?'pnl-pos':'pnl-neg';const sign=pnl>=0?'+':'';const side=f.side==='short'?'空':'多';
+      holdHtml+=`<div class="holding-row"><span class="holding-badge future">期貨${side}</span><span>${a.icon} ${a.name} ×${fmtQty(f.contracts)}口</span><span>進 ${Math.round(f.entryPrice||0).toLocaleString()}G</span><span>保證金 ${Math.round(f.margin||0).toLocaleString()}G</span><span class="${cls}">${sign}${Math.round(pnl).toLocaleString()}G</span></div>`;
+    });
+    if(!holdHtml)holdHtml='<div class="holding-detail">尚無現股、零股、期貨或空單持倉</div>';
+    const tradeHtml=renderTradeHistory(p,i);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><input class="name-input" value="${p.name}" onchange="renameP(${i},this.value)">${holdHtml?`<div class="holding-detail">${holdHtml}</div>`:''}</td>
-      <td><code style="font-size:12px;color:var(--gold2)">${playerAccountLabel(p)}</code></td>
-      <td><code style="font-size:12px;color:var(--gold2)">${playerPasswordLabel(p)}</code><br><button class="btn-sm" style="font-size:10px;padding:2px 8px;margin-top:3px" onclick="resetPlayerPass(${i})">&#x91cd;&#x8a2d;&#x5e33;&#x5bc6;</button></td>
-      <td>${p.cash.toLocaleString()} G</td>
-      <td>${pv.toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">成本 ${Math.round(cost).toLocaleString()} G</span></td>
-      <td><span class="${unr>=0?'pnl-pos':'pnl-neg'}">${unr>=0?'+':''}${Math.round(unr).toLocaleString()} G</span></td>
-      <td><span class="${rlz>=0?'pnl-pos':'pnl-neg'}">${rlz>=0?'+':''}${Math.round(rlz).toLocaleString()} G</span></td>
-      <td style="font-weight:700;color:var(--gold2)">${Math.round(totalAsset).toLocaleString()} G</td>
-      <td style="white-space:nowrap">
+    tr.innerHTML=`<td data-label="冒險者"><input class="name-input" value="${escHtml(p.name)}" onchange="renameP(${i},this.value)"><div class="holding-detail">${holdHtml}</div>${tradeHtml}</td>
+      <td data-label="帳號"><code style="font-size:12px;color:var(--gold2)">${playerAccountLabel(p)}</code></td>
+      <td data-label="角色密碼"><code style="font-size:12px;color:var(--gold2)">${playerPasswordLabel(p)}</code><br><button class="btn-sm" style="font-size:10px;padding:2px 8px;margin-top:3px" onclick="resetPlayerPass(${i})">&#x91cd;&#x8a2d;&#x5e33;&#x5bc6;</button></td>
+      <td data-label="現金">${Math.round(p.cash||0).toLocaleString()} G</td>
+      <td data-label="持倉值">${Math.round(pv+shortPrincipal+futureMarginTotal).toLocaleString()} G<br><span style="font-size:11px;color:var(--ink3)">現股成本 ${Math.round(cost).toLocaleString()} G・空本 ${Math.round(shortPrincipal).toLocaleString()} G・期保 ${Math.round(futureMarginTotal).toLocaleString()} G</span></td>
+      <td data-label="未實現"><span class="${(unr+shortPnlTotal+futurePnlTotal)>=0?'pnl-pos':'pnl-neg'}">${(unr+shortPnlTotal+futurePnlTotal)>=0?'+':''}${Math.round(unr+shortPnlTotal+futurePnlTotal).toLocaleString()} G</span></td>
+      <td data-label="已實現"><span class="${rlz>=0?'pnl-pos':'pnl-neg'}">${rlz>=0?'+':''}${Math.round(rlz).toLocaleString()} G</span></td>
+      <td data-label="總資產" style="font-weight:700;color:var(--gold2)">${Math.round(totalAsset).toLocaleString()} G</td>
+      <td data-label="操作" style="white-space:nowrap">
         <button class="btn-sm" style="font-size:10px;padding:4px 8px" onclick="resetP(${i})">重置</button>
         <button class="btn-danger" style="font-size:10px;padding:4px 8px;margin-left:4px" onclick="deleteP(${i})">刪除</button>
       </td>`;
@@ -2466,7 +2583,7 @@ function adjustPlayerAccount(){
   if(note.length){gmLog('good',`GM 調整 ${p.name}：${note.join('，')}`);push();renderWealth();}
 }
 function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
-function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];push();renderWealth();}
+function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];W.players[i].futures=[];W.players[i].tradeHistory=[];push();renderWealth();}
 function deleteP(i){if(!confirm(`確定刪除玩家「${W.players[i].name}」？\n此操作無法復原，所有持倉與金幣將一併刪除。`))return;W.players.splice(i,1);push();renderWealth();}
 function giveGold(){
   const t=document.getElementById('goldTarget').value,g=parseInt(document.getElementById('goldAmt').value);if(!g)return;
@@ -2476,7 +2593,7 @@ function giveGold(){
 }
 function addPlayer(){
   const n=document.getElementById('newPlayerName').value.trim();if(!n)return;
-  W.players.push({id:'p'+Date.now(),name:n,cash:1500,portfolio:{},realizedPnL:0,shorts:[],accountPlain:'',passPlain:'',passHash:''});
+  W.players.push({id:'p'+Date.now(),name:n,cash:1500,portfolio:{},realizedPnL:0,shorts:[],futures:[],tradeHistory:[],accountPlain:'',passPlain:'',passHash:''});
   document.getElementById('newPlayerName').value='';push();renderWealth();buildEvtGrid();
 }
 
@@ -2635,19 +2752,21 @@ function renderMkt(){
     tr.className=(lUp?'is-limit-up':lDn?'is-limit-dn':isWarn?'is-warning':'');
 
     const P = intradayPlan(a);
-    // 波動模式（優先用 assetVolPrefs 持久設定，其次 P.volatility）
+    // 波動模式：下拉選單顯示目前實際生效模式；只有排程到未來 slot 的 nextSlotVol 才顯示待生效
     const blazeVol=a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':null;
-    const volPref = blazeVol || W.assetVolPrefs?.[a.id] || P?.volatility || 'neutral';
-    // 實際生效中的波動模式（從 plan 讀，反映 GAS 套用的結果）
     const volActive = blazeVol || P?.volatility || 'neutral';
     const volActiveLabel = VOL_OPTS.find(o=>o.v===volActive)?.l || volActive;
-    const volMatch = volPref === volActive;
-    const volStatusHtml = volMatch
-      ? `<div style="font-size:10px;color:#27a060;margin-top:2px">✓ 生效中：${volActiveLabel}</div>`
-      : `<div style="font-size:10px;color:#e08020;margin-top:2px">⏳ 待生效（目前：${volActiveLabel}）</div>`;
+    const queuedVol = P?.nextSlotShock!==undefined ? (P.nextSlotVol||null) : null;
+    const queuedSlot = Number.isFinite(P?.nextSlotShockSlot) ? P.nextSlotShockSlot : null;
+    const currentSlot = S.status==='open' ? (S.slot||0) : 0;
+    const hasFutureQueuedVol = queuedVol && queuedVol!==volActive && (queuedSlot===null || queuedSlot>currentSlot);
+    const queuedVolLabel = hasFutureQueuedVol ? (VOL_OPTS.find(o=>o.v===queuedVol)?.l || queuedVol) : '';
+    const volStatusHtml = hasFutureQueuedVol
+      ? `<div style="font-size:10px;color:#e08020;margin-top:2px">⏳ ${INTRADAY_SLOTS[queuedSlot]||'下一格'} 待生效：${queuedVolLabel}（目前：${volActiveLabel}）</div>`
+      : `<div style="font-size:10px;color:#27a060;margin-top:2px">✓ 生效中：${volActiveLabel}</div>`;
     const volSelHtml = `
       <select class="vol-sel" onchange="onVolSelChange('${a.id}',this.value)">
-        ${VOL_OPTS.map(o=>`<option value="${o.v}"${volPref===o.v?' selected':''}>${o.l}</option>`).join('')}
+        ${VOL_OPTS.map(o=>`<option value="${o.v}"${volActive===o.v?' selected':''}>${o.l}</option>`).join('')}
       </select>
       ${volStatusHtml}`;
 
