@@ -379,6 +379,20 @@ firebase.auth().signInAnonymously().catch(()=>{});
         </div>
         <div style="font-size:11px;color:var(--ink3);margin-bottom:8px">各標的漲跌幅（選填，留空全部 = 系統照趨勢自動跑）</div>
         <div class="evt-pct-grid" id="schPctGrid"></div>
+        <div style="margin-top:10px;border-top:1px dashed var(--parch3);padding-top:10px">
+          <div class="sec">大盤指數影響（選填）</div>
+          <div class="g2">
+            <div class="field">
+              <label>影響盤別</label>
+              <select id="schIndexSession">
+                <option value="">不影響大盤</option>
+                <option value="day">日盤大盤</option>
+                <option value="night">夜盤大盤</option>
+              </select>
+            </div>
+            <div class="field"><label>大盤影響 %</label><input type="number" id="schIndexPct" min="-10" max="10" step="0.1" placeholder="例如 -2.5"></div>
+          </div>
+        </div>
         <button class="btn btn-gold" style="margin-top:8px" onclick="addSchedule()">＋ 加入排程</button>
       </div>
       <div class="sec">排程列表</div>
@@ -423,6 +437,46 @@ firebase.auth().signInAnonymously().catch(()=>{});
     <div style="padding:10px 16px;border-top:1px solid var(--parch3);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button class="btn btn-gold" onclick="applyAllCloseTargets()" title="套用所有已填入的今日收盤目標欄位">✅ 一併套用所有收盤目標</button>
       <span style="font-size:11px;color:var(--ink3)">填好各標的「今日收盤目標」欄後，點此一次套用全部</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-title">📈 大盤指數控制</div>
+      <span style="font-size:12px;color:var(--ink3)">日盤跟隨成分股，夜盤只跑指數</span>
+    </div>
+    <div class="pb">
+      <div id="marketIndexPanel"></div>
+
+      <!-- 成分股權重設定 -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--parch3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-size:11px;font-weight:900;color:var(--ink3);letter-spacing:1px">⚖ 成分股權重設定</div>
+          <button class="btn-sm" onclick="toggleWeightEditor()" id="weightEditorToggleBtn">展開</button>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:6px">各股對大盤的影響比重，總和須為 100%。漲跌幅 × 權重 → 影響大盤點數。</div>
+        <div id="indexWeightEditorWrap" style="display:none">
+          <div id="indexWeightEditor"></div>
+        </div>
+      </div>
+
+      <div class="g2" style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--parch3)">
+        <div class="field">
+          <label>干預盤別</label>
+          <select id="indexImpactSession">
+            <option value="day">日盤大盤</option>
+            <option value="night">夜盤大盤</option>
+          </select>
+        </div>
+        <div class="field"><label>干預幅度 %</label><input type="number" id="indexImpactPct" min="-10" max="10" step="0.1" value="1"></div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-purple" onclick="applyMarketIndexImpactFromUi()">套用大盤干預</button>
+        <button class="btn btn-ghost" onclick="resetMarketIndexState()" style="color:var(--up);border-color:var(--up)">重置大盤基準</button>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--parch3);font-size:11px;color:var(--ink3)">
+        🌙 夜盤 00:05 自動開盤，根據各股明日開盤設定推進指數；排程夜盤事件自動分配漲跌幅至各股次日計畫。
+      </div>
     </div>
   </div>
 
@@ -619,6 +673,24 @@ const INTRADAY_SLOTS=(function(){
   return slots;
 })();
 const INTRADAY_TICKS_PER_HOUR=1;
+const MARKET_INDEX_BASE=10000;
+// 夜盤時段：00:05 ~ 06:55，每 5 分鐘一格，共 83 格
+const NIGHT_SLOT_MINUTES=5;
+const NIGHT_SLOTS=(function(){
+  const s=[];
+  for(let m=5;m<=415;m+=NIGHT_SLOT_MINUTES){
+    const h=Math.floor(m/60),mn=m%60;
+    s.push(`${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`);
+  }
+  return s; // ["00:05","00:10",...,"06:55"]
+})();
+function currentRealNightSlot(){
+  const d=new Date(),h=d.getHours(),m=d.getMinutes();
+  if(h===0&&m<5)return 0;
+  if(h>=MARKET_OPEN_HOUR)return NIGHT_SLOTS.length-1;
+  const total=h*60+m;
+  return Math.min(Math.max(Math.floor((total-5)/NIGHT_SLOT_MINUTES),0),NIGHT_SLOTS.length-1);
+}
 const INTRADAY_PATTERNS={
   neutral:{name:'一般自然盤',pull:.55,noise:.75},
   choppy:{name:'震盪',pull:.48,noise:1.15,zigzag:true,zig:.014,wave:.018},
@@ -1243,6 +1315,7 @@ function migrateAssets(world){
   if(!world.presetEvents)world.presetEvents=[];
   if(!world.schedules)world.schedules=[];
   ensureAssetGroups(world);
+  ensureMarketIndex(world);
 
   // 趨勢狀態也補入缺少的新標的（含 ASSETS0 與 IPO 標的）
   world.assets.filter(a=>!a.delisted).forEach(a=>{
@@ -1271,6 +1344,7 @@ function afterLoad(){
   buildSchPctGrid();
   if(!W.schedules) W.schedules=[];
   if(!W.market)W.market=initMarketState();
+  ensureMarketIndex(W);
   intradaySession();
   normalizeQueuedIntradayShocks();
   document.getElementById('setY').value=W.gameYear||1;
@@ -1495,6 +1569,15 @@ function intradayOpen(){
   });
   W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
   W.market.nextDayPlans={};
+  const MI=ensureMarketIndex();
+  MI.day.dateKey=intradayKey();
+  // 若夜盤開盤中，以夜盤收盤價作為隔日開盤參考基準（類台股期貨夜盤機制）
+  const _nightRef=MI.night?.status==='open'?MI.night.price:null;
+  MI.day.prevClose=_nightRef||(MI.day.price||calcMarketIndexUnderlying(W));
+  if(_nightRef){MI.night.status='closed';gmLog('time',`夜盤收盤（日盤開啟），指數 ${Math.round(_nightRef).toLocaleString()} 帶入隔日基準`);}
+  MI.day.factor=1;
+  MI.day.points=[];
+  syncMarketIndexDay('日盤開盤');
   syncIntradaySlotFromPoints();
   gmLog('time',`⏱ 日內盤開盤：${ds()} 07:00`);
   push();renderAll();
@@ -1506,6 +1589,7 @@ function intradayStep(){
   if(step>=INTRADAY_SLOTS.length){intradayClose();return;}
   W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
   S.slot=step;
+  syncMarketIndexDay('日盤推進');
   addLog('time',`日內盤推進至 ${INTRADAY_SLOTS[step]}`);
   runDueSchedules();
   push();renderAll();
@@ -1674,6 +1758,9 @@ function intradayClose(){
     a.price=intradayLastPoint(P).price;
     a.history.push(a.price);
   });
+  syncMarketIndexDay('日盤收盤');
+  const _MI=ensureMarketIndex();
+  if(_MI.day&&_MI.day.price){_MI.history.push(Math.round(_MI.day.price));if(_MI.history.length>500)_MI.history=_MI.history.slice(-500);}
   S.status='closed';
   S.lastClosedRealDate=new Date().toDateString();
   addLog('time',`日內盤收盤：${ds()}，收盤價已寫入歷史`);
@@ -2003,6 +2090,185 @@ function initMarketState(){
     researchTimer:Math.floor(Math.random()*20)+20,  // 法術研究週期
     prophecyTimer:Math.floor(Math.random()*15)+15,  // 占卜公信力週期
   };
+}
+
+function defaultIndexWeight(a){
+  return Math.max(1,Math.min(20,Math.round(Math.sqrt(Math.max(1,a.price||1))/3)));
+}
+function ensureMarketIndex(world=W){
+  if(!world.market)world.market=initMarketState();
+  const M=world.market;
+  if(!M.index)M.index={name:'格蘭大陸加權指數',base:MARKET_INDEX_BASE,basePrices:{},weights:{},day:{},night:{},history:[]};
+  const I=M.index;
+  if(!I.name)I.name='格蘭大陸加權指數';
+  if(!I.base)I.base=MARKET_INDEX_BASE;
+  if(!I.basePrices)I.basePrices={};
+  if(!I.weights)I.weights={};
+  if(!I.day)I.day={};
+  if(!I.night)I.night={};
+  if(!Array.isArray(I.history))I.history=[];
+  (world.assets||[]).forEach(a=>{
+    if(!a||a.delisted)return;
+    if(!I.basePrices[a.id])I.basePrices[a.id]=Math.max(1,a.price||1);
+    if(!I.weights[a.id])I.weights[a.id]=defaultIndexWeight(a);
+  });
+  ['day','night'].forEach(k=>{
+    const S=I[k];
+    if(!Array.isArray(S.points))S.points=[];
+    if(!S.factor)S.factor=1;
+    if(!S.status)S.status=k==='day'?'idle':'closed';
+    if(!S.prevClose)S.prevClose=I.base;
+    if(!S.price)S.price=S.prevClose;
+    if(!S.high)S.high=S.price;
+    if(!S.low)S.low=S.price;
+  });
+  return I;
+}
+function calcMarketIndexUnderlying(world=W){
+  const I=ensureMarketIndex(world);
+  let sum=0, totalWeight=0;
+  (world.assets||[]).forEach(a=>{
+    if(!a||a.delisted)return;
+    const base=I.basePrices[a.id]||a.price||1;
+    const weight=Number(I.weights[a.id])||1;
+    sum+=weight*((a.price||base)/Math.max(1,base));
+    totalWeight+=weight;
+  });
+  return Math.round((I.base||MARKET_INDEX_BASE)*(totalWeight?sum/totalWeight:1));
+}
+function pushMarketIndexPoint(sessionKey, price, label){
+  const I=ensureMarketIndex();
+  const S=I[sessionKey];
+  const slot=sessionKey==='day'?(W?.market?.intraday?.slot||0):currentRealNightSlot();
+  const pt={slot,price:Math.round(price),major:true,ts:Date.now(),label:label||''};
+  const last=S.points[S.points.length-1];
+  if(last&&last.slot===slot)S.points[S.points.length-1]=pt;
+  else S.points.push(pt);
+  if(S.points.length>420)S.points=S.points.slice(-420);
+}
+function syncMarketIndexDay(label){
+  if(!W)return null;
+  const I=ensureMarketIndex();
+  const S=I.day;
+  const price=Math.round(calcMarketIndexUnderlying(W)*(S.factor||1));
+  if(!S.prevClose)S.prevClose=price;
+  S.price=price;
+  S.high=Math.max(S.high||price,price);
+  S.low=Math.min(S.low||price,price);
+  S.status=W?.market?.intraday?.status==='open'?'open':'closed';
+  pushMarketIndexPoint('day',price,label||'日盤');
+  return price;
+}
+function openNightMarketIndex(){
+  const I=ensureMarketIndex();
+  syncMarketIndexDay();
+  const N=I.night;
+  if(N.status==='open')return N;
+  N.status='open';
+  N.dateKey=intradayKey();
+  N.prevClose=I.day.price||calcMarketIndexUnderlying(W);
+  N.price=N.prevClose;
+  N.high=N.price;
+  N.low=N.price;
+  N.factor=1;
+  N.maxSlot=NIGHT_SLOTS.length-1;
+  const startSlot=currentRealNightSlot();
+  N.points=[{slot:startSlot,price:N.price,major:true,ts:Date.now(),label:'夜盤開盤'}];
+  return N;
+}
+// 計算夜盤目標指數：以各股 nextDayPlans.targetPct 計算加權指數目標
+function calcNightTargetIndex(){
+  const I=ensureMarketIndex();
+  if(!I.basePrices||!W?.assets)return I.night?.prevClose||I.day?.price||I.base||MARKET_INDEX_BASE;
+  const nxt=W?.market?.nextDayPlans||{};
+  let sum=0,totalW=0;
+  (W.assets||[]).forEach(a=>{
+    if(!a||a.delisted)return;
+    const base=I.basePrices[a.id]||a.price||1;
+    const w=Number(I.weights[a.id])||1;
+    const tgt=(nxt[a.id]&&typeof nxt[a.id].targetPct==='number')?nxt[a.id].targetPct:0;
+    sum+=w*(Math.max(1,(a.price||base)*(1+tgt))/Math.max(1,base));
+    totalW+=w;
+  });
+  return totalW?Math.round((I.base||MARKET_INDEX_BASE)*sum/totalW):(I.night?.prevClose||I.day?.price||I.base||MARKET_INDEX_BASE);
+}
+// 將夜盤指數漲跌幅反向按權重分配給各股 nextDayPlans（僅限 GM 主動干預時呼叫）
+function distributeNightImpactToStocks(pct){
+  const I=ensureMarketIndex();
+  if(!W?.assets||!W?.market)return;
+  if(!W.market.nextDayPlans)W.market.nextDayPlans={};
+  const weights=I.weights||{};
+  const totalW=(W.assets||[]).filter(a=>!a?.delisted).reduce((s,a)=>s+(Number(weights[a.id])||1),0)||1;
+  const N=(W.assets||[]).filter(a=>!a?.delisted).length||1;
+  const avgW=totalW/N;
+  (W.assets||[]).forEach(a=>{
+    if(!a||a.delisted)return;
+    const w=Number(weights[a.id])||1;
+    // 高權重股得更多，低權重股得更少；平均等於 pct
+    const stockPct=pct*(w/avgW);
+    const old=typeof W.market.nextDayPlans[a.id]?.targetPct==='number'?W.market.nextDayPlans[a.id].targetPct:0;
+    W.market.nextDayPlans[a.id]={...(W.market.nextDayPlans[a.id]||{}),targetPct:Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,old+stockPct))};
+  });
+}
+// distribute=true 時呼叫 distributeNightImpactToStocks（供 GM 干預與排程事件使用）
+function applyMarketIndexImpact(sessionKey,pct,label,distribute=false){
+  const I=ensureMarketIndex();
+  const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+  if(sessionKey==='night'){
+    const N=openNightMarketIndex();
+    N.price=Math.round(Math.max(1,N.price*(1+p)));
+    N.high=Math.max(N.high||N.price,N.price);
+    N.low=Math.min(N.low||N.price,N.price);
+    pushMarketIndexPoint('night',N.price,label||'夜盤干預');
+    if(distribute&&p!==0)distributeNightImpactToStocks(p);
+    return N.price;
+  }
+  const D=I.day;
+  D.factor=(D.factor||1)*(1+p);
+  return syncMarketIndexDay(label||'日盤干預');
+}
+function applyMarketIndexImpactFromUi(){
+  const session=document.getElementById('indexImpactSession')?.value||'day';
+  const pct=(parseFloat(document.getElementById('indexImpactPct')?.value)||0)/100;
+  const price=applyMarketIndexImpact(session,pct,'GM干預',true);
+  gmLog('time',`大盤${session==='night'?'夜盤':'日盤'}干預 ${(pct*100)>=0?'+':''}${(pct*100).toFixed(1)}%，指數 ${price.toLocaleString()}`);
+  push();renderMarketIndex();
+}
+async function runNightMarketAuto(force=false){
+  if(!W||busy)return;
+  const I=ensureMarketIndex();
+  const N=I.night;
+  const now=new Date(),h=now.getHours(),m=now.getMinutes();
+  const today=now.toDateString();
+  const runKey=`${today}-${h}-${m}`;
+  // 夜盤時段：00:05 ~ 06:55（日盤開盤前）
+  const isNightHour=(h===0&&m>=5)||(h>0&&h<MARKET_OPEN_HOUR);
+  if(!isNightHour)return;
+  if(N.lastNightAutoRun===runKey&&!force)return;
+  N.lastNightAutoRun=runKey;
+  if(N.status!=='open')openNightMarketIndex();
+  const targetSlot=currentRealNightSlot();
+  const lastSlot=N.points.length>0?N.points[N.points.length-1].slot:0;
+  if(lastSlot>=targetSlot&&!force)return;
+  // 計算夜盤目標指數（根據各股 nextDayPlans）
+  const target=calcNightTargetIndex();
+  const cur=N.price||N.prevClose||target;
+  const remaining=Math.max(1,NIGHT_SLOTS.length-1-targetSlot);
+  // 每格向目標靠攏（剩餘格數分攤差距）+ 隨機噪音
+  const pull=(target-cur)/remaining;
+  const noise=(Math.random()-0.5)*Math.abs(cur)*0.0015;
+  const move=(pull+noise)/Math.max(1,cur);
+  applyMarketIndexImpact('night',move,'夜盤自動');   // 不分配給股票（distribute=false）
+  runDueSchedules();  // 觸發夜盤排程事件（事件內部有 distribute=true）
+  push();renderMarketIndex();
+}
+function resetMarketIndexState(){
+  if(!confirm('重置大盤基準？這會重新用目前股價作為成分股基準。'))return;
+  if(!W.market)W.market=initMarketState();
+  delete W.market.index;
+  ensureMarketIndex();
+  syncMarketIndexDay('重置基準');
+  push();renderMarketIndex();
 }
 
 function rollMkt(eventBiasFn){
@@ -3491,7 +3757,7 @@ function renderHeat(){
   });
 }
 
-function renderAll(){refreshTime();renderMkt();renderAssetGroups();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
+function renderAll(){refreshTime();renderMkt();renderMarketIndex();renderAssetGroups();renderTrendStatus();renderWealth();renderPresets();renderDelistList();renderDescEditList();renderSuspendList();renderLog();renderHeat();renderSchedules();}
 
 // ── 暫停交易 ──
 function renderSuspendList(){
@@ -3706,6 +3972,8 @@ function initCollapsiblePanels(){
 document.getElementById('setupOverlay').classList.add('hidden');
 init();
 setInterval(()=>{const n=new Date();const ts=`現實 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;const gc=document.getElementById('gmClock');if(gc)gc.textContent=ts;const rc=document.getElementById('realClock');if(rc)rc.textContent=ts;},1000);
+// 夜盤自動推進：每分鐘檢查一次（00:05~06:55）
+setInterval(()=>runNightMarketAuto(),60000);
 
 // ═══════════════════════════════════════════════════════
 //  撤銷系統（只保留 1 步）
@@ -3766,13 +4034,18 @@ function getSchPcts(){
 function addSchedule(){
   const timeVal = document.getElementById('schTime').value;
   if(!timeVal){ alert('請填入時間'); return; }
-  const normalizedTime=timeLabelForSlot(nearestIntradaySlotForTime(timeVal));
+  const indexSession=document.getElementById('schIndexSession')?.value||'';
+  const normalizedTime=indexSession==='night'?timeVal:timeLabelForSlot(nearestIntradaySlotForTime(timeVal));
   const gameDayInput = parseInt(document.getElementById('schGameDay')?.value);
   const gameDay = isNaN(gameDayInput) ? (W?.gameDay||1) : gameDayInput;
   if(gameDay < (W?.gameDay||1)){ alert('遊戲日期不能早於目前日期（第'+W.gameDay+'日）'); return; }
 
   const evtName = document.getElementById('schEvtName')?.value.trim()||'';
   const pcts = getSchPcts();
+  const indexPctRaw=parseFloat(document.getElementById('schIndexPct')?.value);
+  const indexImpact=(indexSession&&Number.isFinite(indexPctRaw))
+    ? {session:indexSession,pct:Math.max(-10,Math.min(10,indexPctRaw))/100}
+    : null;
 
   if(!W.schedules) W.schedules=[];
   W.schedules.push({
@@ -3782,11 +4055,14 @@ function addSchedule(){
     requestedTime: timeVal,
     evtName,
     pcts,
+    indexImpact,
     fired: false
   });
   W.schedules.sort((a,b)=>(a.gameDay-b.gameDay)||((a.gameTime||'')>(b.gameTime||'')?1:-1));
 
   document.getElementById('schEvtName') && (document.getElementById('schEvtName').value='');
+  const schIndexPct=document.getElementById('schIndexPct');if(schIndexPct)schIndexPct.value='';
+  const schIndexSession=document.getElementById('schIndexSession');if(schIndexSession)schIndexSession.value='';
   W.assets.forEach(a=>{const e=document.getElementById('sch_epct_'+a.id);if(e)e.value='';});
 
   push(); renderSchedules();
@@ -3810,9 +4086,11 @@ function renderSchedules(){
       : (()=>{const dt=new Date(s.dateTime);return `${dt.getMonth()+1}/${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;})();
     const hasName = !!s.evtName;
     const hasPcts = s.pcts && Object.keys(s.pcts).length > 0;
-    const actionLabel = !hasName && !hasPcts ? '純推進' : !hasName && hasPcts ? '靜默漲跌' : '事件觸發';
+    const hasIndex = !!(s.indexImpact && Number.isFinite(Number(s.indexImpact.pct)));
+    const actionLabel = !hasName && !hasPcts && !hasIndex ? '純推進' : !hasName && hasPcts ? '靜默漲跌' : hasIndex && !hasPcts ? '大盤事件' : '事件觸發';
     const pctSummary = Object.entries(s.pcts||{}).filter(([,v])=>v!==0).slice(0,3)
       .map(([id,v])=>{ const a=W.assets.find(x=>x.id===id); return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:'' }).filter(Boolean).join('  ');
+    const indexSummary = hasIndex ? `大盤${s.indexImpact.session==='night'?'夜盤':'日盤'} ${(s.indexImpact.pct*100)>=0?'+':''}${(s.indexImpact.pct*100).toFixed(1)}%` : '';
 
     const row = document.createElement('div');
     row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid var(--parch3);margin-bottom:6px;background:rgba(255,255,255,0.15);flex-wrap:wrap';
@@ -3820,13 +4098,151 @@ function renderSchedules(){
       <div style="font-size:18px;flex-shrink:0">🕐</div>
       <div style="flex:1;min-width:120px">
         <div style="font-size:13px;font-weight:700;color:var(--ink)">${dtStr} — ${s.evtName}</div>
-        <div style="font-size:11px;color:var(--gold2);margin-top:2px">${actionLabel}${pctSummary?' · '+pctSummary:''}</div>
+        <div style="font-size:11px;color:var(--gold2);margin-top:2px">${actionLabel}${pctSummary?' · '+pctSummary:''}${indexSummary?' · '+indexSummary:''}</div>
       </div>
       <button onclick="fireScheduleNow(${s.id})" style="padding:4px 10px;border:1px solid var(--gold);color:var(--gold2);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">立即觸發</button>
       <button onclick="delSchedule(${s.id})" style="padding:4px 10px;border:1px solid var(--up);color:var(--up);background:transparent;cursor:pointer;font-size:11px;flex-shrink:0">刪除</button>`;
     el.appendChild(row);
   });
   updateSchedNextLabel();
+}
+
+function pctTextFromPrices(now,prev){
+  if(!prev)return '0.00%';
+  const pct=(now-prev)/prev*100;
+  return `${pct>=0?'+':''}${pct.toFixed(2)}%`;
+}
+function sparklineSvg(points,color){
+  const pts=(points||[]).slice(-80);
+  if(pts.length<2)return '<div style="font-size:12px;color:var(--ink3)">資料累積中</div>';
+  const vals=pts.map(p=>p.price||0);
+  const min=Math.min(...vals),max=Math.max(...vals);
+  const w=260,h=64,pad=5;
+  const path=vals.map((v,i)=>{
+    const x=pad+i*(w-pad*2)/Math.max(1,vals.length-1);
+    const y=h-pad-(max===min?0.5:(v-min)/(max-min))*(h-pad*2);
+    return `${i?'L':'M'}${x.toFixed(1)} ${y.toFixed(1)}`;
+  }).join(' ');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:300px;height:70px;display:block">
+    <path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>
+  </svg>`;
+}
+function renderMarketIndex(){
+  const el=document.getElementById('marketIndexPanel');if(!el||!W)return;
+  const I=ensureMarketIndex();
+  const dayPrice=syncMarketIndexDay();
+  const D=I.day,N=I.night;
+  const dayPct=pctTextFromPrices(D.price,D.prevClose);
+  const nightPct=pctTextFromPrices(N.price,N.prevClose);
+  const dayColor=D.price>=D.prevClose?'var(--up)':'var(--dn)';
+  const nightColor=N.price>=N.prevClose?'var(--up)':'var(--dn)';
+  el.innerHTML=`
+    <div class="g2">
+      <div style="border:1px solid var(--parch3);background:rgba(255,255,255,.18);padding:10px">
+        <div style="font-size:11px;color:var(--ink3);font-weight:800;letter-spacing:1px">日盤大盤</div>
+        <div style="font-size:28px;font-weight:900;color:${dayColor}">${(D.price||dayPrice).toLocaleString()}</div>
+        <div style="font-size:12px;color:${dayColor};font-weight:800">${dayPct}</div>
+        ${sparklineSvg(D.points, D.price>=D.prevClose?'#b42318':'#16884a')}
+        <div style="font-size:11px;color:var(--ink3)">高 ${Math.round(D.high||D.price).toLocaleString()} / 低 ${Math.round(D.low||D.price).toLocaleString()} / 係數 ${(D.factor||1).toFixed(4)}</div>
+      </div>
+      <div style="border:1px solid var(--parch3);background:rgba(255,255,255,.18);padding:10px">
+        <div style="font-size:11px;color:var(--ink3);font-weight:800;letter-spacing:1px">夜盤大盤</div>
+        <div style="font-size:28px;font-weight:900;color:${nightColor}">${Math.round(N.price||D.price||0).toLocaleString()}</div>
+        <div style="font-size:12px;color:${nightColor};font-weight:800">${nightPct}</div>
+        ${sparklineSvg(N.points, N.price>=N.prevClose?'#b42318':'#16884a')}
+        <div style="font-size:11px;color:var(--ink3)">狀態 ${N.status==='open'?'開盤':'未開'} / 高 ${Math.round(N.high||N.price||0).toLocaleString()} / 低 ${Math.round(N.low||N.price||0).toLocaleString()}</div>
+      </div>
+    </div>`;
+  const wrap=document.getElementById('indexWeightEditorWrap');
+  if(wrap&&wrap.style.display!=='none')renderIndexWeightEditor();
+}
+
+function renderIndexWeightEditor(){
+  const el=document.getElementById('indexWeightEditor');
+  if(!el||!W)return;
+  const I=ensureMarketIndex();
+  const assets=(W.assets||[]).filter(a=>!a.delisted);
+  if(!assets.length){el.innerHTML='<div style="font-size:12px;color:var(--ink3)">尚無上市股票</div>';return;}
+  const totalRaw=assets.reduce((s,a)=>s+(Number(I.weights[a.id])||1),0);
+  const rows=assets.map(a=>{
+    const rawW=Number(I.weights[a.id])||1;
+    const pct=totalRaw?(rawW/totalRaw*100):(100/assets.length);
+    return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid rgba(222,206,150,0.25)">
+      <span style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.icon||''} ${a.name}</span>
+      <input type="number" id="wgt_${a.id}" min="0" max="100" step="0.1"
+        value="${pct.toFixed(1)}"
+        style="width:72px;background:rgba(255,255,255,0.5);border:1px solid var(--parch3);border-bottom:2px solid var(--gold);padding:4px 6px;font-size:12px;font-family:'Noto Sans TC',sans-serif;outline:none;text-align:right"
+        oninput="updateWeightTotal()">
+      <span style="font-size:11px;color:var(--ink3);flex-shrink:0">%</span>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="max-height:300px;overflow-y:auto;padding-right:4px;margin-bottom:8px">${rows}</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--parch3)">
+      <span style="font-size:12px;color:var(--ink3)">合計：<strong id="weightTotalDisp" style="color:var(--ink)">──</strong> %</span>
+      <span id="weightTotalWarn" style="font-size:11px;color:var(--up);display:none">⚠ 總和應為 100%</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn-sm" onclick="equalizeWeights()">均等分配</button>
+        <button class="btn-sm" onclick="saveIndexWeights()" style="border-color:var(--purple);color:var(--purple)">套用權重</button>
+      </div>
+    </div>`;
+  updateWeightTotal();
+}
+
+function updateWeightTotal(){
+  if(!W)return;
+  const assets=(W.assets||[]).filter(a=>!a.delisted);
+  let total=0;
+  assets.forEach(a=>{
+    const v=parseFloat(document.getElementById('wgt_'+a.id)?.value||'0')||0;
+    total+=v;
+  });
+  const el=document.getElementById('weightTotalDisp');
+  const warnEl=document.getElementById('weightTotalWarn');
+  if(el)el.textContent=total.toFixed(1);
+  if(warnEl)warnEl.style.display=Math.abs(total-100)>0.6?'':'none';
+}
+
+function equalizeWeights(){
+  if(!W)return;
+  const assets=(W.assets||[]).filter(a=>!a.delisted);
+  if(!assets.length)return;
+  const eq=(100/assets.length);
+  assets.forEach(a=>{
+    const inp=document.getElementById('wgt_'+a.id);
+    if(inp)inp.value=eq.toFixed(1);
+  });
+  updateWeightTotal();
+}
+
+function saveIndexWeights(){
+  if(!W)return;
+  const I=ensureMarketIndex();
+  const assets=(W.assets||[]).filter(a=>!a.delisted);
+  let total=0;
+  const vals={};
+  assets.forEach(a=>{
+    const v=Math.max(0,parseFloat(document.getElementById('wgt_'+a.id)?.value||'0')||0);
+    vals[a.id]=v;
+    total+=v;
+  });
+  if(total<0.1){alert('請輸入有效的權重值（總和不能為 0）');return;}
+  assets.forEach(a=>{
+    I.weights[a.id]=parseFloat((vals[a.id]/total*100).toFixed(4));
+  });
+  syncMarketIndexDay('權重更新');
+  push();
+  renderMarketIndex();
+  gmLog('time',`成分股權重已更新（輸入合計 ${total.toFixed(1)}%，已標準化至 100%）`);
+}
+
+function toggleWeightEditor(){
+  const wrap=document.getElementById('indexWeightEditorWrap');
+  const btn=document.getElementById('weightEditorToggleBtn');
+  if(!wrap)return;
+  const isHidden=wrap.style.display==='none';
+  wrap.style.display=isHidden?'':'none';
+  if(btn)btn.textContent=isHidden?'收合':'展開';
+  if(isHidden)renderIndexWeightEditor();
 }
 
 function updateSchedNextLabel(){
@@ -3877,6 +4293,13 @@ function schedIsDue(s){
   const sDay=s.gameDay||1;
   if(sDay>curDay)return false;
   if(sDay<curDay)return true;
+  if(s.indexImpact?.session==='night'){
+    const now=new Date();
+    const curMinutes=now.getHours()*60+now.getMinutes();
+    const parts=(s.gameTime||'00:00').split(':');
+    const schedMinutes=(parseInt(parts[0]||'0',10))*60+parseInt(parts[1]||'0',10);
+    return curMinutes>=schedMinutes;
+  }
   // 同一天：比較 slot
   const S=intradaySession();
   const curSlot=S?.slot||0;
@@ -3888,6 +4311,7 @@ function schedIsDue(s){
 function execSchedule(s){
   const hasName=!!(s.evtName&&s.evtName.trim());
   const hasPcts=s.pcts&&Object.keys(s.pcts).length>0;
+  const hasIndex=!!(s.indexImpact&&Number.isFinite(Number(s.indexImpact.pct)));
   if(hasPcts){
     let ok=0;
     Object.entries(s.pcts).forEach(([id,pct])=>{
@@ -3901,11 +4325,17 @@ function execSchedule(s){
     });
     if(hasName){addLog('ev',`⚡ 世界事件：${s.evtName}`);addEventLog(`⚡ ${s.evtName}`);}
     gmLog('time',`排程漲跌幅已在 ${s.gameTime||'?'} 生效，並設定為當日收盤目標，共 ${ok} 支`);
-  }else if(hasName){
+  }
+  if(hasIndex){
+    // 排程事件主動干預大盤時，夜盤需反向分配漲跌幅給各股 nextDayPlans
+    const price=applyMarketIndexImpact(s.indexImpact.session,s.indexImpact.pct,s.evtName||'排程大盤事件',true);
+    if(hasName&&!hasPcts){gmLog('ev',`[大盤排程] ${s.evtName}`);}
+    gmLog('time',`排程大盤${s.indexImpact.session==='night'?'夜盤':'日盤'}影響 ${(s.indexImpact.pct*100)>=0?'+':''}${(s.indexImpact.pct*100).toFixed(1)}%，指數 ${price.toLocaleString()}`);
+  }else if(!hasPcts&&hasName){
     addLog('ev',`⚡ 世界事件：${s.evtName}`);
     addEventLog(`⚡ ${s.evtName}`);
     gmLog('time',`排程事件已執行：${s.evtName}`);
-  }else{
+  }else if(!hasPcts&&!hasIndex){
     gmLog('time','排程已執行');
   }
 }
