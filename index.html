@@ -1309,7 +1309,18 @@ function intradayPlan(a){
   if(!P.volatility)P.volatility='neutral';
   if(!P.points||!P.points.length)P.points=[{slot:0,price:P.prevClose||a.price,major:true}];
   if(!P.prevClose)P.prevClose=P.points[0].price||a.price;
+  ensureVolSwitchSchedule(P, S.slot||0);
   return P;
+}
+function randomVolDurationSlots(){
+  const minutes=120+Math.floor(Math.random()*181); // 2:00 ~ 5:00，非固定整點
+  return Math.max(1,Math.round(minutes/SLOT_MINUTES));
+}
+function ensureVolSwitchSchedule(P,currentSlot){
+  if(!P)return;
+  if(!Number.isFinite(P.nextVolSwitchSlot)||P.nextVolSwitchSlot<=currentSlot){
+    P.nextVolSwitchSlot=Math.min((currentSlot||0)+randomVolDurationSlots(),INTRADAY_SLOTS.length-1);
+  }
 }
 function intradayLastPoint(P){return P.points[P.points.length-1];}
 function intradayCompletedSlot(P){
@@ -1434,26 +1445,44 @@ function intradayOpen(){
   if(!W.market)W.market=initMarketState();
   const old=W.market.intraday;
   const oldPlans=old?.plans||{};
+  const nextDayPlans=W.market.nextDayPlans||{};
   const plans={};
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const keep=oldPlans[a.id]||{};
+    const nextCfg=nextDayPlans[a.id]||{};
     const h=a.history;
     const prev=(h&&h.length)?h[h.length-1]:a.price;
     const keepToday=old?.dateKey===intradayKey()&&old?.status==='open'&&keep.points&&keep.points.length>1;
     if(keepToday){
       const pts=keep.points.map(pt=>({...pt}));
       plans[a.id]={prevClose:keep.prevClose||prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',points:pts,high:Math.max(keep.prevClose||prev,...pts.map(x=>x.price||0)),low:Math.min(keep.prevClose||prev,...pts.map(x=>x.price||Infinity))};
+      plans[a.id].nextVolSwitchSlot=Number.isFinite(keep.nextVolSwitchSlot)?keep.nextVolSwitchSlot:randomVolDurationSlots();
+      if(keep.nextSlotShock!==undefined){
+        plans[a.id].nextSlotShock=keep.nextSlotShock;
+        plans[a.id].nextSlotShockSlot=keep.nextSlotShockSlot;
+        plans[a.id].nextSlotShockEndSlot=keep.nextSlotShockEndSlot;
+        plans[a.id].nextSlotVol=keep.nextSlotVol;
+      }
+      if(keep.tempIntervention!==undefined)plans[a.id].tempIntervention=keep.tempIntervention;
+      if(keep.limitLocked!==undefined)plans[a.id].limitLocked=keep.limitLocked;
       const last=pts[pts.length-1];
       if(last&&Number.isFinite(last.price))a.price=last.price;
       return;
     }
     a.price=prev;
     const nextTarget=calcNextDayTargetPct(a,keep.targetPct||0);
-    plans[a.id]={prevClose:prev,targetPct:nextTarget,volatility:a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':(keep.volatility||'neutral'),points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
+    if(nextCfg.blaze==='up')a.blaze='up';
+    else if(nextCfg.blaze==='dn')a.blaze='dn';
+    else if(nextCfg.blaze===null)a.blaze=null;
+    const hasNextTarget=typeof nextCfg.targetPct==='number';
+    const hasNextVol=nextCfg.volatility&&INTRADAY_PATTERNS[nextCfg.volatility];
+    plans[a.id]={prevClose:prev,targetPct:hasNextTarget?Math.max(-0.10,Math.min(0.10,nextCfg.targetPct)):nextTarget,volatility:a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':(hasNextVol?nextCfg.volatility:(keep.volatility||'neutral')),points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
+    ensureVolSwitchSchedule(plans[a.id],0);
     if(a.blaze==='up')plans[a.id].limitLocked='up';
     if(a.blaze==='dn')plans[a.id].limitLocked='dn';
   });
   W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
+  W.market.nextDayPlans={};
   syncIntradaySlotFromPoints();
   gmLog('time',`⏱ 日內盤開盤：${ds()} 07:00`);
   push();renderAll();
@@ -1584,13 +1613,13 @@ function intradayStepAsset(a,step){
         delete P.nextSlotShock;delete P.nextSlotVol;delete P.nextSlotShockSlot;delete P.nextSlotShockEndSlot;
       }
     }else{
-      // 每 3 小時重新隨機波動模式（不影響目標價）
-      const _s3h=Math.round(180/SLOT_MINUTES);
-      if(step>0&&step%_s3h===0){
+      ensureVolSwitchSchedule(P, step-1);
+      if(step>=P.nextVolSwitchSlot&&step<INTRADAY_SLOTS.length-1){
         const _pks=Object.keys(INTRADAY_PATTERNS);
         P.volatility=_pks[Math.floor(Math.random()*_pks.length)];
         P.intradayPhase=Math.random()*Math.PI*2;
         P.intradayDrift=(Math.random()-0.5)*0.05;
+        P.nextVolSwitchSlot=Math.min(step+randomVolDurationSlots(),INTRADAY_SLOTS.length-1);
         activeCfg=P.volatility;
       }
       const cfg=INTRADAY_PATTERNS[activeCfg]||INTRADAY_PATTERNS.neutral;
@@ -1634,6 +1663,7 @@ function intradayClose(){
     a.history.push(a.price);
   });
   S.status='closed';
+  S.lastClosedRealDate=new Date().toDateString();
   addLog('time',`日內盤收盤：${ds()}，收盤價已寫入歷史`);
   W.gameDay=(W.gameDay||1)+1;
   if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
@@ -1643,39 +1673,46 @@ function intradayClose(){
   push();renderAll();
 }
 function intradayRandomTargets(){
-  if(!confirm('確定要把全市場隨機漲跌幅排入下一個小時嗎？已經走過的小時價格會保留。'))return;
+  const tomorrow=isAfterIntradayClose();
+  if(!confirm(tomorrow?'確定要把全市場隨機漲跌幅排入明日開盤設定嗎？':'確定要把全市場隨機漲跌幅排入下一個小時嗎？已經走過的小時價格會保留。'))return;
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const p=(Math.random()*4-2)/100;
     queueNextHourMove(a,p,qbVolForPct(p));
     touchTrendForQueuedMove(a,p);
   });
   const S=syncIntradaySlotFromPoints();
-  gmLog('ev','🎯 全市場下一小時已隨機排入 -2% ~ +2%');
-  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
+  gmLog('ev',`🎯 全市場${tomorrow?'明日開盤':'下一小時'}已隨機排入 -2% ~ +2%`);
+  if(!tomorrow)gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
   push();renderAll();
 }
 function intradayZeroTargets(){
-  if(!confirm('確定要把全市場下一小時排為平盤嗎？已經走過的小時價格會保留。'))return;
+  const tomorrow=isAfterIntradayClose();
+  if(!confirm(tomorrow?'確定要把全市場明日開盤排為平盤嗎？':'確定要把全市場下一小時排為平盤嗎？已經走過的小時價格會保留。'))return;
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     queueNextHourMove(a,0,'flat');
     touchTrendForQueuedMove(a,0);
   });
   const S=syncIntradaySlotFromPoints();
-  gmLog('ev','🎯 全市場下一小時已排為平盤');
-  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
+  gmLog('ev',`🎯 全市場${tomorrow?'明日開盤':'下一小時'}已排為平盤`);
+  if(!tomorrow)gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
   push();renderAll();
 }
 function setIntradayTarget(id,val){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
   let p=Math.max(-10,Math.min(10,parseFloat(val)||0))/100;
   if(p>=0.099)p=0.10;if(p<=-0.099)p=-0.10;
-  const P=queueNextHourMove(a,p,intradayPlan(a).nextSlotVol||qbVolForPct(p));
+  const P=queueNextHourMove(a,p,isAfterIntradayClose()?qbVolForPct(p):(intradayPlan(a).nextSlotVol||qbVolForPct(p)));
   touchTrendForQueuedMove(a,p);
-  gmLog('time',`${a.name} 下一小時排入 ${p>=0?'+':''}${(p*100).toFixed(1)}%`);
+  gmLog('time',`${a.name} ${isAfterIntradayClose()?'明日開盤':'下一小時'}排入 ${p>=0?'+':''}${(p*100).toFixed(1)}%`);
   push();renderIntradayPlans();
 }
 function setIntradayVol(id,val){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(isAfterIntradayClose()){
+    setNextDayPlan(id,{volatility:INTRADAY_PATTERNS[val]?val:'neutral'});
+    push();renderIntradayPlans();
+    return;
+  }
   const P=intradayPlan(a), v=INTRADAY_PATTERNS[val]?val:'neutral';
   if(P.nextSlotShock!==undefined)P.nextSlotVol=v;
   else P.volatility=v;
@@ -1694,6 +1731,29 @@ function intradayVolKey(s){
   if(s.includes('先拉'))return 'buyThenSell';
   return 'neutral';
 }
+function isAfterIntradayClose(){
+  const S=W?.market?.intraday;
+  if(!S)return false;
+  const today=new Date().toDateString();
+  const todayYmd=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;})();
+  return S.status==='closed'||S.lastClosedRealDate===today||S.lastClosedRealDate===todayYmd;
+}
+function ensureNextDayPlans(){
+  if(!W.market)W.market={};
+  if(!W.market.nextDayPlans)W.market.nextDayPlans={};
+  return W.market.nextDayPlans;
+}
+function nextDayPlanFor(id){
+  return W?.market?.nextDayPlans?.[id]||null;
+}
+function setNextDayPlan(id, patch){
+  const plans=ensureNextDayPlans();
+  plans[id]=Object.assign({},plans[id]||{},patch||{});
+  return plans[id];
+}
+function clearNextDayPlan(id){
+  if(W?.market?.nextDayPlans)delete W.market.nextDayPlans[id];
+}
 function qbVolForPct(pct){
   const p=Number(pct)||0, abs=Math.abs(p);
   if(abs>=0.065)return 'violent';
@@ -1703,13 +1763,16 @@ function qbVolForPct(pct){
 }
 function queueNextHourMove(a,pct,vol){
   if(!a||a.delisted)return null;
+  const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+  if(isAfterIntradayClose()){
+    return setNextDayPlan(a.id,{targetPct:clamped,volatility:INTRADAY_PATTERNS[vol]?vol:qbVolForPct(clamped),blaze:clamped>=DAILY_LIMIT?'up':clamped<=-DAILY_LIMIT?'dn':null});
+  }
   let S=intradaySession();
   if(S.status!=='open'){
     intradayOpen();
     S=intradaySession();
   }
   const P=intradayPlan(a);
-  const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
   const startSlot=nextQueuedIntradaySlot();
   const SLOTS_2H=Math.round(120/SLOT_MINUTES);
   P.nextSlotShock=clamped;
@@ -1727,6 +1790,10 @@ function naturalizePct(pct){
 }
 function setTodayCloseTarget(a,pct){
   if(!a||a.delisted)return null;
+  if(isAfterIntradayClose()){
+    const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
+    return setNextDayPlan(a.id,{targetPct:p,blaze:p>=DAILY_LIMIT?'up':p<=-DAILY_LIMIT?'dn':null});
+  }
   let S=intradaySession();
   if(S.status!=='open'){
     intradayOpen();
@@ -1740,6 +1807,7 @@ function setTodayCloseTarget(a,pct){
 }
 function applyTempIntervention(id){
   const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return;
+  if(isAfterIntradayClose()){alert('短期干預只能在日內盤開盤中使用；收盤後請使用明日開盤設定。');return;}
   const minutes=parseFloat(document.getElementById('tmin_'+id)?.value);
   const pctInput=parseFloat(document.getElementById('tpct_'+id)?.value);
   if(!Number.isFinite(minutes)||minutes<=0){alert('請輸入影響分鐘數');return;}
@@ -1766,6 +1834,7 @@ function applyTempIntervention(id){
 }
 function knockOpenLimit(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(isAfterIntradayClose()){alert('收盤後不能敲開漲跌停；請改用明日開盤設定。');return;}
   const P=intradayPlan(a);if(!P||!P.limitLocked)return;
   // 敲開：推一個往反方向的小幅衝擊，讓股票恢復波動
   const side=P.limitLocked;
@@ -1789,7 +1858,8 @@ function applyIntradayBatch(){
   const raw=document.getElementById('intradayBatchText')?.value||'';
   const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
   if(!lines.length){alert('請先輸入批次事件目標');return;}
-  if(!confirm('確定要把這些日內盤目標排入下一個小時嗎？已經走過的小時價格會保留，不會重畫。'))return;
+  const tomorrow=isAfterIntradayClose();
+  if(!confirm(tomorrow?'確定要把這些目標排入明日開盤設定嗎？':'確定要把這些日內盤目標排入下一個小時嗎？已經走過的小時價格會保留，不會重畫。'))return;
   let ok=0,miss=[];
   lines.forEach(line=>{
     const m=line.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)\s*(.*)$/);
@@ -1803,8 +1873,8 @@ function applyIntradayBatch(){
     ok++;
   });
   const S=syncIntradaySlotFromPoints();
-  gmLog('ev',`🎯 批次事件目標已排入下一小時 ${ok} 筆${miss.length?`，未匹配 ${miss.length} 筆`:''}`);
-  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
+  gmLog('ev',`🎯 批次事件目標已排入${tomorrow?'明日開盤':'下一小時'} ${ok} 筆${miss.length?`，未匹配 ${miss.length} 筆`:''}`);
+  if(!tomorrow)gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}`);
   if(miss.length)alert('以下未匹配：\n'+miss.join('\n'));
   push();renderAll();
 }
@@ -1812,12 +1882,18 @@ function saveIntradayAutoPref(){localStorage.setItem('gran_intraday_auto',docume
 async function runIntradayAuto(force=false){
   if(!W||busy)return;
   const now=new Date(), hour=now.getHours(), today=now.toDateString();
+  const todayYmd=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const runKey=`${today}-${hour}-${now.getMinutes()}`;
   let S=intradaySession();
   const isCloseHour=hour===0&&now.getMinutes()===0;
-  if(isCloseHour&&S.lastClosedRealDate===today)return;
+  const closedToday=()=>S.lastClosedRealDate===today||S.lastClosedRealDate===todayYmd;
+  if(isCloseHour&&closedToday())return;
   if(S.lastAutoRun===runKey&&!force)return;
   if(!isCloseHour&&(hour<MARKET_OPEN_HOUR||hour>23))return;
+  if(closedToday()){
+    if(S.status==='open'){S.status='closed';S.slot=INTRADAY_SLOTS.length-1;push();renderAll();}
+    S.lastAutoRun=runKey;return;
+  }
   if(S.dateKey!==intradayKey()||S.status==='closed'||S.status==='idle'){intradayOpen();S=intradaySession();}
   const targetSlot=currentRealIntradaySlot();
   if((intradaySession().slot||0)<targetSlot)intradayStep();
@@ -1836,6 +1912,12 @@ function setAssetHourMove(id, pct){
   const p=Math.max(-10,Math.min(10,Number(pct)||0))/100;
   // 優先用 GM 持久設定的波動模式
   const volPref=(W.assetVolPrefs&&W.assetVolPrefs[id])||qbVolForPct(p);
+  if(isAfterIntradayClose()){
+    setNextDayPlan(id,{targetPct:p,volatility:volPref,blaze:p>=DAILY_LIMIT?'up':p<=-DAILY_LIMIT?'dn':null});
+    gmLog('time',`${a.name} 明日開盤設定：${p>=0?'+':''}${(p*100).toFixed(0)}% / ${(VOL_OPTS.find(o=>o.v===volPref)?.l||volPref)}`);
+    push();renderMkt();
+    return;
+  }
   const P=queueNextHourMove(a,p,volPref);
   touchTrendForQueuedMove(a,p);
   const slotLabel=INTRADAY_SLOTS[P?.nextSlotShockSlot||nextQueuedIntradaySlot()]||'下一小時';
@@ -1850,6 +1932,14 @@ function setCloseTarget(id){
   const raw=parseFloat(el.value);
   if(isNaN(raw)){alert('請輸入漲跌幅，例如 5 或 -3');return;}
   const targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,raw/100));
+  if(isAfterIntradayClose()){
+    setNextDayPlan(id,{targetPct});
+    const finalPrice=Math.round((a.price||1)*(1+targetPct));
+    gmLog('time',`${a.name} 明日開盤設定：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → 約 ${finalPrice.toLocaleString()} G`);
+    el.value='';
+    push();renderMkt();
+    return;
+  }
   const P=intradayPlan(a);
   P.targetPct=targetPct;
   const finalPrice=Math.round((P.prevClose||a.price)*(1+targetPct));
@@ -1862,16 +1952,24 @@ function applyAllCloseTargets(){
   if(!W)return;
   let count=0;
   const applied=[];
+  const tomorrow=isAfterIntradayClose();
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const el=document.getElementById('ctgt_'+a.id);
     if(!el)return;
     const raw=parseFloat(el.value);
     if(isNaN(raw))return;
     const targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,raw/100));
-    const P=intradayPlan(a);
-    P.targetPct=targetPct;
-    const finalPrice=Math.round((P.prevClose||a.price)*(1+targetPct));
-    gmLog('time',`${a.name} 收盤目標：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → ${finalPrice.toLocaleString()} G`);
+    let finalPrice;
+    if(tomorrow){
+      setNextDayPlan(a.id,{targetPct});
+      finalPrice=Math.round((a.price||1)*(1+targetPct));
+      gmLog('time',`${a.name} 明日開盤設定：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → 約 ${finalPrice.toLocaleString()} G`);
+    }else{
+      const P=intradayPlan(a);
+      P.targetPct=targetPct;
+      finalPrice=Math.round((P.prevClose||a.price)*(1+targetPct));
+      gmLog('time',`${a.name} 收盤目標：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → ${finalPrice.toLocaleString()} G`);
+    }
     el.value='';
     count++;
     applied.push(`${a.name} ${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}%`);
@@ -2210,6 +2308,7 @@ async function applyPcts(pcts,label,opts={}){
   saveUndoSnapshot(`${opts.silent?'排程調整':'事件觸發'}：${label}（${ds()}）`);
   const corrPcts=calcCorrelationPcts(pcts);
   const allPcts={...corrPcts,...pcts};
+  const tomorrow=isAfterIntradayClose();
   let ok=0;
 
   Object.entries(allPcts).forEach(([id,rawPct])=>{
@@ -2229,7 +2328,7 @@ async function applyPcts(pcts,label,opts={}){
   });
 
   if(opts.silent){
-    gmLog('time',`排程事件已排入下一小時：${ds()}`);
+    gmLog('time',`排程事件已排入${tomorrow?'明日開盤':'下一小時'}：${ds()}`);
   }else{
     addLog('ev',`⚡ 世界事件：${label}`);
     addEventLog(`⚡ ${label}`);
@@ -2239,10 +2338,11 @@ async function applyPcts(pcts,label,opts={}){
     const pct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pcts[a.id])||0));
     return `${a.name} ${pct>=0?'+':''}${(pct*100).toFixed(1)}%`;
   }).join('  ');
-  if(affected&&!opts.silent)gmLog('ev',`🎯 下一小時影響：${affected}`);
+  if(affected&&!opts.silent)gmLog('ev',`🎯 ${tomorrow?'明日開盤':'下一小時'}影響：${affected}`);
 
   const S=syncIntradaySlotFromPoints();
-  gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}，共 ${ok} 支`);
+  if(tomorrow)gmLog('time',`明日開盤設定完成，共 ${ok} 支`);
+  else gmLog('time',`下一次日內盤推進：${INTRADAY_SLOTS[Math.min((S.slot||0)+1,INTRADAY_SLOTS.length-1)]}，共 ${ok} 支`);
   renderAll();
   await push();
 }
@@ -2256,7 +2356,7 @@ function buildEvtGrid(){
   });
 }
 function clearForm(){const nameEl=document.getElementById('evtName');const descEl=document.getElementById('evtDesc');const boxEl=document.getElementById('inferBox');if(nameEl)nameEl.value='';if(descEl)descEl.value='';if(boxEl)boxEl.classList.add('hidden');W.assets.forEach(a=>{const e=document.getElementById('epct_'+a.id);if(e)e.value='';});}
-async function fireNow(){const name=document.getElementById('evtName')?.value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}if(!confirm(`確定觸發「${name}」並排入下一個小時嗎？`))return;await applyPcts(p,name);}
+async function fireNow(){const name=document.getElementById('evtName')?.value.trim()||'未命名事件';const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}if(!confirm(`確定觸發「${name}」並排入${isAfterIntradayClose()?'明日開盤':'下一個小時'}嗎？`))return;await applyPcts(p,name);}
 function savePreset(){
   const name=document.getElementById('evtName')?.value.trim()||'';if(!name){alert('請輸入事件名稱');return;}
   const p=getPcts();if(!Object.keys(p).length){alert('請至少設定一個標的的漲跌幅');return;}
@@ -2276,7 +2376,7 @@ function renderPresets(){
     el.appendChild(d);
   });
 }
-function firePreset(i){const ev=W.presetEvents[i];if(!ev)return;if(!confirm(`確定觸發「${ev.name}」並排入下一個小時嗎？`))return;applyPcts(ev.pcts,ev.name);}
+function firePreset(i){const ev=W.presetEvents[i];if(!ev)return;if(!confirm(`確定觸發「${ev.name}」並排入${isAfterIntradayClose()?'明日開盤':'下一個小時'}嗎？`))return;applyPcts(ev.pcts,ev.name);}
 function delPreset(i){if(!confirm('確定刪除？'))return;W.presetEvents.splice(i,1);push();renderPresets();}
 
 // ═══════════════════════════════════════════════════════
@@ -2703,10 +2803,19 @@ function setAssetHourMovePick(id, range){
 // 波動模式 select 變更
 function onVolSelChange(id, val){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(isAfterIntradayClose()&&(val==='blazeUp'||val==='blazeDn')){
+    setNextDayPlan(id,{volatility:val,blaze:val==='blazeUp'?'up':'dn',targetPct:val==='blazeUp'?DAILY_LIMIT:-DAILY_LIMIT});
+    push();renderMkt();return;
+  }
   if(val==='blazeUp'){toggleBlaze(id,'up');return;}
   if(val==='blazeDn'){toggleBlaze(id,'dn');return;}
   if(!W.assetVolPrefs) W.assetVolPrefs={};
   W.assetVolPrefs[id] = val;
+  if(isAfterIntradayClose()){
+    setNextDayPlan(id,{volatility:INTRADAY_PATTERNS[val]?val:'neutral',blaze:null});
+    push(); renderMkt();
+    return;
+  }
   const P=intradayPlan(a);
   // ★ 立即套用到當日 plan，不等明天開盤
   if(P){
@@ -2761,6 +2870,7 @@ function renderMkt(){
   const S=intradaySession();
   const statusLabel=document.getElementById('intradayStatusLabel');
   if(statusLabel) statusLabel.textContent=`${S.status==='open'?'開盤中':S.status==='closed'?'已收盤':'待開盤'} · ${INTRADAY_SLOTS[S.slot||0]||'07:00'} · ${ds()}`;
+  const closedForTomorrow = isAfterIntradayClose();
 
   W.assets.forEach(a=>{
     if(!catMatch(a, _mktTab)) return;
@@ -2777,11 +2887,14 @@ function renderMkt(){
     const tr=document.createElement('tr');
     tr.className=(lUp?'is-limit-up':lDn?'is-limit-dn':isWarn?'is-warning':'');
 
-    const P = intradayPlan(a);
+    const P = closedForTomorrow ? W?.market?.intraday?.plans?.[a.id] : intradayPlan(a);
+    const nextPlan = nextDayPlanFor(a.id);
     // 波動模式：下拉選單顯示目前實際生效模式；只有排程到未來 slot 的 nextSlotVol 才顯示待生效
     const blazeVol=a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':null;
     const volActive = blazeVol || P?.volatility || 'neutral';
     const volActiveLabel = VOL_OPTS.find(o=>o.v===volActive)?.l || volActive;
+    const nextVol = nextPlan?.volatility || null;
+    const nextVolLabel = nextVol ? (VOL_OPTS.find(o=>o.v===nextVol)?.l || nextVol) : '';
     const queuedVol = P?.nextSlotShock!==undefined ? (P.nextSlotVol||null) : null;
     const queuedSlot = Number.isFinite(P?.nextSlotShockSlot) ? P.nextSlotShockSlot : null;
     const currentSlot = S.status==='open' ? (S.slot||0) : 0;
@@ -2789,24 +2902,26 @@ function renderMkt(){
     const queuedVolLabel = hasFutureQueuedVol ? (VOL_OPTS.find(o=>o.v===queuedVol)?.l || queuedVol) : '';
     const volStatusHtml = hasFutureQueuedVol
       ? `<div style="font-size:10px;color:#e08020;margin-top:2px">⏳ ${INTRADAY_SLOTS[queuedSlot]||'下一格'} 待生效：${queuedVolLabel}（目前：${volActiveLabel}）</div>`
+      : nextVol
+        ? `<div style="font-size:10px;color:#8e44ad;margin-top:2px">☀ 明日：${nextVolLabel}（目前：${volActiveLabel}）</div>`
       : `<div style="font-size:10px;color:#27a060;margin-top:2px">✓ 生效中：${volActiveLabel}</div>`;
     const volSelHtml = `
       <select class="vol-sel" onchange="onVolSelChange('${a.id}',this.value)">
-        ${VOL_OPTS.map(o=>`<option value="${o.v}"${volActive===o.v?' selected':''}>${o.l}</option>`).join('')}
+        ${VOL_OPTS.map(o=>`<option value="${o.v}"${(nextVol||volActive)===o.v?' selected':''}>${o.l}</option>`).join('')}
       </select>
       ${volStatusHtml}`;
 
     // 今日收盤目標（顯示已設定的 targetPct）
-    const tgt = P?.targetPct;
+    const tgt = closedForTomorrow && typeof nextPlan?.targetPct==='number' ? nextPlan.targetPct : P?.targetPct;
     const tgtLabel = (tgt!==undefined&&tgt!==0)
-      ? `<div class="close-target-set">${tgt>=0?'+':''}${(tgt*100).toFixed(1)}%</div>`
+      ? `<div class="close-target-set">${closedForTomorrow?'明日 ':''}${tgt>=0?'+':''}${(tgt*100).toFixed(1)}%</div>`
       : `<div class="close-target-set" style="color:var(--ink3)">未設</div>`;
     const closeTargetHtml = `
       <div class="close-target-wrap">
         <input class="close-target-inp" id="ctgt_${a.id}" type="number"
           placeholder="%" step="0.5" min="-10" max="10"
-          title="輸入今日收盤漲跌幅，例如 5 或 -3">
-        <button class="close-target-btn" onclick="setCloseTarget('${a.id}')">設定</button>
+          title="輸入${closedForTomorrow?'明日':'今日'}目標漲跌幅，例如 5 或 -3">
+        <button class="close-target-btn" onclick="setCloseTarget('${a.id}')">${closedForTomorrow?'明日':'設定'}</button>
       </div>
       ${tgtLabel}`;
     const temp=P?.tempIntervention;
@@ -2848,6 +2963,26 @@ function renderMkt(){
 
 function toggleBlaze(id,mode){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
+  if(isAfterIntradayClose()){
+    const alreadyNext=nextDayPlanFor(id)?.blaze===mode;
+    if(alreadyNext){
+      setNextDayPlan(id,{blaze:null,volatility:'neutral'});
+      if(W.assetVolPrefs&&(W.assetVolPrefs[a.id]==='blazeUp'||W.assetVolPrefs[a.id]==='blazeDn'))W.assetVolPrefs[a.id]='neutral';
+      gmLog('ev',`· ${a.name} 取消明日強勢${mode==='up'?'上漲':'下跌'}設定`);
+    }else{
+      const targetPct=mode==='up'?DAILY_LIMIT:-DAILY_LIMIT;
+      setNextDayPlan(id,{
+        targetPct,
+        volatility:mode==='up'?'blazeUp':'blazeDn',
+        blaze:mode
+      });
+      if(!W.assetVolPrefs)W.assetVolPrefs={};
+      W.assetVolPrefs[a.id]=mode==='up'?'blazeUp':'blazeDn';
+      gmLog('ev',`${mode==='up'?'🔥':'💀'} ${a.name} 明日開盤設定：強勢${mode==='up'?'上漲':'下跌'} / ${targetPct>=0?'+':''}${(targetPct*100).toFixed(0)}%`);
+    }
+    push();renderMkt();
+    return;
+  }
   if(a.blaze===mode){
     a.blaze=null;
     if(W.assetVolPrefs&&(W.assetVolPrefs[a.id]==='blazeUp'||W.assetVolPrefs[a.id]==='blazeDn'))W.assetVolPrefs[a.id]='neutral';
@@ -2941,10 +3076,21 @@ async function applyGroupCommand(){
   const targetRaw=vol==='blazeUp'?10:vol==='blazeDn'?-10:raw;
   const pct=Math.max(-10,Math.min(10,targetRaw));
   const p=pct/100;
+  const tomorrow=isAfterIntradayClose();
   let ok=0, previews=[];
   if(!W.assetVolPrefs)W.assetVolPrefs={};
   g.assetIds.forEach(id=>{
     const a=W.assets.find(x=>x.id===id&&!x.delisted);if(!a)return;
+    if(tomorrow){
+      setNextDayPlan(a.id,{targetPct:p,volatility:vol,blaze:vol==='blazeUp'?'up':vol==='blazeDn'?'dn':null});
+      W.assetVolPrefs[a.id]=vol;
+      ok++;
+      if(previews.length<3){
+        const finalPrice=Math.round((a.price||1)*(1+p));
+        previews.push(`${a.name} → 約 ${finalPrice.toLocaleString()} G`);
+      }
+      return;
+    }
     const P=setTodayCloseTarget(a,p);if(!P)return;
     a.blaze=vol==='blazeUp'?'up':vol==='blazeDn'?'dn':null;
     W.assetVolPrefs[a.id]=vol;
@@ -2962,7 +3108,7 @@ async function applyGroupCommand(){
   });
   if(!ok){alert(`族群「${g.name}」目前沒有可套用的上市標的`);return;}
   const volLabel=VOL_OPTS.find(o=>o.v===vol)?.l || INTRADAY_PATTERNS[vol]?.name || vol;
-  const msg=`已套用「${g.name}」：當日目標 ${pct>=0?'+':''}${pct.toFixed(1)}% / ${volLabel}，共 ${ok} 支`;
+  const msg=`已套用「${g.name}」：${tomorrow?'明日開盤':'當日'}目標 ${pct>=0?'+':''}${pct.toFixed(1)}% / ${volLabel}，共 ${ok} 支`;
   gmLog('time',`${msg}${previews.length?`（${previews.join('、')}${ok>previews.length?'...':''}）`:''}`);
   await push();renderAll();
   const status=document.getElementById('groupApplyStatus');
