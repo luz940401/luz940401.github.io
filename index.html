@@ -2900,11 +2900,13 @@ function renderMkt(){
     const currentSlot = S.status==='open' ? (S.slot||0) : 0;
     const hasFutureQueuedVol = queuedVol && queuedVol!==volActive && (queuedSlot===null || queuedSlot>currentSlot);
     const queuedVolLabel = hasFutureQueuedVol ? (VOL_OPTS.find(o=>o.v===queuedVol)?.l || queuedVol) : '';
-    const volStatusHtml = hasFutureQueuedVol
-      ? `<div style="font-size:10px;color:#e08020;margin-top:2px">⏳ ${INTRADAY_SLOTS[queuedSlot]||'下一格'} 待生效：${queuedVolLabel}（目前：${volActiveLabel}）</div>`
-      : nextVol
-        ? `<div style="font-size:10px;color:#8e44ad;margin-top:2px">☀ 明日：${nextVolLabel}（目前：${volActiveLabel}）</div>`
-      : `<div style="font-size:10px;color:#27a060;margin-top:2px">✓ 生效中：${volActiveLabel}</div>`;
+    const volStatusHtml = closedForTomorrow
+      ? (nextVol
+        ? `<div style="font-size:10px;color:#8e44ad;margin-top:2px">☀ 明日開盤：${nextVolLabel}</div>`
+        : `<div style="font-size:10px;color:#8e44ad;margin-top:2px">☀ 明日開盤：尚未指定波動</div>`)
+      : hasFutureQueuedVol
+        ? `<div style="font-size:10px;color:#e08020;margin-top:2px">⏳ ${INTRADAY_SLOTS[queuedSlot]||'下一格'} 待生效：${queuedVolLabel}（目前：${volActiveLabel}）</div>`
+        : `<div style="font-size:10px;color:#27a060;margin-top:2px">✓ 生效中：${volActiveLabel}</div>`;
     const volSelHtml = `
       <select class="vol-sel" onchange="onVolSelChange('${a.id}',this.value)">
         ${VOL_OPTS.map(o=>`<option value="${o.v}"${(nextVol||volActive)===o.v?' selected':''}>${o.l}</option>`).join('')}
