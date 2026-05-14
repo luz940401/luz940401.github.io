@@ -1059,6 +1059,32 @@ function futurePnL(f){
 }
 function futuresMarginValue(p){return (p.futures||[]).reduce((s,f)=>s+(Number(f.margin)||0),0);}
 function futuresPnLValue(p){return (p.futures||[]).reduce((s,f)=>s+futurePnL(f),0);}
+function futureGroupKey(f){
+  return [f.assetId||'',f.side||'long',Number(f.multiplier)||2].join('|');
+}
+function groupedFutures(p){
+  const groups={};
+  (p.futures||[]).forEach((f,idx)=>{
+    const contracts=Number(f.contracts)||0;
+    if(contracts<=0)return;
+    const key=futureGroupKey(f);
+    if(!groups[key]){
+      groups[key]={...f,contracts:0,entryPrice:0,margin:0,maintenance:0,_entryCost:0,_sourceIndexes:[]};
+    }
+    const g=groups[key];
+    g.contracts+=contracts;
+    g._entryCost+=(Number(f.entryPrice)||0)*contracts;
+    g.margin+=Number(f.margin)||0;
+    g.maintenance+=Number(f.maintenance)||0;
+    g._sourceIndexes.push(idx);
+  });
+  return Object.values(groups).map(g=>{
+    g.contracts=Math.round(g.contracts*1000)/1000;
+    g.entryPrice=g.contracts>0?g._entryCost/g.contracts:0;
+    delete g._entryCost;
+    return g;
+  });
+}
 
 function setSS(state,txt){document.getElementById('sdot').className='sdot '+state;document.getElementById('slabel').textContent=txt;}
 
@@ -2531,7 +2557,7 @@ function renderWealth(){
       const pnl=shortPnL(s);const cls=pnl>=0?'pnl-pos':'pnl-neg';const sign=pnl>=0?'+':'';
       holdHtml+=`<div class="holding-row"><span class="holding-badge short">空單</span><span>${a.icon} ${a.name} ×${fmtQty(s.shortQty)}</span><span>進 ${Math.round(s.entryPrice||0).toLocaleString()}G</span><span>本金 ${Math.round(s.principal||0).toLocaleString()}G</span><span class="${cls}">${sign}${Math.round(pnl).toLocaleString()}G</span></div>`;
     });
-    (p.futures||[]).forEach(f=>{
+    groupedFutures(p).forEach(f=>{
       const a=W.assets.find(x=>x.id===f.assetId);if(!a)return;
       const pnl=futurePnL(f);const cls=pnl>=0?'pnl-pos':'pnl-neg';const sign=pnl>=0?'+':'';const side=f.side==='short'?'空':'多';
       holdHtml+=`<div class="holding-row"><span class="holding-badge future">期貨${side}</span><span>${a.icon} ${a.name} ×${fmtQty(f.contracts)}口</span><span>進 ${Math.round(f.entryPrice||0).toLocaleString()}G</span><span>保證金 ${Math.round(f.margin||0).toLocaleString()}G</span><span class="${cls}">${sign}${Math.round(pnl).toLocaleString()}G</span></div>`;
