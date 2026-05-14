@@ -32,6 +32,12 @@ body{min-height:100vh;background:#140c04;background-image:radial-gradient(ellips
 .mstat{text-align:center;min-width:72px;}
 .mstat-val{font-size:18px;font-weight:700;}
 .mstat-lbl{font-size:11px;color:var(--ink3);margin-top:2px;}
+.chart-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:-2px 0 12px;padding:8px 10px;border:1px solid var(--parch3);background:rgba(255,255,255,.18);}
+.chart-tool-title{font-size:11px;font-weight:900;color:var(--ink3);letter-spacing:1px;}
+.ma-options{display:flex;gap:6px;flex-wrap:wrap;}
+.ma-toggle{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;color:var(--ink2);border:1px solid var(--parch3);background:rgba(255,255,255,.28);padding:4px 8px;cursor:pointer;user-select:none;}
+.ma-toggle input{width:auto;margin:0;accent-color:var(--gold);}
+.ma-swatch{width:18px;height:3px;border-radius:999px;display:inline-block;}
 .panel{background:rgba(245,233,206,0.95);border:2px solid var(--gold);box-shadow:0 3px 16px var(--shadow);margin-bottom:14px;}
 .ph{background:var(--parch2);border-bottom:2px solid var(--gold);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
 .ph-title{font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:1px;}
@@ -259,6 +265,10 @@ firebase.auth().signInAnonymously().catch(()=>{});
     <div class="modal-head"><div class="modal-title" id="modalTitle">走勢圖</div><button class="modal-close" onclick="closeModal()">✕</button></div>
     <div class="modal-body">
       <div class="modal-stats" id="modalStats"></div>
+      <div class="chart-tools">
+        <div class="chart-tool-title">均線</div>
+        <div class="ma-options" id="maOptions"></div>
+      </div>
       <canvas id="modalChart" height="240" style="width:100%"></canvas>
     </div>
   </div>
@@ -617,7 +627,9 @@ const INTRADAY_PATTERNS={
   quiet:{name:'沒波動',pull:1,noise:0},
   violent:{name:'劇烈',pull:.38,noise:1.85,zigzag:true,zig:.022,wave:.026},
   sellThenBuy:{name:'先殺後拉',pull:.82,noise:.72,shape:'sellThenBuy',shock:.065},
-  buyThenSell:{name:'先拉後殺',pull:.82,noise:.72,shape:'buyThenSell',shock:.065}
+  buyThenSell:{name:'先拉後殺',pull:.82,noise:.72,shape:'buyThenSell',shock:.065},
+  fakeBreakout:{name:'假突破',pull:.60,noise:1.30,shape:'fakeBreakout',shock:.055},
+  washout:{name:'洗盤',pull:.60,noise:1.30,shape:'washout',shock:.055}
 };
 // 趨勢編輯面板狀態（需早於 renderTrendStatus 宣告）
 var trendEditOpen=false;
@@ -1729,6 +1741,8 @@ function intradayVolKey(s){
   if(s.includes('劇'))return 'violent';
   if(s.includes('先殺'))return 'sellThenBuy';
   if(s.includes('先拉'))return 'buyThenSell';
+  if(s.includes('假突破'))return 'fakeBreakout';
+  if(s.includes('洗盤'))return 'washout';
   return 'neutral';
 }
 function isAfterIntradayClose(){
@@ -3176,8 +3190,45 @@ function renderTrendStatus(){
 // ═══════════════════════════════════════════════════════
 //  走勢圖
 // ═══════════════════════════════════════════════════════
+const MA_LINES=[
+  {n:5,label:'MA5',color:'#d35400'},
+  {n:10,label:'MA10',color:'#8e44ad'},
+  {n:20,label:'MA20',color:'#2980b9'},
+  {n:30,label:'MA30',color:'#6a4820'}
+];
+let chartMaVisible={5:true,10:true,20:true,30:false};
+let currentChartAssetId=null;
+
+function renderMaOptions(){
+  const el=document.getElementById('maOptions');if(!el)return;
+  el.innerHTML=MA_LINES.map(ma=>`
+    <label class="ma-toggle" title="顯示 ${ma.label} 均線">
+      <input type="checkbox" ${chartMaVisible[ma.n]?'checked':''} onchange="toggleChartMa(${ma.n},this.checked)">
+      <span class="ma-swatch" style="background:${ma.color}"></span>
+      <span>${ma.label}</span>
+    </label>
+  `).join('');
+}
+
+function toggleChartMa(n,checked){
+  chartMaVisible[n]=!!checked;
+  const a=W.assets.find(x=>x.id===currentChartAssetId);
+  if(a)drawFull(a);
+}
+
+function movingAverage(values,days){
+  const out=new Array(values.length).fill(null);
+  for(let i=days-1;i<values.length;i++){
+    let sum=0;
+    for(let j=i-days+1;j<=i;j++)sum+=values[j];
+    out[i]=sum/days;
+  }
+  return out;
+}
+
 function openChart(id){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
+  currentChartAssetId=id;
   const ch=gc(a),h=a.history||[],series=h.length?h.slice():[a.price];if(series[series.length-1]!==a.price)series.push(a.price);
   let hi=series[0],lo=series[0];for(let i=1;i<series.length;i++){if(series[i]>hi)hi=series[i];if(series[i]<lo)lo=series[i];}const cur=a.price,first=series[0],tot=(cur-first)/first*100;
   document.getElementById('modalTitle').textContent=`${a.icon} ${a.name} 走勢圖`;
@@ -3187,6 +3238,7 @@ function openChart(id){
     <div class="mstat"><div class="mstat-val" style="color:${dnCol}">${lo.toLocaleString()} G</div><div class="mstat-lbl">歷史最低</div></div>
     <div class="mstat"><div class="mstat-val" style="color:${chCol(tot)}">${tot>=0?'+':''}${tot.toFixed(1)}%</div><div class="mstat-lbl">總漲跌幅</div></div>
     <div class="mstat"><div class="mstat-val">${series.length}</div><div class="mstat-lbl">記錄天數</div></div>`;
+  renderMaOptions();
   document.getElementById('chartModal').classList.remove('hidden');
   requestAnimationFrame(()=>drawFull(a));
 }
@@ -3197,6 +3249,11 @@ function drawFull(a){
   const candles=gmMiniCandles(a,48);
   if(!candles.length)return;
   const vals=candles.flatMap(cd=>[cd.open,cd.high,cd.low,cd.close]);
+  const closes=candles.map(cd=>cd.close);
+  const maSeries=MA_LINES.map(ma=>({...ma,values:movingAverage(closes,ma.n)}));
+  maSeries.forEach(ma=>{
+    if(chartMaVisible[ma.n])ma.values.forEach(v=>{if(Number.isFinite(v))vals.push(v);});
+  });
   const rawMn=Math.min(...vals),rawMx=Math.max(...vals);
   const padRange=Math.max((rawMx-rawMn)*0.14,rawMx*0.012,1);
   const mn=rawMn-padRange,mx=rawMx+padRange,rng=mx-mn||1;
@@ -3220,6 +3277,36 @@ function drawFull(a){
     ctx.fillRect(x-barW/2,top,barW,h);
     if(i===candles.length-1){ctx.strokeStyle='rgba(26,16,8,.45)';ctx.strokeRect(x-barW/2,top,barW,h);}
   });
+  maSeries.forEach(ma=>{
+    if(!chartMaVisible[ma.n])return;
+    ctx.strokeStyle=ma.color;
+    ctx.lineWidth=1.8;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    let started=false;
+    ma.values.forEach((v,i)=>{
+      if(!Number.isFinite(v))return;
+      const x=px(i),y=py(v);
+      if(!started){ctx.moveTo(x,y);started=true;}
+      else ctx.lineTo(x,y);
+    });
+    if(started)ctx.stroke();
+  });
+  const legend=maSeries.filter(ma=>chartMaVisible[ma.n]);
+  if(legend.length){
+    let lx=pl,ly=12;
+    ctx.font='11px sans-serif';ctx.textAlign='left';
+    legend.forEach(ma=>{
+      const latest=[...ma.values].reverse().find(v=>Number.isFinite(v));
+      if(!Number.isFinite(latest))return;
+      const text=`${ma.label} ${Math.round(latest).toLocaleString()}`;
+      ctx.strokeStyle=ma.color;ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(lx,ly-3);ctx.lineTo(lx+16,ly-3);ctx.stroke();
+      ctx.fillStyle=ma.color;ctx.fillText(text,lx+20,ly);
+      lx+=ctx.measureText(text).width+48;
+      if(lx>w-140){lx=pl;ly+=15;}
+    });
+  }
   const step=Math.max(1,Math.floor(candles.length/6));
   ctx.fillStyle='rgba(74,56,16,0.5)';ctx.font='10px sans-serif';ctx.textAlign='center';
   candles.forEach((_,i)=>{if(i%step===0||i===candles.length-1)ctx.fillText(i===candles.length-1?'今日':`-${candles.length-1-i}`,px(i),H-8);});
