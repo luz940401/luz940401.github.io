@@ -3974,6 +3974,8 @@ init();
 setInterval(()=>{const n=new Date();const ts=`現實 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;const gc=document.getElementById('gmClock');if(gc)gc.textContent=ts;const rc=document.getElementById('realClock');if(rc)rc.textContent=ts;},1000);
 // 夜盤自動推進：每分鐘檢查一次（00:05~06:55）
 setInterval(()=>runNightMarketAuto(),60000);
+// 日盤自動推進：每分鐘檢查一次（07:00~24:00）
+setInterval(()=>runIntradayAuto(),60000);
 
 // ═══════════════════════════════════════════════════════
 //  撤銷系統（只保留 1 步）
