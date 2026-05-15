@@ -388,7 +388,6 @@ firebase.auth().signInAnonymously().catch(()=>{});
               <select id="schIndexSession">
                 <option value="">不影響大盤</option>
                 <option value="day">日盤大盤</option>
-                <option value="night">夜盤大盤</option>
               </select>
             </div>
             <div class="field"><label>大盤影響 %</label><input type="number" id="schIndexPct" min="-10" max="10" step="0.1" placeholder="例如 -2.5"></div>
@@ -444,7 +443,7 @@ firebase.auth().signInAnonymously().catch(()=>{});
   <div class="panel">
     <div class="ph">
       <div class="ph-title">📈 大盤指數控制</div>
-      <span style="font-size:12px;color:var(--ink3)">日盤跟隨成分股，夜盤只跑指數</span>
+      <span style="font-size:12px;color:var(--ink3)">日盤跟隨成分股與正常收盤</span>
     </div>
     <div class="pb">
       <div id="marketIndexPanel"></div>
@@ -466,7 +465,6 @@ firebase.auth().signInAnonymously().catch(()=>{});
           <label>干預盤別</label>
           <select id="indexImpactSession">
             <option value="day">日盤大盤</option>
-            <option value="night">夜盤大盤</option>
           </select>
         </div>
         <div class="field"><label>干預幅度 %</label><input type="number" id="indexImpactPct" min="-10" max="10" step="0.1" value="1"></div>
@@ -474,9 +472,6 @@ firebase.auth().signInAnonymously().catch(()=>{});
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
         <button class="btn btn-purple" onclick="applyMarketIndexImpactFromUi()">套用大盤干預</button>
         <button class="btn btn-ghost" onclick="resetMarketIndexState()" style="color:var(--up);border-color:var(--up)">重置大盤基準</button>
-      </div>
-      <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--parch3);font-size:11px;color:var(--ink3)">
-        🌙 夜盤 00:05 自動開盤，根據各股明日開盤設定推進指數；排程夜盤事件自動分配漲跌幅至各股次日計畫。
       </div>
     </div>
   </div>
@@ -1649,10 +1644,8 @@ function intradayOpen(){
   W.market.nextDayPlans={};
   const MI=ensureMarketIndex();
   MI.day.dateKey=intradayKey();
-  // 若夜盤開盤中，以夜盤收盤價作為隔日開盤參考基準（類台股期貨夜盤機制）
-  const _nightRef=MI.night?.status==='open'?MI.night.price:null;
-  MI.day.prevClose=_nightRef||(MI.day.price||calcMarketIndexUnderlying(W));
-  if(_nightRef){MI.night.status='closed';gmLog('time',`夜盤收盤（日盤開啟），指數 ${Math.round(_nightRef).toLocaleString()} 帶入隔日基準`);}
+  MI.day.prevClose=MI.day.price||calcMarketIndexUnderlying(W);
+  if(MI.night)MI.night.status='closed';
   MI.day.factor=1;
   MI.day.points=[];
   syncMarketIndexDay('日盤開盤');
@@ -2362,41 +2355,14 @@ function applyMarketIndexImpact(sessionKey,pct,label,distribute=false){
   return syncMarketIndexDay(label||'日盤干預');
 }
 function applyMarketIndexImpactFromUi(){
-  const session=document.getElementById('indexImpactSession')?.value||'day';
+  const session='day';
   const pct=(parseFloat(document.getElementById('indexImpactPct')?.value)||0)/100;
   const price=applyMarketIndexImpact(session,pct,'GM干預',true);
-  gmLog('time',`大盤${session==='night'?'夜盤':'日盤'}干預 ${(pct*100)>=0?'+':''}${(pct*100).toFixed(1)}%，指數 ${price.toLocaleString()}`);
+  gmLog('time',`大盤日盤干預 ${(pct*100)>=0?'+':''}${(pct*100).toFixed(1)}%，指數 ${price.toLocaleString()}`);
   push();renderMarketIndex();
 }
 async function runNightMarketAuto(force=false){
-  if(!W||busy)return;
-  // 夜盤同樣由 Apps Script 後端統一推進；GM 頁保持唯讀，避免背景頁籤和後端互相覆寫。
-  if(!force)return;
-  const I=ensureMarketIndex();
-  const N=I.night;
-  const now=new Date(),h=now.getHours(),m=now.getMinutes();
-  const today=now.toDateString();
-  const runKey=`${today}-${h}-${m}`;
-  // 夜盤時段：00:05 ~ 06:55（日盤開盤前）
-  const isNightHour=(h===0&&m>=5)||(h>0&&h<MARKET_OPEN_HOUR);
-  if(!isNightHour)return;
-  if(N.lastNightAutoRun===runKey&&!force)return;
-  N.lastNightAutoRun=runKey;
-  if(N.status!=='open')openNightMarketIndex();
-  const targetSlot=currentRealNightSlot();
-  const lastSlot=N.points.length>0?N.points[N.points.length-1].slot:0;
-  if(lastSlot>=targetSlot&&!force)return;
-  // 計算夜盤目標指數（根據各股 nextDayPlans）
-  const target=calcNightTargetIndex();
-  const cur=N.price||N.prevClose||target;
-  const remaining=Math.max(1,NIGHT_SLOTS.length-1-targetSlot);
-  // 每格向目標靠攏（剩餘格數分攤差距）+ 隨機噪音
-  const pull=(target-cur)/remaining;
-  const noise=(Math.random()-0.5)*Math.abs(cur)*0.0015;
-  const move=(pull+noise)/Math.max(1,cur);
-  applyMarketIndexImpact('night',move,'夜盤自動');   // 不分配給股票（distribute=false）
-  runDueSchedules();  // 觸發夜盤排程事件（事件內部有 distribute=true）
-  push();renderMarketIndex();
+  return;
 }
 function resetMarketIndexState(){
   if(!confirm('重置大盤基準？這會重新用目前股價作為成分股基準。'))return;
@@ -4130,8 +4096,6 @@ setInterval(()=>{const n=new Date();const ts=`現實 ${String(n.getHours()).padS
 // 日內盤由 Apps Script 後端自動推進；GM 頁不再於背景自動補追，避免與後端同時改寫行情。
 setTimeout(()=>runIntradayAuto(false),4000);
 setInterval(()=>runIntradayAuto(),60000);
-// 夜盤自動推進：每分鐘檢查一次（00:05~06:55）
-setInterval(()=>runNightMarketAuto(),60000);
 
 // ═══════════════════════════════════════════════════════
 //  撤銷系統（只保留 1 步）
@@ -4193,7 +4157,7 @@ function addSchedule(){
   const timeVal = document.getElementById('schTime').value;
   if(!timeVal){ alert('請填入時間'); return; }
   const indexSession=document.getElementById('schIndexSession')?.value||'';
-  const normalizedTime=indexSession==='night'?timeVal:timeLabelForSlot(nearestIntradaySlotForTime(timeVal));
+  const normalizedTime=timeLabelForSlot(nearestIntradaySlotForTime(timeVal));
   const gameDayInput = parseInt(document.getElementById('schGameDay')?.value);
   const gameDay = isNaN(gameDayInput) ? (W?.gameDay||1) : gameDayInput;
   if(gameDay < (W?.gameDay||1)){ alert('遊戲日期不能早於目前日期（第'+W.gameDay+'日）'); return; }
@@ -4202,7 +4166,7 @@ function addSchedule(){
   const pcts = getSchPcts();
   const indexPctRaw=parseFloat(document.getElementById('schIndexPct')?.value);
   const indexImpact=(indexSession&&Number.isFinite(indexPctRaw))
-    ? {session:indexSession,pct:Math.max(-10,Math.min(10,indexPctRaw))/100}
+    ? {session:'day',pct:Math.max(-10,Math.min(10,indexPctRaw))/100}
     : null;
 
   if(!W.schedules) W.schedules=[];
@@ -4248,7 +4212,7 @@ function renderSchedules(){
     const actionLabel = !hasName && !hasPcts && !hasIndex ? '純推進' : !hasName && hasPcts ? '靜默漲跌' : hasIndex && !hasPcts ? '大盤事件' : '事件觸發';
     const pctSummary = Object.entries(s.pcts||{}).filter(([,v])=>v!==0).slice(0,3)
       .map(([id,v])=>{ const a=W.assets.find(x=>x.id===id); return a?`${a.name}${v>=0?'+':''}${(v*100).toFixed(0)}%`:'' }).filter(Boolean).join('  ');
-    const indexSummary = hasIndex ? `大盤${s.indexImpact.session==='night'?'夜盤':'日盤'} ${(s.indexImpact.pct*100)>=0?'+':''}${(s.indexImpact.pct*100).toFixed(1)}%` : '';
+    const indexSummary = hasIndex ? `大盤日盤 ${(s.indexImpact.pct*100)>=0?'+':''}${(s.indexImpact.pct*100).toFixed(1)}%` : '';
 
     const row = document.createElement('div');
     row.style.cssText='display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border:1px solid var(--parch3);margin-bottom:6px;background:rgba(255,255,255,0.15);flex-wrap:wrap';
@@ -4289,26 +4253,17 @@ function renderMarketIndex(){
   const el=document.getElementById('marketIndexPanel');if(!el||!W)return;
   const I=ensureMarketIndex();
   const dayPrice=syncMarketIndexDay();
-  const D=I.day,N=I.night;
+  const D=I.day;
   const dayPct=pctTextFromPrices(D.price,D.prevClose);
-  const nightPct=pctTextFromPrices(N.price,N.prevClose);
   const dayColor=D.price>=D.prevClose?'var(--up)':'var(--dn)';
-  const nightColor=N.price>=N.prevClose?'var(--up)':'var(--dn)';
   el.innerHTML=`
-    <div class="g2">
+    <div>
       <div style="border:1px solid var(--parch3);background:rgba(255,255,255,.18);padding:10px">
         <div style="font-size:11px;color:var(--ink3);font-weight:800;letter-spacing:1px">日盤大盤</div>
         <div style="font-size:28px;font-weight:900;color:${dayColor}">${(D.price||dayPrice).toLocaleString()}</div>
         <div style="font-size:12px;color:${dayColor};font-weight:800">${dayPct}</div>
         ${sparklineSvg(D.points, D.price>=D.prevClose?'#b42318':'#16884a')}
         <div style="font-size:11px;color:var(--ink3)">高 ${Math.round(D.high||D.price).toLocaleString()} / 低 ${Math.round(D.low||D.price).toLocaleString()} / 係數 ${(D.factor||1).toFixed(4)}</div>
-      </div>
-      <div style="border:1px solid var(--parch3);background:rgba(255,255,255,.18);padding:10px">
-        <div style="font-size:11px;color:var(--ink3);font-weight:800;letter-spacing:1px">夜盤大盤</div>
-        <div style="font-size:28px;font-weight:900;color:${nightColor}">${Math.round(N.price||D.price||0).toLocaleString()}</div>
-        <div style="font-size:12px;color:${nightColor};font-weight:800">${nightPct}</div>
-        ${sparklineSvg(N.points, N.price>=N.prevClose?'#b42318':'#16884a')}
-        <div style="font-size:11px;color:var(--ink3)">狀態 ${N.status==='open'?'開盤':'未開'} / 高 ${Math.round(N.high||N.price||0).toLocaleString()} / 低 ${Math.round(N.low||N.price||0).toLocaleString()}</div>
       </div>
     </div>`;
   const wrap=document.getElementById('indexWeightEditorWrap');
@@ -4451,13 +4406,6 @@ function schedIsDue(s){
   const sDay=s.gameDay||1;
   if(sDay>curDay)return false;
   if(sDay<curDay)return true;
-  if(s.indexImpact?.session==='night'){
-    const now=new Date();
-    const curMinutes=now.getHours()*60+now.getMinutes();
-    const parts=(s.gameTime||'00:00').split(':');
-    const schedMinutes=(parseInt(parts[0]||'0',10))*60+parseInt(parts[1]||'0',10);
-    return curMinutes>=schedMinutes;
-  }
   // 同一天：比較 slot
   const S=intradaySession();
   const curSlot=S?.slot||0;
@@ -4485,10 +4433,9 @@ function execSchedule(s){
     gmLog('time',`排程漲跌幅已在 ${s.gameTime||'?'} 生效，並設定為當日收盤目標，共 ${ok} 支`);
   }
   if(hasIndex){
-    // 排程事件主動干預大盤時，夜盤需反向分配漲跌幅給各股 nextDayPlans
-    const price=applyMarketIndexImpact(s.indexImpact.session,s.indexImpact.pct,s.evtName||'排程大盤事件',true);
+    const price=applyMarketIndexImpact('day',s.indexImpact.pct,s.evtName||'排程大盤事件',true);
     if(hasName&&!hasPcts){gmLog('ev',`[大盤排程] ${s.evtName}`);}
-    gmLog('time',`排程大盤${s.indexImpact.session==='night'?'夜盤':'日盤'}影響 ${(s.indexImpact.pct*100)>=0?'+':''}${(s.indexImpact.pct*100).toFixed(1)}%，指數 ${price.toLocaleString()}`);
+    gmLog('time',`排程大盤日盤影響 ${(s.indexImpact.pct*100)>=0?'+':''}${(s.indexImpact.pct*100).toFixed(1)}%，指數 ${price.toLocaleString()}`);
   }else if(!hasPcts&&hasName){
     addLog('ev',`⚡ 世界事件：${s.evtName}`);
     addEventLog(`⚡ ${s.evtName}`);
