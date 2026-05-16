@@ -1069,6 +1069,19 @@ const upCol='#c0392b', dnCol='#27ae60';
 const chCol=ch=>ch>=0?upCol:dnCol;
 const sn=d=>{const m=Math.floor(((d-1)%360)/30);return SEASONS[m]+'之日';};
 const ds=()=>`格蘭曆 第${W.gameYear}年 第${W.gameDay||1}日`;
+function realDateKey(d=new Date()){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function tradingCloseRealDateKey(d=new Date()){
+  const closeDate=d.getHours()<MARKET_OPEN_HOUR?new Date(d.getTime()-24*60*60*1000):d;
+  return realDateKey(closeDate);
+}
+function worldAbsDay(w){
+  return ((Number(w?.gameYear)||1)-1)*360+(Number(w?.gameDay)||1);
+}
 const gc=a=>{const h=a.history;return h.length<2?0:(h[h.length-1]-h[h.length-2])/h[h.length-2];};
 const isLimitUp=a=>gc(a)>=DAILY_LIMIT*0.98;
 const isLimitDn=a=>gc(a)<=-DAILY_LIMIT*0.98;
@@ -1268,6 +1281,13 @@ async function push(){
       try{
         const fbSnap=await firebase.database().ref('world').get();
         if(fbSnap.exists())fbWorld=fbSnap.val();
+        if(fbWorld&&!W._forceOverwrite&&worldAbsDay(fbWorld)>worldAbsDay(saveWorld)){
+          W=migrateAssets(fbWorld);
+          setSS('ok','雲端已換日，已改用最新資料');
+          try{localStorage.setItem(LOCAL_KEY,JSON.stringify(W));}catch(_){}
+          renderAll();
+          return;
+        }
         if(fbWorld&&Array.isArray(fbWorld.players)&&Array.isArray(saveWorld.players)){
           const fp=fbWorld.players||[];
           saveWorld.players=saveWorld.players.map((lp,i)=>{
@@ -1603,6 +1623,10 @@ function calcNextDayTargetPct(a,keepPct){
 function intradayOpen(){
   if(!W.market)W.market=initMarketState();
   const old=W.market.intraday;
+  if(old?.status==='closed'&&old?.dateKey===intradayKey()&&(old.lastClosedRealDate===realDateKey()||old.lastClosedRealDate===new Date().toDateString())){
+    alert('今日已收盤，請等下一個現實日再開盤。');
+    return false;
+  }
   const oldPlans=old?.plans||{};
   const nextDayPlans=W.market.nextDayPlans||{};
   const plans={};
@@ -1640,7 +1664,7 @@ function intradayOpen(){
     if(a.blaze==='up')plans[a.id].limitLocked='up';
     if(a.blaze==='dn')plans[a.id].limitLocked='dn';
   });
-  W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:''};
+  W.market.intraday={dateKey:intradayKey(),status:'open',slot:0,plans,lastAutoRun:'',lastClosedRealDate:old?.dateKey===intradayKey()?(old?.lastClosedRealDate||''):''};
   W.market.nextDayPlans={};
   const MI=ensureMarketIndex();
   MI.day.dateKey=intradayKey();
@@ -1652,10 +1676,14 @@ function intradayOpen(){
   syncIntradaySlotFromPoints();
   gmLog('time',`⏱ 日內盤開盤：${ds()} 07:00`);
   push();renderAll();
+  return true;
 }
 function intradayStep(silent=false){
   let S=syncIntradaySlotFromPoints();
-  if(S.status!=='open'){intradayOpen();S=intradaySession();}
+  if(S.status!=='open'){
+    if(intradayOpen()===false)return;
+    S=intradaySession();
+  }
   const step=(S.slot||0)+1;
   if(step>=INTRADAY_SLOTS.length){intradayClose();return;}
   W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
@@ -1852,7 +1880,7 @@ function intradayClose(){
   const _MI=ensureMarketIndex();
   if(_MI.day&&_MI.day.price){_MI.history.push(Math.round(_MI.day.price));if(_MI.history.length>500)_MI.history=_MI.history.slice(-500);}
   S.status='closed';
-  S.lastClosedRealDate=new Date().toDateString();
+  S.lastClosedRealDate=tradingCloseRealDateKey();
   addLog('time',`日內盤收盤：${ds()}，收盤價已寫入歷史`);
   W.gameDay=(W.gameDay||1)+1;
   if(W.gameDay>360){W.gameDay=1;W.gameYear++;}
