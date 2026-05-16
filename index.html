@@ -350,6 +350,7 @@ firebase.auth().signInAnonymously().catch(()=>{});
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px" onclick="intradayStep()">▶ 推進 1 格</button>
           <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:var(--up);border-color:var(--up)" onclick="catchUpIntraday()">⚡ 補追至當前時間</button>
+          <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:var(--purple);border-color:var(--purple)" onclick="rollbackIntradayToTime()">↩ 回退日內線</button>
           <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px;color:var(--dn)" onclick="resetIntradayPoints()">↺ 重置日內資料</button>
         </div>
       </div>
@@ -1161,12 +1162,14 @@ function mergeLogsForSave(a,b,limit){
 }
 function mergeWorldForFirebaseSave(incoming,current){
   const next=cloneWorldForSave(incoming);
+  const forceIntradayOverwrite=!!next._forceIntradayOverwrite;
   delete next._forceOverwrite;
+  delete next._forceIntradayOverwrite;
   if(!current)return next;
   // 已完成的日內盤 slot 必須以 Firebase 為準，避免 GM 頁面用舊的本地行情覆蓋玩家端正在看的即時走勢。
   const I=next.market&&next.market.intraday;
   const C=current.market&&current.market.intraday;
-  if(I&&C&&I.dateKey===C.dateKey&&I.plans&&C.plans){
+  if(!forceIntradayOverwrite&&I&&C&&I.dateKey===C.dateKey&&I.plans&&C.plans){
     Object.keys(C.plans).forEach(id=>{
       const cp=C.plans[id],ip=I.plans[id];
       if(!cp||!ip||!Array.isArray(cp.points)||!cp.points.length)return;
@@ -1313,11 +1316,13 @@ async function push(){
       // Intraday plans can exceed 256KB, so write them at a separate path.
       const plans=saveWorld.market&&saveWorld.market.intraday&&saveWorld.market.intraday.plans;
       if(plans){
+        await firebaseRESTPatch('/world/market/intraday',{plansSyncing:true,plansSyncingAt:Date.now()});
         // Write world without plans first (plans are too big for one request)
         const worldMain=cloneWorldForSave(saveWorld);
         if(worldMain.market&&worldMain.market.intraday){
           delete worldMain.market.intraday.plans;
           worldMain.market.intraday.plansSyncing=true;
+          worldMain.market.intraday.plansSyncingAt=Date.now();
         }
         await firebaseRESTPut('/world',worldMain);
         // PATCH plans in batches of 16 (~200KB each) to stay under 256KB limit
@@ -1326,7 +1331,7 @@ async function push(){
           const chunk={};keys.slice(i,i+BATCH).forEach(k=>{chunk[k]=plans[k];});
           await firebaseRESTPatch('/world/market/intraday/plans',chunk);
         }
-        await firebaseRESTPatch('/world/market/intraday',{plansSyncing:false});
+        await firebaseRESTPatch('/world/market/intraday',{plansSyncing:false,plansSyncingAt:null,plansSyncError:null});
       }else{
         await firebaseRESTPut('/world',saveWorld);
       }
@@ -1686,7 +1691,16 @@ function intradayStep(silent=false){
   }
   const step=(S.slot||0)+1;
   if(step>=INTRADAY_SLOTS.length){intradayClose();return;}
-  W.assets.filter(a=>!a.delisted).forEach(a=>intradayStepAsset(a,step));
+  W.assets.filter(a=>!a.delisted).forEach(a=>{
+    const P=intradayPlan(a);
+    let done=intradayCompletedSlot(P);
+    while(done<step){
+      intradayStepAsset(a,done+1);
+      const nextDone=intradayCompletedSlot(P);
+      if(nextDone<=done)break;
+      done=nextDone;
+    }
+  });
   S.slot=step;
   syncMarketIndexDay('日盤推進');
   addLog('time',`日內盤推進至 ${INTRADAY_SLOTS[step]}`);
@@ -2101,13 +2115,14 @@ function applyIntradayBatch(){
 }
 function gmIntradayAutoEnabled(){
   const el=document.getElementById('intradayAutoToggle');
-  return !!(el&&el.checked);
+  if(el)return !!el.checked;
+  return localStorage.getItem('gran_intraday_auto')!=='0';
 }
 function saveIntradayAutoPref(){localStorage.setItem('gran_intraday_auto',gmIntradayAutoEnabled()?'1':'0');}
+const AUTO_INTRADAY_FALLBACK_LAG_SLOTS=2;
 async function runIntradayAuto(force=false){
   if(!W||busy)return;
-  // 日內盤由 Apps Script 後端排程統一推進；GM 前端不可在背景自行隨機推盤。
-  // 只有明確存在且打開的測試開關才允許前端自動追盤，避免兩個來源同時改寫日內線。
+  // 正常由 Apps Script 後端推進。GM 端只在後端落後一段時間時接手補缺口。
   if(!force&&!gmIntradayAutoEnabled())return;
   const now=new Date(), hour=now.getHours(), today=now.toDateString();
   const todayYmd=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -2116,7 +2131,6 @@ async function runIntradayAuto(force=false){
   const isCloseHour=hour===0&&now.getMinutes()===0;
   const closedToday=()=>S.lastClosedRealDate===today||S.lastClosedRealDate===todayYmd;
   if(isCloseHour&&closedToday())return;
-  if(S.lastAutoRun===runKey&&!force)return;
   if(!isCloseHour&&(hour<MARKET_OPEN_HOUR||hour>23))return;
   if(closedToday()&&S.dateKey===intradayKey()){
     if(S.status==='open'){S.status='closed';S.slot=INTRADAY_SLOTS.length-1;push();renderAll();}
@@ -2124,16 +2138,21 @@ async function runIntradayAuto(force=false){
   }
   if(S.dateKey!==intradayKey()||closedToday()||S.status==='closed'||S.status==='idle'){intradayOpen();S=intradaySession();}
   const targetSlot=currentRealIntradaySlot();
-  const behindBy=targetSlot-(intradaySession().slot||0);
-  if(behindBy===1){
-    intradayStep();
-  }else if(behindBy>1){
+  const startSlot=syncIntradaySlotFromPoints().slot||0;
+  const behindBy=targetSlot-startSlot;
+  if(!force&&behindBy<AUTO_INTRADAY_FALLBACK_LAG_SLOTS)return;
+  if(S.gmFallbackRunKey===runKey&&!force)return;
+  if(behindBy>0){
+    saveIntradayRecoverySnapshot(`自動備援補追前 ${INTRADAY_SLOTS[startSlot]} → ${INTRADAY_SLOTS[targetSlot]}`);
     while((intradaySession().slot||0)<targetSlot)intradayStep(true);
-    push();renderAll();
+    gmLog('warn',`⚠ 後端推進落後，GM 備援補追：${INTRADAY_SLOTS[startSlot]} → ${INTRADAY_SLOTS[targetSlot]}，共 ${behindBy} 格`);
+    S=intradaySession();
+    S.gmFallbackRunKey=runKey;
+    await push();
+    renderAll();
   }
   S=intradaySession();
   if(isCloseHour&&S.status==='open'){intradayClose();const yest=new Date(now);yest.setDate(yest.getDate()-1);intradaySession().lastClosedRealDate=yest.toDateString();}
-  S.lastAutoRun=runKey;
 }
 
 function catchUpIntraday(){
@@ -2150,9 +2169,115 @@ function catchUpIntraday(){
   if(startSlot>=targetSlot){alert(`目前已是最新（${INTRADAY_SLOTS[startSlot]}），無需補追。`);return;}
   const count=targetSlot-startSlot;
   if(!confirm(`補追 ${count} 格（${INTRADAY_SLOTS[startSlot]} → ${INTRADAY_SLOTS[targetSlot]}）？`))return;
+  saveIntradayRecoverySnapshot(`補追前 ${INTRADAY_SLOTS[startSlot]} → ${INTRADAY_SLOTS[targetSlot]}`);
   while((intradaySession().slot||0)<targetSlot)intradayStep(true);
   gmLog('time',`⚡ 手動補追完成：${INTRADAY_SLOTS[startSlot]} → ${INTRADAY_SLOTS[targetSlot]}，共 ${count} 格`);
   push();renderAll();
+}
+
+function saveIntradayRecoverySnapshot(reason){
+  if(!W)return null;
+  const key='gran_intraday_recovery_snapshot_'+Date.now();
+  const snapshot={
+    savedAt:Date.now(),
+    reason:reason||'手動操作前快照',
+    gameYear:W.gameYear||1,
+    gameDay:W.gameDay||1,
+    intraday:cloneWorldForSave(W.market?.intraday||null),
+    marketIndexDay:cloneWorldForSave(W.market?.index?.day||null),
+    assetPrices:(W.assets||[]).map(a=>({id:a.id,price:a.price}))
+  };
+  try{
+    localStorage.setItem(key,JSON.stringify(snapshot));
+    localStorage.setItem('gran_intraday_recovery_latest_key',key);
+    return key;
+  }catch(e){
+    console.warn('[recovery snapshot] failed',e);
+    return null;
+  }
+}
+
+function slotForIntradayTimeText(timeText){
+  const m=String(timeText||'').trim().match(/^(\d{1,2}):(\d{2})$/);
+  if(!m)return null;
+  let h=Number(m[1]), min=Number(m[2]);
+  if(!Number.isFinite(h)||!Number.isFinite(min)||min<0||min>59)return null;
+  const h24=h===0?24:h;
+  if(h24<MARKET_OPEN_HOUR||h24>MARKET_CLOSE_HOUR)return null;
+  const offset=(h24-MARKET_OPEN_HOUR)*60+min;
+  return Math.min(Math.max(Math.floor(offset/SLOT_MINUTES),0),INTRADAY_SLOTS.length-1);
+}
+
+function trimIntradayPlanToSlot(P,slot){
+  if(!P||!Array.isArray(P.points))return null;
+  let pts=P.points
+    .filter(pt=>pt&&Number.isFinite(pt.slot)&&Math.floor(pt.slot)<=slot)
+    .map(pt=>({...pt}));
+  if(!pts.length){
+    pts=[{slot:0,price:P.prevClose||1,major:true}];
+  }
+  pts.sort((a,b)=>(a.slot||0)-(b.slot||0));
+  P.points=pts;
+  const last=pts[pts.length-1];
+  P.high=Math.max(P.prevClose||last.price||0,...pts.map(x=>x.price||0));
+  P.low=Math.min(P.prevClose||last.price||Infinity,...pts.map(x=>x.price||Infinity));
+  if(P.nextSlotShockSlot!==undefined&&P.nextSlotShockSlot<=slot){
+    delete P.nextSlotShock;delete P.nextSlotShockSlot;delete P.nextSlotShockEndSlot;delete P.nextSlotVol;
+  }
+  if(P.tempIntervention&&P.tempIntervention.endSlot<=slot)delete P.tempIntervention;
+  return last;
+}
+
+async function rollbackIntradayToTime(){
+  if(!W||busy)return;
+  const input=prompt('回退日內線到哪個時間？\n會保留該時間以前的點位，刪除之後補追產生的錯誤走勢。\n格式 HH:MM，例如 22:15','22:15');
+  if(input===null)return;
+  const slot=slotForIntradayTimeText(input);
+  if(slot===null){alert('時間格式不正確，請輸入 07:00 ~ 24:00，且格式為 HH:MM');return;}
+  const label=INTRADAY_SLOTS[slot]||input;
+  const S=intradaySession();
+  if(!S||S.status!=='open'||!S.plans){alert('目前沒有開盤中的日內盤可以回退。');return;}
+  const latestSnapKey=localStorage.getItem('gran_intraday_recovery_latest_key')||'';
+  const latestSnap=latestSnapKey?localStorage.getItem(latestSnapKey):null;
+  if(!latestSnap){
+    if(!confirm('找不到「補追前快照」。\n\n這個功能只能裁切目前 Firebase 裡的日內線，不能還原成你按補追之前的版本。\n如果你要精準找回舊線，請先不要繼續，改查 Firebase/瀏覽器備份。\n\n仍要裁切目前線嗎？'))return;
+  }
+  const current=syncIntradaySlotFromPoints().slot||0;
+  if(slot>=current){alert(`目前日內線只到 ${INTRADAY_SLOTS[current]}，不需要回退。`);return;}
+  const target=currentRealIntradaySlot();
+  const fillCount=Math.max(0,target-slot);
+  if(!confirm(`確定回退日內線到 ${label}？\n\n將保留 slot 0~${slot}，刪除 ${label} 之後的即時走勢。\n完成後可再按「補追至當前時間」補 ${fillCount} 格。`))return;
+
+  saveUndoSnapshot(`回退日內線到 ${label}`);
+  saveIntradayRecoverySnapshot(`回退前 ${INTRADAY_SLOTS[current]} → ${label}`);
+
+  Object.entries(S.plans).forEach(([id,P])=>{
+    const last=trimIntradayPlanToSlot(P,slot);
+    const a=W.assets.find(x=>x.id===id);
+    if(a&&last&&Number.isFinite(last.price))a.price=last.price;
+  });
+  S.slot=slot;
+  S.lastAutoRun='';
+  S.plansSyncing=false;
+
+  const MI=ensureMarketIndex();
+  if(MI.day&&Array.isArray(MI.day.points)){
+    MI.day.points=MI.day.points.filter(pt=>pt&&Number.isFinite(pt.slot)&&Math.floor(pt.slot)<=slot);
+    const lastIdx=MI.day.points[MI.day.points.length-1];
+    if(lastIdx&&Number.isFinite(lastIdx.price)){
+      MI.day.price=lastIdx.price;
+      MI.day.high=Math.max(MI.day.prevClose||lastIdx.price,...MI.day.points.map(x=>x.price||0));
+      MI.day.low=Math.min(MI.day.prevClose||lastIdx.price,...MI.day.points.map(x=>x.price||Infinity));
+    }else{
+      syncMarketIndexDay(`回退至 ${label}`);
+    }
+  }
+
+  gmLog('time',`↩ 日內線已回退至 ${label}；可從此點補追新走勢`);
+  W._forceIntradayOverwrite=true;
+  await push();
+  delete W._forceIntradayOverwrite;
+  renderAll();
 }
 
 // ═══════════════════════════════════════════════════════
