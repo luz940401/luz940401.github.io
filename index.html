@@ -1998,7 +1998,8 @@ function queueNextHourMove(a,pct,vol){
   if(!a||a.delisted)return null;
   const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
   if(isAfterIntradayClose()){
-    return setNextDayPlan(a.id,{targetPct:clamped,volatility:INTRADAY_PATTERNS[vol]?vol:qbVolForPct(clamped),volPinned:true});
+    const safeVol=(vol==='blazeUp'||vol==='blazeDn')?qbVolForPct(clamped):(INTRADAY_PATTERNS[vol]?vol:qbVolForPct(clamped));
+    return setNextDayPlan(a.id,{targetPct:clamped,volatility:safeVol,volPinned:true,blaze:null});
   }
   let S=intradaySession();
   if(S.status!=='open'){
@@ -2025,7 +2026,7 @@ function setTodayCloseTarget(a,pct){
   if(!a||a.delisted)return null;
   if(isAfterIntradayClose()){
     const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
-    return setNextDayPlan(a.id,{targetPct:p});
+    return setNextDayPlan(a.id,{targetPct:p,blaze:null});
   }
   let S=intradaySession();
   if(S.status!=='open'){
@@ -2288,9 +2289,10 @@ function setAssetHourMove(id, pct){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
   const p=Math.max(-10,Math.min(10,Number(pct)||0))/100;
   // 優先用 GM 持久設定的波動模式
-  const volPref=(W.assetVolPrefs&&W.assetVolPrefs[id])||qbVolForPct(p);
+  const rawVolPref=(W.assetVolPrefs&&W.assetVolPrefs[id])||qbVolForPct(p);
+  const volPref=(rawVolPref==='blazeUp'||rawVolPref==='blazeDn')?qbVolForPct(p):rawVolPref;
   if(isAfterIntradayClose()){
-    setNextDayPlan(id,{targetPct:p,volatility:volPref,volPinned:true});
+    setNextDayPlan(id,{targetPct:p,volatility:volPref,volPinned:true,blaze:null});
     gmLog('time',`${a.name} 明日開盤設定：${p>=0?'+':''}${(p*100).toFixed(0)}% / ${(VOL_OPTS.find(o=>o.v===volPref)?.l||volPref)}`);
     push();renderMkt();
     return;
@@ -2310,7 +2312,7 @@ function setCloseTarget(id){
   if(isNaN(raw)){alert('請輸入漲跌幅，例如 5 或 -3');return;}
   const targetPct=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,raw/100));
   if(isAfterIntradayClose()){
-    setNextDayPlan(id,{targetPct});
+    setNextDayPlan(id,{targetPct,blaze:null});
     const finalPrice=Math.round((a.price||1)*(1+targetPct));
     gmLog('time',`${a.name} 明日開盤設定：${targetPct>=0?'+':''}${(targetPct*100).toFixed(1)}% → 約 ${finalPrice.toLocaleString()} G`);
     clearMktDraft(id,'closeTarget');
