@@ -1693,12 +1693,11 @@ function intradayStep(silent=false){
   if(step>=INTRADAY_SLOTS.length){intradayClose();return;}
   W.assets.filter(a=>!a.delisted).forEach(a=>{
     const P=intradayPlan(a);
-    let done=intradayCompletedSlot(P);
-    while(done<step){
-      intradayStepAsset(a,done+1);
+    let cursor=intradayCompletedSlot(P);
+    while(cursor<step){
+      intradayStepAsset(a,cursor+1);
       const nextDone=intradayCompletedSlot(P);
-      if(nextDone<=done)break;
-      done=nextDone;
+      cursor=nextDone>cursor?nextDone:cursor+1;
     }
   });
   S.slot=step;
