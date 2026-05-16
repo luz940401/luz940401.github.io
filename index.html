@@ -2163,7 +2163,14 @@ function catchUpIntraday(){
   const _sameGameDay=S.dateKey===intradayKey();
   const _closedToday=(S.lastClosedRealDate===_today||S.lastClosedRealDate===_todayYmd)&&_sameGameDay;
   if(_closedToday){alert('今日已收盤，無法補追。');return;}
-  if(!_sameGameDay||S.status==='closed'||S.status==='idle'){intradayOpen();S=intradaySession();}
+  if(!_sameGameDay){
+    alert(`目前日內盤日期是 ${S.dateKey||'未知'}，不是現在遊戲日期 ${intradayKey()}。\n為避免重開新盤覆蓋走勢，已取消補追。`);
+    return;
+  }
+  if(S.status!=='open'){
+    alert('目前日內盤不是開盤中，無法補追。\n請先確認是否已收盤，避免重開新盤覆蓋走勢。');
+    return;
+  }
   const targetSlot=currentRealIntradaySlot();
   const startSlot=S.slot||0;
   if(startSlot>=targetSlot){alert(`目前已是最新（${INTRADAY_SLOTS[startSlot]}），無需補追。`);return;}
@@ -4266,9 +4273,7 @@ function initCollapsiblePanels(){
 document.getElementById('setupOverlay').classList.add('hidden');
 init();
 setInterval(()=>{const n=new Date();const ts=`現實 ${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;const gc=document.getElementById('gmClock');if(gc)gc.textContent=ts;const rc=document.getElementById('realClock');if(rc)rc.textContent=ts;},1000);
-// 日內盤由 Apps Script 後端自動推進；GM 頁不再於背景自動補追，避免與後端同時改寫行情。
-setTimeout(()=>runIntradayAuto(false),4000);
-setInterval(()=>runIntradayAuto(),60000);
+// 日內盤由 Apps Script 後端自動推進；GM 頁不在背景自動補追，避免與後端同時改寫行情。
 
 // ═══════════════════════════════════════════════════════
 //  撤銷系統（只保留 1 步）
