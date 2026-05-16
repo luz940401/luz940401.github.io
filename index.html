@@ -1998,7 +1998,7 @@ function queueNextHourMove(a,pct,vol){
   if(!a||a.delisted)return null;
   const clamped=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
   if(isAfterIntradayClose()){
-    return setNextDayPlan(a.id,{targetPct:clamped,volatility:INTRADAY_PATTERNS[vol]?vol:qbVolForPct(clamped),volPinned:true,blaze:clamped>=DAILY_LIMIT?'up':clamped<=-DAILY_LIMIT?'dn':null});
+    return setNextDayPlan(a.id,{targetPct:clamped,volatility:INTRADAY_PATTERNS[vol]?vol:qbVolForPct(clamped),volPinned:true});
   }
   let S=intradaySession();
   if(S.status!=='open'){
@@ -2025,7 +2025,7 @@ function setTodayCloseTarget(a,pct){
   if(!a||a.delisted)return null;
   if(isAfterIntradayClose()){
     const p=Math.max(-DAILY_LIMIT,Math.min(DAILY_LIMIT,Number(pct)||0));
-    return setNextDayPlan(a.id,{targetPct:p,blaze:p>=DAILY_LIMIT?'up':p<=-DAILY_LIMIT?'dn':null});
+    return setNextDayPlan(a.id,{targetPct:p});
   }
   let S=intradaySession();
   if(S.status!=='open'){
@@ -2290,7 +2290,7 @@ function setAssetHourMove(id, pct){
   // 優先用 GM 持久設定的波動模式
   const volPref=(W.assetVolPrefs&&W.assetVolPrefs[id])||qbVolForPct(p);
   if(isAfterIntradayClose()){
-    setNextDayPlan(id,{targetPct:p,volatility:volPref,volPinned:true,blaze:p>=DAILY_LIMIT?'up':p<=-DAILY_LIMIT?'dn':null});
+    setNextDayPlan(id,{targetPct:p,volatility:volPref,volPinned:true});
     gmLog('time',`${a.name} 明日開盤設定：${p>=0?'+':''}${(p*100).toFixed(0)}% / ${(VOL_OPTS.find(o=>o.v===volPref)?.l||volPref)}`);
     push();renderMkt();
     return;
@@ -3225,30 +3225,40 @@ function renderPlayerAdjustTargets(){
   sel.innerHTML=W.players.map((p,i)=>p?`<option value="${i}">${p.name}</option>`:'').join('');
   if(cur)sel.value=cur;
 }
+function readGoldInput(id){
+  const raw=document.getElementById(id)?.value;
+  if(raw===undefined||String(raw).trim()==='')return null;
+  const n=Number(raw);
+  return Number.isFinite(n)?Math.round(n):null;
+}
+function setPlayerCash(p,value){
+  p.cash=Math.max(0,Math.round(Number(value)||0));
+  p._cashAdjustedAt=Date.now();
+}
 function adjustPlayerAccount(){
   const sel=document.getElementById('playerAdjustTarget');
   if(!sel)return;
   const idx=parseInt(sel.value);
   if(isNaN(idx)||!W.players[idx])return;
   const p=W.players[idx];
-  const cashSet=parseInt(document.getElementById('playerCashSet').value);
-  const cashDelta=parseInt(document.getElementById('playerCashDelta').value);
-  const realSet=parseInt(document.getElementById('playerRealizedSet').value);
-  const realDelta=parseInt(document.getElementById('playerRealizedDelta').value);
+  const cashSet=readGoldInput('playerCashSet');
+  const cashDelta=readGoldInput('playerCashDelta');
+  const realSet=readGoldInput('playerRealizedSet');
+  const realDelta=readGoldInput('playerRealizedDelta');
   let note=[];
-  if(!Number.isNaN(cashSet)){p.cash=cashSet;note.push(`現金設為 ${cashSet.toLocaleString()} G`);} 
-  if(!Number.isNaN(cashDelta)){p.cash+=(cashDelta||0);note.push(`現金 ${cashDelta>=0?'+':''}${cashDelta.toLocaleString()} G`);} 
-  if(!Number.isNaN(realSet)){p.realizedPnL=realSet;note.push(`已實現損益設為 ${realSet.toLocaleString()} G`);} 
-  if(!Number.isNaN(realDelta)){p.realizedPnL=(p.realizedPnL||0)+(realDelta||0);note.push(`已實現損益 ${realDelta>=0?'+':''}${realDelta.toLocaleString()} G`);} 
+  if(cashSet!==null){setPlayerCash(p,cashSet);note.push(`現金設為 ${p.cash.toLocaleString()} G`);} 
+  if(cashDelta!==null){setPlayerCash(p,(p.cash||0)+cashDelta);note.push(`現金 ${cashDelta>=0?'+':''}${cashDelta.toLocaleString()} G`);} 
+  if(realSet!==null){p.realizedPnL=realSet;note.push(`已實現損益設為 ${realSet.toLocaleString()} G`);} 
+  if(realDelta!==null){p.realizedPnL=(p.realizedPnL||0)+realDelta;note.push(`已實現損益 ${realDelta>=0?'+':''}${realDelta.toLocaleString()} G`);} 
   if(note.length){gmLog('good',`GM 調整 ${p.name}：${note.join('，')}`);push();renderWealth();}
 }
 function renameP(i,n){W.players[i].name=n.trim()||`冒險者${i+1}`;push();renderWealth();}
-function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;W.players[i].cash=1500;W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];W.players[i].futures=[];W.players[i].tradeHistory=[];push();renderWealth();}
+function resetP(i){if(!confirm(`重置 ${W.players[i].name}？`))return;setPlayerCash(W.players[i],1500);W.players[i].portfolio={};W.players[i].realizedPnL=0;W.players[i].shorts=[];W.players[i].futures=[];W.players[i].tradeHistory=[];push();renderWealth();}
 function deleteP(i){if(!confirm(`確定刪除玩家「${W.players[i].name}」？\n此操作無法復原，所有持倉與金幣將一併刪除。`))return;W.players.splice(i,1);push();renderWealth();}
 function giveGold(){
-  const t=document.getElementById('goldTarget').value,g=parseInt(document.getElementById('goldAmt').value);if(!g)return;
-  if(t==='all'){W.players.forEach(p=>{if(p)p.cash+=g;});gmLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
-  else{const idx=parseInt(t);W.players[idx].cash+=g;gmLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
+  const t=document.getElementById('goldTarget').value,g=readGoldInput('goldAmt');if(!g)return;
+  if(t==='all'){W.players.forEach(p=>{if(p)setPlayerCash(p,(p.cash||0)+g);});gmLog('good',`GM 賜予所有玩家各 ${g.toLocaleString()} G`);}
+  else{const idx=parseInt(t);setPlayerCash(W.players[idx],(W.players[idx].cash||0)+g);gmLog('good',`GM 賜予 ${W.players[idx].name} ${g.toLocaleString()} G`);}
   document.getElementById('goldAmt').value='';push();renderWealth();
 }
 function addPlayer(){
@@ -3427,7 +3437,8 @@ function renderMkt(){
     const P = closedForTomorrow ? W?.market?.intraday?.plans?.[a.id] : intradayPlan(a);
     const nextPlan = nextDayPlanFor(a.id);
     // 波動模式：下拉選單顯示目前實際生效模式；只有排程到未來 slot 的 nextSlotVol 才顯示待生效
-    const blazeVol=a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':null;
+    const explicitBlaze=closedForTomorrow ? (nextPlan?.blaze || a.blaze || null) : (a.blaze || null);
+    const blazeVol=explicitBlaze==='up'?'blazeUp':explicitBlaze==='dn'?'blazeDn':null;
     const volActive = blazeVol || P?.volatility || 'neutral';
     const volActiveLabel = VOL_OPTS.find(o=>o.v===volActive)?.l || volActive;
     const nextVol = nextPlan?.volatility || null;
@@ -3499,7 +3510,7 @@ function renderMkt(){
       <td>${closeTargetHtml}</td>
       <td>${tempHtml}</td>
       <td style="white-space:nowrap">
-        <button class="blaze-btn up${a.blaze==='up'?' active':''}" onclick="toggleBlaze('${a.id}','up')" title="強勢漲停">▲ 漲停</button><button class="blaze-btn dn${a.blaze==='dn'?' active':''}" onclick="toggleBlaze('${a.id}','dn')" title="強勢跌停">▼ 跌停</button>
+        <button class="blaze-btn up${explicitBlaze==='up'?' active':''}" onclick="toggleBlaze('${a.id}','up')" title="強勢漲停">▲ 漲停</button><button class="blaze-btn dn${explicitBlaze==='dn'?' active':''}" onclick="toggleBlaze('${a.id}','dn')" title="強勢跌停">▼ 跌停</button>
       </td>`;
     tb.appendChild(tr);
     requestAnimationFrame(()=>drawGmKChart(a));
@@ -3509,9 +3520,17 @@ function renderMkt(){
 function toggleBlaze(id,mode){
   const a=W.assets.find(x=>x.id===id);if(!a)return;
   if(isAfterIntradayClose()){
-    const alreadyNext=nextDayPlanFor(id)?.blaze===mode;
+    const alreadyNext=nextDayPlanFor(id)?.blaze===mode || a.blaze===mode;
     if(alreadyNext){
       setNextDayPlan(id,{blaze:null,volatility:'neutral',volPinned:true});
+      if(a.blaze===mode)a.blaze=null;
+      const P=intradayPlan(a);
+      if(P&&(P.volatility==='blazeUp'||P.volatility==='blazeDn')){
+        P.volatility='neutral';
+        P.volPinned=true;
+        delete P.limitLocked;
+        delete P.limitLockedByGap;
+      }
       if(W.assetVolPrefs&&(W.assetVolPrefs[a.id]==='blazeUp'||W.assetVolPrefs[a.id]==='blazeDn'))W.assetVolPrefs[a.id]='neutral';
       gmLog('ev',`· ${a.name} 取消明日強勢${mode==='up'?'上漲':'下跌'}設定`);
     }else{
