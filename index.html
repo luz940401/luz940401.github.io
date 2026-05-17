@@ -1643,7 +1643,7 @@ function intradayOpen(){
     const keepToday=old?.dateKey===intradayKey()&&old?.status==='open'&&keep.points&&keep.points.length>1;
     if(keepToday){
       const pts=keep.points.map(pt=>({...pt}));
-      plans[a.id]={prevClose:keep.prevClose||prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',volPinned:!!keep.volPinned,points:pts,high:Math.max(keep.prevClose||prev,...pts.map(x=>x.price||0)),low:Math.min(keep.prevClose||prev,...pts.map(x=>x.price||Infinity))};
+      plans[a.id]={prevClose:keep.prevClose||prev,targetPct:Math.max(-0.10,Math.min(0.10,keep.targetPct||0)),volatility:keep.volatility||'neutral',volPinned:!!keep.volPinned,watchInterval:Number.isFinite(keep.watchInterval)?keep.watchInterval:assetWatchInterval(a),points:pts,high:Math.max(keep.prevClose||prev,...pts.map(x=>x.price||0)),low:Math.min(keep.prevClose||prev,...pts.map(x=>x.price||Infinity))};
       plans[a.id].nextVolSwitchSlot=Number.isFinite(keep.nextVolSwitchSlot)?keep.nextVolSwitchSlot:randomVolDurationSlots();
       if(keep.nextSlotShock!==undefined){
         plans[a.id].nextSlotShock=keep.nextSlotShock;
@@ -1664,7 +1664,7 @@ function intradayOpen(){
     else if(nextCfg.blaze===null)a.blaze=null;
     const hasNextTarget=typeof nextCfg.targetPct==='number';
     const hasNextVol=nextCfg.volatility&&INTRADAY_PATTERNS[nextCfg.volatility];
-    plans[a.id]={prevClose:prev,targetPct:hasNextTarget?Math.max(-0.10,Math.min(0.10,nextCfg.targetPct)):nextTarget,volatility:a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':(hasNextVol?nextCfg.volatility:(keep.volatility||'neutral')),volPinned:!!(nextCfg.volPinned||hasNextVol||keep.volPinned),points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
+    plans[a.id]={prevClose:prev,targetPct:hasNextTarget?Math.max(-0.10,Math.min(0.10,nextCfg.targetPct)):nextTarget,volatility:a.blaze==='up'?'blazeUp':a.blaze==='dn'?'blazeDn':(hasNextVol?nextCfg.volatility:(keep.volatility||'neutral')),volPinned:!!(nextCfg.volPinned||hasNextVol||keep.volPinned),watchInterval:assetWatchInterval(a),points:[{slot:0,price:prev,major:true}],high:prev,low:prev};
     ensureVolSwitchSchedule(plans[a.id],0);
     if(a.blaze==='up')plans[a.id].limitLocked='up';
     if(a.blaze==='dn')plans[a.id].limitLocked='dn';
@@ -1794,7 +1794,9 @@ function intradayStepAsset(a,step){
   let activeCfg=P.volatility;
   const last=intradayLastPoint(P);
   // 處置股分盤交易：非更新步只推平價（凍結走勢）
-  const _wi=assetWatchInterval(a);
+  const computedWatchInterval=assetWatchInterval(a);
+  const _wi=Number.isFinite(P.watchInterval)&&P.watchInterval>0?Math.round(P.watchInterval):computedWatchInterval;
+  if(computedWatchInterval>0&&!P.watchInterval)P.watchInterval=computedWatchInterval;
   if(_wi>0&&step>0&&step!==INTRADAY_SLOTS.length-1&&step%_wi!==0){
     a.price=last?last.price:P.prevClose; // 不推中間點，讓相鄰更新點自然連成斜線
     return;
@@ -3472,7 +3474,8 @@ function renderMkt(){
 
     // 今日收盤目標（顯示已設定的 targetPct）
     const tgt = closedForTomorrow && typeof nextPlan?.targetPct==='number' ? nextPlan.targetPct : P?.targetPct;
-    const tgtLabel = (tgt!==undefined&&tgt!==0)
+    const hasTgt = Number.isFinite(tgt);
+    const tgtLabel = hasTgt
       ? `<div class="close-target-set">${closedForTomorrow?'明日 ':''}${tgt>=0?'+':''}${(tgt*100).toFixed(1)}%</div>`
       : `<div class="close-target-set" style="color:var(--ink3)">未設</div>`;
     const draft=marketDrafts[a.id]||{};
